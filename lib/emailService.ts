@@ -52,14 +52,33 @@ export async function sendDailyTaskLogEmail(
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="x-apple-disable-message-reformatting">
+        <meta name="color-scheme" content="light">
+        <meta name="supported-color-schemes" content="light">
         <title>Orbit Daily Performance Summary — ${dateStr}</title>
         <style>
+          :root {
+            color-scheme: light;
+            supported-color-schemes: light;
+          }
           /* Reset & Basic Styles */
           body, html { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a; }
           * { box-sizing: border-box; }
           table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
           img { border: 0; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
           
+          .logo-container {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+          }
+
+          /* Force light background in dark mode email clients */
+          @media (prefers-color-scheme: dark) {
+            .logo-container, [data-ogsc] .logo-container {
+              background-color: #ffffff !important;
+              background: #ffffff !important;
+            }
+          }
+
           /* Responsive Breakpoints */
           @media only screen and (max-width: 580px) {
             .wrapper { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
@@ -93,7 +112,13 @@ export async function sendDailyTaskLogEmail(
                           <table border="0" cellpadding="0" cellspacing="0">
                             <tr>
                               <td style="vertical-align: middle; padding-right: 12px;">
-                                <img src="https://orbit.merajulhaque.com/logos/orbit-light-icon.png" width="38" height="38" alt="Orbit Logo" style="display: block; width: 38px; height: 38px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15);" />
+                                <table border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff" class="logo-container" style="background-color: #ffffff !important; background: #ffffff !important; border-radius: 10px;">
+                                  <tr>
+                                    <td bgcolor="#ffffff" class="logo-container" style="background-color: #ffffff !important; background: #ffffff !important; padding: 5px; border-radius: 10px;">
+                                      <img src="https://orbit.merajulhaque.com/logos/orbit-light-icon.png" width="38" height="38" alt="Orbit Logo" style="display: block; width: 38px; height: 38px;" />
+                                    </td>
+                                  </tr>
+                                </table>
                               </td>
                               <td style="vertical-align: middle;">
                                 <span style="font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; display: block; line-height: 1;">Orbit</span>
@@ -150,9 +175,8 @@ export async function sendDailyTaskLogEmail(
                     <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #15803d; padding-bottom: 8px; border-bottom: 2px solid #dcfce7; margin-top: 12px; margin-bottom: 12px; display: flex; items-center;">
                       ✓ Completed Tasks (${completedCount})
                     </div>
-                    ${
-                      completedCount > 0
-                        ? `<table border="0" cellpadding="0" cellspacing="0" width="100%" class="task-table" style="margin-bottom: 24px; table-layout: auto;">
+                    ${completedCount > 0
+      ? `<table border="0" cellpadding="0" cellspacing="0" width="100%" class="task-table" style="margin-bottom: 24px; table-layout: auto;">
                             <thead>
                               <tr style="background-color: #f8fafc;">
                                 <th align="left" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; padding: 10px 8px; border-bottom: 1px solid #e2e8f0; width: 55%;">Task Title</th>
@@ -162,23 +186,23 @@ export async function sendDailyTaskLogEmail(
                             </thead>
                             <tbody>
                               ${completedItems
-                                .map((t: any) => {
-                                  const cat = t.category || 'Personal';
-                                  const prio = (t.priority || 'medium').toLowerCase();
-                                  
-                                  let catBg = '#e2e8f0';
-                                  let catColor = '#334155';
-                                  if (cat === 'Client') { catBg = '#ede9fe'; catColor = '#6d28d9'; }
-                                  else if (cat === 'Research') { catBg = '#dbeafe'; catColor = '#1e40af'; }
-                                  else if (cat === 'Career') { catBg = '#d1fae5'; catColor = '#065f46'; }
-                                  else if (cat === 'Personal') { catBg = '#fef3c7'; catColor = '#92400e'; }
+        .map((t: any) => {
+          const cat = t.category || 'Personal';
+          const prio = (t.priority || 'medium').toLowerCase();
 
-                                  let prioColor = '#0284c7';
-                                  if (prio === 'urgent') prioColor = '#dc2626';
-                                  else if (prio === 'high') prioColor = '#ea580c';
-                                  else if (prio === 'low') prioColor = '#64748b';
+          let catBg = '#e2e8f0';
+          let catColor = '#334155';
+          if (cat === 'Client') { catBg = '#ede9fe'; catColor = '#6d28d9'; }
+          else if (cat === 'Research') { catBg = '#dbeafe'; catColor = '#1e40af'; }
+          else if (cat === 'Career') { catBg = '#d1fae5'; catColor = '#065f46'; }
+          else if (cat === 'Personal') { catBg = '#fef3c7'; catColor = '#92400e'; }
 
-                                  return `
+          let prioColor = '#0284c7';
+          if (prio === 'urgent') prioColor = '#dc2626';
+          else if (prio === 'high') prioColor = '#ea580c';
+          else if (prio === 'low') prioColor = '#64748b';
+
+          return `
                                     <tr>
                                       <td class="task-title" style="padding: 10px 8px; font-size: 13px; font-weight: 600; color: #1e293b; border-bottom: 1px solid #f1f5f9; word-break: break-word; overflow-wrap: anywhere;">
                                         ${t.title || 'Untitled Task'}
@@ -194,20 +218,19 @@ export async function sendDailyTaskLogEmail(
                                         </span>
                                       </td>
                                     </tr>`;
-                                })
-                                .join('')}
+        })
+        .join('')}
                             </tbody>
                           </table>`
-                        : `<div style="font-size: 12px; color: #94a3b8; font-style: italic; padding: 12px 0 24px 0;">No tasks were completed on this date.</div>`
-                    }
+      : `<div style="font-size: 12px; color: #94a3b8; font-style: italic; padding: 12px 0 24px 0;">No tasks were completed on this date.</div>`
+    }
 
                     <!-- Section: Pending / Non-Completed Tasks -->
                     <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #b45309; padding-bottom: 8px; border-bottom: 2px solid #fef3c7; margin-top: 12px; margin-bottom: 12px;">
                       ⏳ Non-Completed Tasks (${pendingCount})
                     </div>
-                    ${
-                      pendingCount > 0
-                        ? `<table border="0" cellpadding="0" cellspacing="0" width="100%" class="task-table" style="margin-bottom: 24px; table-layout: auto;">
+                    ${pendingCount > 0
+      ? `<table border="0" cellpadding="0" cellspacing="0" width="100%" class="task-table" style="margin-bottom: 24px; table-layout: auto;">
                             <thead>
                               <tr style="background-color: #f8fafc;">
                                 <th align="left" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; padding: 10px 8px; border-bottom: 1px solid #e2e8f0; width: 55%;">Task Title</th>
@@ -217,23 +240,23 @@ export async function sendDailyTaskLogEmail(
                             </thead>
                             <tbody>
                               ${pendingItems
-                                .map((t: any) => {
-                                  const cat = t.category || 'Personal';
-                                  const prio = (t.priority || 'medium').toLowerCase();
-                                  
-                                  let catBg = '#e2e8f0';
-                                  let catColor = '#334155';
-                                  if (cat === 'Client') { catBg = '#ede9fe'; catColor = '#6d28d9'; }
-                                  else if (cat === 'Research') { catBg = '#dbeafe'; catColor = '#1e40af'; }
-                                  else if (cat === 'Career') { catBg = '#d1fae5'; catColor = '#065f46'; }
-                                  else if (cat === 'Personal') { catBg = '#fef3c7'; catColor = '#92400e'; }
+        .map((t: any) => {
+          const cat = t.category || 'Personal';
+          const prio = (t.priority || 'medium').toLowerCase();
 
-                                  let prioColor = '#0284c7';
-                                  if (prio === 'urgent') prioColor = '#dc2626';
-                                  else if (prio === 'high') prioColor = '#ea580c';
-                                  else if (prio === 'low') prioColor = '#64748b';
+          let catBg = '#e2e8f0';
+          let catColor = '#334155';
+          if (cat === 'Client') { catBg = '#ede9fe'; catColor = '#6d28d9'; }
+          else if (cat === 'Research') { catBg = '#dbeafe'; catColor = '#1e40af'; }
+          else if (cat === 'Career') { catBg = '#d1fae5'; catColor = '#065f46'; }
+          else if (cat === 'Personal') { catBg = '#fef3c7'; catColor = '#92400e'; }
 
-                                  return `
+          let prioColor = '#0284c7';
+          if (prio === 'urgent') prioColor = '#dc2626';
+          else if (prio === 'high') prioColor = '#ea580c';
+          else if (prio === 'low') prioColor = '#64748b';
+
+          return `
                                     <tr>
                                       <td class="task-title" style="padding: 10px 8px; font-size: 13px; font-weight: 600; color: #1e293b; border-bottom: 1px solid #f1f5f9; word-break: break-word; overflow-wrap: anywhere;">
                                         ${t.title || 'Untitled Task'}
@@ -249,12 +272,12 @@ export async function sendDailyTaskLogEmail(
                                         </span>
                                       </td>
                                     </tr>`;
-                                })
-                                .join('')}
+        })
+        .join('')}
                             </tbody>
                           </table>`
-                        : `<div style="font-size: 12px; color: #94a3b8; font-style: italic; padding: 12px 0 24px 0;">All scheduled tasks were completed!</div>`
-                    }
+      : `<div style="font-size: 12px; color: #94a3b8; font-style: italic; padding: 12px 0 24px 0;">All scheduled tasks were completed!</div>`
+    }
 
                     <!-- CTA Button -->
                     <div align="center" style="margin-top: 24px; margin-bottom: 8px;">
