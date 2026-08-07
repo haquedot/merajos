@@ -19,13 +19,24 @@ export async function POST(req: Request) {
     const body = await req.json();
     const id = body.id || `h-${Date.now()}`;
     
-    const newHabit = await Habit.findByIdAndUpdate(
-      id,
-      { ...body, _id: id },
+    const habitData = {
+      _id: id,
+      name: body.name || 'Untitled Habit',
+      category: body.category || 'Personal',
+      icon: body.icon || 'Activity',
+      targetDaysPerWeek: body.targetDaysPerWeek ?? 7,
+      currentStreak: body.currentStreak ?? 0,
+      longestStreak: body.longestStreak ?? 0,
+      history: body.history || {},
+    };
+
+    const newHabit = await Habit.findOneAndUpdate(
+      { _id: id },
+      { $set: habitData },
       { upsert: true, new: true }
     ).lean();
 
-    return NextResponse.json({ habit: { ...newHabit, id: (newHabit as any)._id } }, { status: 201 });
+    return NextResponse.json({ habit: { ...(newHabit as any), id: (newHabit as any)._id } }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -41,8 +52,13 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Habit id is required' }, { status: 400 });
     }
 
-    const updatedHabit = await Habit.findByIdAndUpdate(id, updates, { new: true }).lean();
-    return NextResponse.json({ habit: { ...updatedHabit, id: (updatedHabit as any)._id } });
+    const updatedHabit = await Habit.findOneAndUpdate(
+      { _id: id },
+      { $set: updates },
+      { new: true, upsert: true }
+    ).lean();
+
+    return NextResponse.json({ habit: { ...(updatedHabit as any), id: (updatedHabit as any)._id } });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -58,9 +74,10 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Habit id is required' }, { status: 400 });
     }
 
-    await Habit.findByIdAndDelete(id);
+    await Habit.deleteOne({ _id: id });
     return NextResponse.json({ success: true, id });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
