@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Activity,
@@ -11,6 +11,7 @@ import {
   Sparkles,
   Award,
   Sun,
+  Trash2,
 } from 'lucide-react';
 import { useHabitStore } from '../../store/useHabitStore';
 import { Habit } from '../../types';
@@ -19,8 +20,13 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 
 export default function HabitsPage() {
-  const { habits, toggleHabitForDate, addHabit, deleteHabit } = useHabitStore();
+  const { habits, toggleHabitForDate, addHabit, deleteHabit, loadFromDB } = useHabitStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Load habits from Dexie IndexedDB & MongoDB on page mount
+  useEffect(() => {
+    loadFromDB();
+  }, [loadFromDB]);
 
   // New habit form
   const [name, setName] = useState('');
@@ -106,17 +112,27 @@ export default function HabitsPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => toggleHabitForDate(habit.id, todayStr)}
-                  className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 shadow-xs transition-all active:scale-95 ${
-                    isCompletedToday
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
-                  }`}
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  {isCompletedToday ? 'Completed!' : 'Mark Today'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleHabitForDate(habit.id, todayStr)}
+                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 shadow-xs transition-all active:scale-95 ${
+                      isCompletedToday
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    {isCompletedToday ? 'Completed!' : 'Mark Today'}
+                  </button>
+
+                  <button
+                    onClick={() => deleteHabit(habit.id)}
+                    title="Delete Habit"
+                    className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* GitHub style calendar heatmap */}

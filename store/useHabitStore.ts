@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Habit } from '../types';
+import { db } from '../database/dexie';
 
 interface HabitState {
   habits: Habit[];
@@ -11,14 +12,38 @@ interface HabitState {
   resetHabits: () => void;
 }
 
+const mergeHabits = (local: Habit[], remote: Habit[]): Habit[] => {
+  const map = new Map<string, Habit>();
+  (local || []).forEach((h) => {
+    if (h && h.id) map.set(h.id, h);
+  });
+  (remote || []).forEach((h) => {
+    if (h && h.id) {
+      const existing = map.get(h.id);
+      map.set(h.id, { ...existing, ...h });
+    }
+  });
+  return Array.from(map.values());
+};
+
 export const useHabitStore = create<HabitState>((set, get) => {
-  // Sync with MongoDB API on load
+  // Sync with IndexedDB & MongoDB API on initialization
   if (typeof window !== 'undefined') {
+    db.habits.toArray().then((localItems) => {
+      if (localItems && localItems.length > 0) {
+        set((state) => ({ habits: mergeHabits(state.habits, localItems) }));
+      }
+    });
+
     fetch('/api/habits')
       .then((res) => res.json())
       .then((data) => {
-        if (data.habits) {
-          set({ habits: data.habits });
+        if (data.habits && Array.isArray(data.habits)) {
+          set((state) => {
+            const merged = mergeHabits(state.habits, data.habits);
+            db.habits.bulkPut(merged);
+            return { habits: merged };
+          });
         }
       })
       .catch((err) => console.warn('[MongoDB HabitSync] Offline or API unreachable', err));
@@ -28,11 +53,22 @@ export const useHabitStore = create<HabitState>((set, get) => {
     habits: [],
 
     loadFromDB: async () => {
+      // 1. Dexie IndexedDB cache load
+      const localItems = await db.habits.toArray();
+      if (localItems && localItems.length > 0) {
+        set((state) => ({ habits: mergeHabits(state.habits, localItems) }));
+      }
+
+      // 2. MongoDB API sync
       try {
         const res = await fetch('/api/habits');
         const data = await res.json();
-        if (data.habits) {
-          set({ habits: data.habits });
+        if (data.habits && Array.isArray(data.habits)) {
+          set((state) => {
+            const merged = mergeHabits(state.habits, data.habits);
+            db.habits.bulkPut(merged);
+            return { habits: merged };
+          });
         }
       } catch (err) {
         console.warn('Failed to load habits from MongoDB API', err);
@@ -50,6 +86,7 @@ export const useHabitStore = create<HabitState>((set, get) => {
       };
 
       set((state) => ({ habits: [...state.habits, newHabit] }));
+      db.habits.put(newHabit).catch(() => {});
 
       // Save to MongoDB API
       fetch('/api/habits', {
@@ -101,6 +138,7 @@ export const useHabitStore = create<HabitState>((set, get) => {
       }));
 
       if (updatedHabit) {
+        db.habits.put(updatedHabit).catch(() => {});
         fetch('/api/habits', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -114,11 +152,16 @@ export const useHabitStore = create<HabitState>((set, get) => {
         habits: state.habits.filter((h) => h.id !== id),
       }));
 
+      db.habits.delete(id).catch(() => {});
       fetch(`/api/habits?id=${id}`, {
         method: 'DELETE',
       }).catch((err) => console.warn('Failed to delete habit from MongoDB API', err));
     },
 
-    resetHabits: () => set({ habits: [] }),
+    resetHabits: () => {
+      db.habits.clear().catch(() => {});
+      set({ habits: [] });
+    },
   };
 });
+
