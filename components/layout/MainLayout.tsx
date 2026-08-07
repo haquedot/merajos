@@ -36,8 +36,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     }
   }, [settings.theme]);
 
+  // Global Ctrl + K / Cmd + K keyboard shortcut listener to open search modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
-    <div className="min-h-screen flex bg-gray-50/50 dark:bg-[#090d16] text-gray-900 dark:text-gray-100 transition-colors selection:bg-blue-500 selection:text-white">
+    <div className="min-h-screen flex bg-[#F8FAFC] dark:bg-[#0B1120] text-[#0F172A] dark:text-[#F8FAFC] transition-colors selection:bg-[#1F3B99] selection:text-white">
       {/* Sidebar */}
       <Sidebar
         mobileOpen={mobileSidebarOpen}

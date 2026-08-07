@@ -155,7 +155,7 @@ export default function CareerPage() {
 
               <button
                 onClick={() => setIsJobModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
               >
                 <Plus className="w-4 h-4" />
                 Add Application
@@ -444,7 +444,7 @@ export default function CareerPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
               Save Application
             </button>

@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Orbit ⭐
+> **Plan. Focus. Execute. Grow.**
+
+Orbit is an intelligent personal productivity command center that helps professionals, students, developers, researchers, and creators organize their work, plan their day, execute deep work, track habits, manage projects, monitor research, and achieve long-term goals from one unified dashboard.
+
+## Key Features
+
+- 🎯 **Daily Task & MIT Tracker**: Full two-way synchronization with Google Tasks.
+- 📅 **Integrated Calendar**: Seamless Google Calendar event management & time-blocking.
+- 🚀 **Projects & Clients Workspace**: Track deliverables, milestones, and client accounts.
+- 📚 **Research & Career Command Center**: Track paper reading, DSA problem solving, and job applications.
+- ⚡ **Daily Performance Analytics**: Automatic 11:45 PM snapshot calculations with email summaries.
+- ⚙️ **Custom Preferences**: Dark/Light mode, email notification toggles, and offline data cache.
 
 ## Getting Started
 
-First, run the development server:
+First, install dependencies and run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to launch Orbit.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Framework**: Next.js (App Router), React 19, TypeScript
+- **Styling**: TailwindCSS, Lucide Icons, Framer Motion
+- **Fonts**: Manrope (via `next/font/google`)
+- **Database**: MongoDB (Server Snapshots), Dexie.js (Client IndexedDB Cache)
+- **Integrations**: Google Tasks API, Google Calendar API, Nodemailer

@@ -210,9 +210,12 @@ export interface Note {
 }
 
 export interface UserSettings {
+  id?: string;
   theme: 'light' | 'dark' | 'system';
   accentColor: string;
   sidebarCollapsed: boolean;
   pomodoroTime: number;
   soundEnabled: boolean;
+  emailNotificationsEnabled?: boolean;
+  notificationEmail?: string;
 }

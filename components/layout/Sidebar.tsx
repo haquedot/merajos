@@ -20,10 +20,10 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
-  Zap,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { Logo } from '../common/Logo';
+import { BRAND } from '../../lib/branding';
 
 export const sidebarItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -52,28 +52,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
   const collapsed = settings.sidebarCollapsed;
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 transition-all duration-300">
+    <div className="flex flex-col h-full bg-white dark:bg-[#101827] border-r border-[#E2E8F0] dark:border-[#243244] transition-all duration-300">
       {/* Brand Header */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 dark:border-gray-800">
+      <div className="flex items-center justify-between h-16 px-4 border-b border-[#E2E8F0] dark:border-[#243244]">
         <Link href="/" className="flex items-center gap-3 overflow-hidden">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
-            <Zap className="w-5 h-5 fill-current" />
-          </div>
-          {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col"
-            >
-              <span className="font-extrabold text-base tracking-tight text-gray-900 dark:text-white flex items-center gap-1">
-                Meraj OS
-                <Sparkles className="w-3.5 h-3.5 text-blue-500 fill-blue-500" />
-              </span>
-              <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                Personal OS
-              </span>
-            </motion.div>
+          {collapsed ? (
+            <Logo variant="icon" size={28} />
+          ) : (
+            <Logo variant="horizontal" size={28} showTagline={false} />
           )}
         </Link>
 
@@ -90,8 +76,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
       {/* Navigation List */}
       <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {sidebarItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
           const Icon = item.icon;
+          const isActive = pathname === item.href;
 
           return (
             <Link
@@ -100,27 +86,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
               onClick={onMobileClose}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all relative group ${
                 isActive
-                  ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/70 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-[#1F3B99] text-white font-semibold shadow-xs'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-[#1E293B] hover:text-gray-900 dark:hover:text-white'
               }`}
               title={collapsed ? item.name : undefined}
             >
               <Icon
                 className={`w-5 h-5 shrink-0 transition-colors ${
                   isActive
-                    ? 'text-blue-600 dark:text-blue-400'
+                    ? 'text-white'
                     : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200'
                 }`}
               />
-              {!collapsed && (
-                <span className="truncate">{item.name}</span>
-              )}
-
+              {!collapsed && <span className="truncate">{item.name}</span>}
               {isActive && (
                 <motion.div
                   layoutId="activeSidebarIndicator"
-                  className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-blue-600 rounded-r-full"
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className="absolute right-0 top-2 bottom-2 w-1 bg-[#6D5BFF] rounded-l-full"
                 />
               )}
             </Link>
@@ -128,21 +110,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
         })}
       </div>
 
-      {/* User profile / Quick status footer */}
+      {/* Footer Branding Info */}
       {!collapsed && (
-        <div className="p-4 m-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-xs shadow-xs">
-            M
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs font-bold text-gray-900 dark:text-white truncate">
-              Meraj Workspace
-            </span>
-            <span className="text-[10px] text-emerald-500 font-medium flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Pro Focus Mode
-            </span>
-          </div>
+        <div className="p-4 border-t border-gray-100 dark:border-gray-800 text-[11px] text-gray-400 dark:text-gray-500">
+          <p className="font-semibold text-gray-700 dark:text-gray-300">{BRAND.name} v{BRAND.version}</p>
+          <p className="truncate">{BRAND.tagline}</p>
         </div>
       )}
     </div>
@@ -162,24 +134,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
       {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileOpen && (
-          <div className="fixed inset-0 z-50 md:hidden">
+          <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onMobileClose}
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+              className="fixed inset-0 z-40 bg-black/50 md:hidden backdrop-blur-xs"
             />
             <motion.aside
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-72 max-w-[80vw] bg-white dark:bg-gray-900 shadow-2xl z-10"
+              className="fixed inset-y-0 left-0 z-50 w-64 md:hidden"
             >
               {sidebarContent}
             </motion.aside>
-          </div>
+          </>
         )}
       </AnimatePresence>
     </>

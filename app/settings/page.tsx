@@ -20,6 +20,9 @@ import {
   User,
   Calendar,
   CheckSquare,
+  Mail,
+  MailCheck,
+  MailX,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useTaskStore } from '../../store/useTaskStore';
@@ -32,10 +35,20 @@ import { useNotesStore } from '../../store/useNotesStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { useWeeklyStore } from '../../store/useWeeklyStore';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
+import { useTheme } from '../../providers/ThemeProvider';
+import { Logo } from '../../components/common/Logo';
+import { BRAND } from '../../lib/branding';
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettingsStore();
+  const { theme, setTheme } = useTheme();
   const { session, syncState, syncMessage, signIn, signOut, syncNow } = useGoogleAuth();
+
+  React.useEffect(() => {
+    if (session?.email && settings.notificationEmail !== session.email) {
+      updateSettings({ notificationEmail: session.email });
+    }
+  }, [session?.email, settings.notificationEmail, updateSettings]);
 
   const { resetTasks } = useTaskStore();
   const { resetProjects } = useProjectStore();
@@ -64,7 +77,7 @@ export default function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `meraj_os_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `orbit_backup_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
   };
 
@@ -99,7 +112,7 @@ export default function SettingsPage() {
       resetCalendar();
       resetWeekly();
       resetSettings();
-      alert('Meraj OS reset to initial state!');
+      alert(`${BRAND.name} reset to initial state!`);
     }
   };
 
@@ -116,7 +129,7 @@ export default function SettingsPage() {
               Google Sync & System Preferences
             </h1>
             <p className="text-xs text-gray-500">
-              Manage Google Calendar & Tasks integration, appearance themes, and IndexedDB local cache
+              Manage Google Calendar & Tasks integration, email notification preferences, and local data cache
             </p>
           </div>
         </div>
@@ -135,7 +148,7 @@ export default function SettingsPage() {
           <button
             onClick={syncNow}
             disabled={syncState === 'syncing'}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-blue-500/20 disabled:opacity-50"
+            className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-2 disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
             <span>{syncState === 'syncing' ? 'Syncing...' : 'Manual Sync Now'}</span>
@@ -201,12 +214,81 @@ export default function SettingsPage() {
             </p>
             <button
               onClick={signIn}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20"
+              className="btn-primary px-5 py-2.5 rounded-xl text-xs"
             >
               Sign In with Google
             </button>
           </div>
         )}
+      </div>
+
+      {/* Daily Email Performance Log Switch Section */}
+      <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
+              <Mail className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
+                Daily Email Task Log
+              </h2>
+              <p className="text-xs text-gray-500">
+                Receive automated task logs via email at 11:45 PM or on manual cron execution
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle Switch Button */}
+          <button
+            onClick={() =>
+              updateSettings({
+                emailNotificationsEnabled: !(settings.emailNotificationsEnabled ?? true),
+              })
+            }
+            className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-xs ${
+              (settings.emailNotificationsEnabled ?? true)
+                ? 'btn-primary'
+                : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700'
+            }`}
+          >
+            {(settings.emailNotificationsEnabled ?? true) ? (
+              <>
+                <MailCheck className="w-4 h-4" />
+                <span>Receive Emails (ON)</span>
+              </>
+            ) : (
+              <>
+                <MailX className="w-4 h-4" />
+                <span>Emails Muted (OFF)</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-3">
+          <label className="text-xs font-extrabold text-gray-700 dark:text-gray-300 block">
+            Notification Recipient Email Address
+          </label>
+          <input
+            type="email"
+            readOnly
+            disabled
+            value={session?.email || settings.notificationEmail || 'No Google Account Connected'}
+            className="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 cursor-not-allowed select-none opacity-90 font-medium"
+          />
+          <p className="text-[11px] text-gray-400">
+            Automatically synchronized with your signed-in Google Account (non-editable).
+          </p>
+          <p className="text-[11px] text-gray-400">
+            Current Status:{' '}
+            <strong className={(settings.emailNotificationsEnabled ?? true) ? 'text-emerald-500' : 'text-amber-500'}>
+              {(settings.emailNotificationsEnabled ?? true)
+                ? '● Active — daily task log emails will be delivered.'
+                : '○ Disabled — email delivery is paused.'}
+            </strong>
+          </p>
+        </div>
       </div>
 
       {/* Theme Settings */}
@@ -215,14 +297,11 @@ export default function SettingsPage() {
           Appearance & Theme
         </h2>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <button
-            onClick={() => {
-              document.documentElement.classList.remove('dark');
-              updateSettings({ theme: 'light' });
-            }}
+            onClick={() => setTheme('light')}
             className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${
-              settings.theme === 'light'
+              theme === 'light'
                 ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 font-bold'
                 : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400'
             }`}
@@ -232,30 +311,15 @@ export default function SettingsPage() {
           </button>
 
           <button
-            onClick={() => {
-              document.documentElement.classList.add('dark');
-              updateSettings({ theme: 'dark' });
-            }}
+            onClick={() => setTheme('dark')}
             className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${
-              settings.theme === 'dark'
+              theme === 'dark'
                 ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 font-bold'
                 : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400'
             }`}
           >
             <Moon className="w-6 h-6 text-blue-500" />
             <span className="text-xs">Dark Mode</span>
-          </button>
-
-          <button
-            onClick={() => updateSettings({ theme: 'system' })}
-            className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${
-              settings.theme === 'system'
-                ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 font-bold'
-                : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400'
-            }`}
-          >
-            <Monitor className="w-6 h-6 text-purple-500" />
-            <span className="text-xs">System Default</span>
           </button>
         </div>
       </div>
@@ -269,13 +333,13 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <button
             onClick={handleExportData}
-            className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center gap-2 hover:bg-blue-100"
+            className="btn-primary p-4 rounded-xl text-xs flex items-center justify-center gap-2"
           >
             <Download className="w-4 h-4" />
             Export JSON Backup
           </button>
 
-          <label className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 text-purple-600 dark:text-purple-400 font-bold text-xs flex items-center justify-center gap-2 hover:bg-purple-100 cursor-pointer">
+          <label className="btn-secondary p-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer">
             <Upload className="w-4 h-4" />
             Import JSON Backup
             <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
@@ -289,6 +353,19 @@ export default function SettingsPage() {
             Reset Data to Default
           </button>
         </div>
+      </div>
+
+      {/* About Orbit Section */}
+      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <Logo variant="horizontal" size={32} showTagline={true} />
+          <span className="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-100 dark:border-indigo-900">
+            v{BRAND.version}
+          </span>
+        </div>
+        <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+          Orbit is an intelligent productivity platform designed to help professionals, students, developers, researchers, and creators organize their work, stay focused, and make consistent progress toward their goals.
+        </p>
       </div>
     </div>
   );

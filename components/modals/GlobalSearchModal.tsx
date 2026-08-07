@@ -26,15 +26,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
   const { jobs } = useCareerStore();
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        if (isOpen) onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+    if (!isOpen) {
+      setQuery('');
+    }
+  }, [isOpen]);
 
   const filteredTasks = query
     ? tasks.filter((t) => t.title.toLowerCase().includes(query.toLowerCase()))

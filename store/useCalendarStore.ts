@@ -18,11 +18,41 @@ interface CalendarState {
   resetCalendar: () => Promise<void>;
 }
 
+const mergeEvents = (local: CalendarEvent[], remote: CalendarEvent[]): CalendarEvent[] => {
+  const map = new Map<string, CalendarEvent>();
+  (local || []).forEach((e) => {
+    if (e && e.id) map.set(e.id, e);
+  });
+  (remote || []).forEach((e) => {
+    if (e && e.id) {
+      const existing = map.get(e.id);
+      map.set(e.id, { ...existing, ...e });
+    }
+  });
+  return Array.from(map.values());
+};
+
 export const useCalendarStore = create<CalendarState>((set, get) => {
   if (typeof window !== 'undefined') {
     db.events.toArray().then((items) => {
-      set({ events: items || [] });
+      if (items && items.length > 0) {
+        set((state) => ({ events: mergeEvents(state.events, items) }));
+      }
     });
+
+    // Fetch from MongoDB API
+    fetch('/api/events')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.events && Array.isArray(data.events)) {
+          set((state) => {
+            const merged = mergeEvents(state.events, data.events);
+            db.events.bulkPut(merged);
+            return { events: merged };
+          });
+        }
+      })
+      .catch((err) => console.warn('[MongoDB EventSync] Offline or API unreachable', err));
   }
 
   return {
@@ -31,8 +61,38 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
     viewMode: 'week',
 
     loadFromDB: async () => {
-      const items = await db.events.toArray();
-      set({ events: items || [] });
+      const localItems = await db.events.toArray();
+      if (localItems && localItems.length > 0) {
+        set((state) => ({ events: mergeEvents(state.events, localItems) }));
+      }
+
+      try {
+        const res = await fetch('/api/events');
+        const data = await res.json();
+        if (data.events && Array.isArray(data.events)) {
+          set((state) => {
+            const merged = mergeEvents(state.events, data.events);
+            db.events.bulkPut(merged);
+            return { events: merged };
+          });
+
+          // Sync any local-only items to MongoDB
+          if (localItems && localItems.length > 0) {
+            const remoteIds = new Set(data.events.map((e: any) => e.id));
+            for (const item of localItems) {
+              if (!remoteIds.has(item.id)) {
+                fetch('/api/events', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(item),
+                }).catch(() => {});
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('MongoDB events fetch failed, falling back to local storage', err);
+      }
     },
 
     setSelectedDate: (date) => set({ selectedDate: date }),
@@ -50,6 +110,13 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       await db.events.add(newEvent);
       set((state) => ({ events: [newEvent, ...state.events] }));
 
+      // Save to MongoDB API
+      fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newEvent),
+      }).catch((err) => console.warn('Failed to post event to MongoDB API', err));
+
       syncService.queueMutation('create', 'event', id, newEvent);
       return id;
     },
@@ -65,6 +132,13 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
         events: state.events.map((e) => (e.id === id ? updatedEvent : e)),
       }));
 
+      // Update in MongoDB API
+      fetch('/api/events', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates }),
+      }).catch((err) => console.warn('Failed to update event in MongoDB API', err));
+
       syncService.queueMutation('update', 'event', id, updatedEvent);
     },
 
@@ -75,6 +149,11 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       set((state) => ({
         events: state.events.filter((e) => e.id !== id),
       }));
+
+      // Delete from MongoDB API
+      fetch(`/api/events?id=${id}`, {
+        method: 'DELETE',
+      }).catch((err) => console.warn('Failed to delete event from MongoDB API', err));
 
       if (existing) {
         syncService.queueMutation('delete', 'event', id, existing);

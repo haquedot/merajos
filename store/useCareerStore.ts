@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { JobApplication, InterviewTopic, DSATopic, JobStatus } from '../types';
+import { JobApplication, InterviewTopic, DSATopic } from '../types';
 
 interface CareerState {
   jobs: JobApplication[];
@@ -9,123 +8,159 @@ interface CareerState {
   jobStatusFilter: string;
   dsaSearchQuery: string;
 
-  // Job Actions
-  addJob: (job: Omit<JobApplication, 'id'>) => void;
-  updateJob: (id: string, updates: Partial<JobApplication>) => void;
-  deleteJob: (id: string) => void;
+  loadFromDB: () => Promise<void>;
+  addJob: (job: Omit<JobApplication, 'id'>) => Promise<void>;
+  updateJob: (id: string, updates: Partial<JobApplication>) => Promise<void>;
+  deleteJob: (id: string) => Promise<void>;
   setJobStatusFilter: (status: string) => void;
 
-  // Interview Actions
-  updateInterviewProgress: (id: string, progress: number) => void;
-  toggleInterviewChecklist: (topicId: string, checklistId: string) => void;
-  updateInterviewNotes: (id: string, notes: string) => void;
+  updateInterviewProgress: (id: string, progress: number) => Promise<void>;
+  toggleInterviewChecklist: (topicId: string, checklistId: string) => Promise<void>;
+  updateInterviewNotes: (id: string, notes: string) => Promise<void>;
 
-  // DSA Actions
-  updateDSASolved: (id: string, easy: number, medium: number, hard: number) => void;
+  updateDSASolved: (id: string, easy: number, medium: number, hard: number) => Promise<void>;
   setDSASearchQuery: (query: string) => void;
 
   resetCareer: () => void;
 }
 
-export const useCareerStore = create<CareerState>()(
-  persist(
-    (set) => ({
-      jobs: [],
-      interviewTopics: [],
-      dsaTopics: [],
-      jobStatusFilter: 'all',
-      dsaSearchQuery: '',
+export const useCareerStore = create<CareerState>((set, get) => {
+  if (typeof window !== 'undefined') {
+    fetch('/api/career')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.career) {
+          set({
+            jobs: data.career.jobs || [],
+            interviewTopics: data.career.interviewTopics || [],
+            dsaTopics: data.career.dsaTopics || [],
+          });
+        }
+      })
+      .catch((err) => console.warn('[MongoDB CareerSync] Offline or API unreachable', err));
+  }
 
-      addJob: (jobData) => {
-        const newJob: JobApplication = {
-          ...jobData,
-          id: `job-${Date.now()}`,
-        };
-        set((state) => ({ jobs: [newJob, ...state.jobs] }));
-      },
+  const syncToDB = (state: Partial<CareerState>) => {
+    const currentState = get();
+    const payload = {
+      jobs: state.jobs || currentState.jobs,
+      interviewTopics: state.interviewTopics || currentState.interviewTopics,
+      dsaTopics: state.dsaTopics || currentState.dsaTopics,
+    };
 
-      updateJob: (id, updates) => {
-        set((state) => ({
-          jobs: state.jobs.map((j) => (j.id === id ? { ...j, ...updates } : j)),
-        }));
-      },
+    fetch('/api/career', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch((err) => console.warn('Failed to sync career to MongoDB API', err));
+  };
 
-      deleteJob: (id) => {
-        set((state) => ({
-          jobs: state.jobs.filter((j) => j.id !== id),
-        }));
-      },
+  return {
+    jobs: [],
+    interviewTopics: [],
+    dsaTopics: [],
+    jobStatusFilter: 'all',
+    dsaSearchQuery: '',
 
-      setJobStatusFilter: (status) => set({ jobStatusFilter: status }),
+    loadFromDB: async () => {
+      try {
+        const res = await fetch('/api/career');
+        const data = await res.json();
+        if (data.career) {
+          set({
+            jobs: data.career.jobs || [],
+            interviewTopics: data.career.interviewTopics || [],
+            dsaTopics: data.career.dsaTopics || [],
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to load career from MongoDB API', err);
+      }
+    },
 
-      updateInterviewProgress: (id, progress) => {
-        set((state) => ({
-          interviewTopics: state.interviewTopics.map((t) =>
-            t.id === id ? { ...t, progress } : t
-          ),
-        }));
-      },
+    addJob: async (jobData) => {
+      const newJob: JobApplication = {
+        ...jobData,
+        id: `job-${Date.now()}`,
+      };
+      const updatedJobs = [newJob, ...get().jobs];
+      set({ jobs: updatedJobs });
+      syncToDB({ jobs: updatedJobs });
+    },
 
-      toggleInterviewChecklist: (topicId, checklistId) => {
-        set((state) => ({
-          interviewTopics: state.interviewTopics.map((t) => {
-            if (t.id === topicId) {
-              const updatedChecklist = t.checklist.map((item) =>
-                item.id === checklistId ? { ...item, completed: !item.completed } : item
-              );
-              const completedCount = updatedChecklist.filter((c) => c.completed).length;
-              const newProgress = updatedChecklist.length > 0
-                ? Math.round((completedCount / updatedChecklist.length) * 100)
-                : t.progress;
+    updateJob: async (id, updates) => {
+      const updatedJobs = get().jobs.map((j) => (j.id === id ? { ...j, ...updates } : j));
+      set({ jobs: updatedJobs });
+      syncToDB({ jobs: updatedJobs });
+    },
 
-              return {
-                ...t,
-                checklist: updatedChecklist,
-                progress: newProgress,
-              };
+    deleteJob: async (id) => {
+      const updatedJobs = get().jobs.filter((j) => j.id !== id);
+      set({ jobs: updatedJobs });
+      syncToDB({ jobs: updatedJobs });
+    },
+
+    setJobStatusFilter: (status) => set({ jobStatusFilter: status }),
+
+    updateInterviewProgress: async (id, progress) => {
+      const updatedTopics = get().interviewTopics.map((t) =>
+        t.id === id ? { ...t, progress } : t
+      );
+      set({ interviewTopics: updatedTopics });
+      syncToDB({ interviewTopics: updatedTopics });
+    },
+
+    toggleInterviewChecklist: async (topicId, checklistId) => {
+      const updatedTopics = get().interviewTopics.map((t) => {
+        if (t.id === topicId) {
+          const updatedChecklist = t.checklist.map((item) =>
+            item.id === checklistId ? { ...item, completed: !item.completed } : item
+          );
+          const completedCount = updatedChecklist.filter((c) => c.completed).length;
+          const newProgress = updatedChecklist.length > 0
+            ? Math.round((completedCount / updatedChecklist.length) * 100)
+            : t.progress;
+
+          return {
+            ...t,
+            checklist: updatedChecklist,
+            progress: newProgress,
+          };
+        }
+        return t;
+      });
+
+      set({ interviewTopics: updatedTopics });
+      syncToDB({ interviewTopics: updatedTopics });
+    },
+
+    updateInterviewNotes: async (id, notes) => {
+      const updatedTopics = get().interviewTopics.map((t) =>
+        t.id === id ? { ...t, notes } : t
+      );
+      set({ interviewTopics: updatedTopics });
+      syncToDB({ interviewTopics: updatedTopics });
+    },
+
+    updateDSASolved: async (id, easy, medium, hard) => {
+      const updatedDSA = get().dsaTopics.map((d) =>
+        d.id === id
+          ? {
+              ...d,
+              easySolved: easy,
+              mediumSolved: medium,
+              hardSolved: hard,
+              lastRevised: new Date().toISOString().split('T')[0],
             }
-            return t;
-          }),
-        }));
-      },
+          : d
+      );
 
-      updateInterviewNotes: (id, notes) => {
-        set((state) => ({
-          interviewTopics: state.interviewTopics.map((t) =>
-            t.id === id ? { ...t, notes } : t
-          ),
-        }));
-      },
+      set({ dsaTopics: updatedDSA });
+      syncToDB({ dsaTopics: updatedDSA });
+    },
 
-      updateDSASolved: (id, easy, medium, hard) => {
-        set((state) => ({
-          dsaTopics: state.dsaTopics.map((d) =>
-            d.id === id
-              ? {
-                  ...d,
-                  easySolved: easy,
-                  mediumSolved: medium,
-                  hardSolved: hard,
-                  lastRevised: new Date().toISOString().split('T')[0],
-                }
-              : d
-          ),
-        }));
-      },
+    setDSASearchQuery: (query) => set({ dsaSearchQuery: query }),
 
-      setDSASearchQuery: (query) => set({ dsaSearchQuery: query }),
-
-      resetCareer: () =>
-        set({
-          jobs: [],
-          interviewTopics: [],
-          dsaTopics: [],
-        }),
-    }),
-    {
-      name: 'meraj_os_career',
-      version: 1,
-      storage: createJSONStorage(() => localStorage),
-    }
-  )
-);
+    resetCareer: () => set({ jobs: [], interviewTopics: [], dsaTopics: [] }),
+  };
+});

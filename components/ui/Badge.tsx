@@ -17,7 +17,7 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const sizeStyles = size === 'sm' ? 'px-2 py-0.5 text-xs font-medium' : 'px-2.5 py-1 text-xs font-semibold';
   
-  let variantStyles = 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300';
+  let variantStyles = 'bg-[#1F3B99]/10 text-[#1F3B99] dark:bg-[#6D5BFF]/20 dark:text-[#6D5BFF]';
   
   switch (variant) {
     case 'secondary':
@@ -33,7 +33,7 @@ export const Badge: React.FC<BadgeProps> = ({
       variantStyles = 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400';
       break;
     case 'purple':
-      variantStyles = 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300';
+      variantStyles = 'bg-[#6D5BFF]/10 text-[#6D5BFF] dark:bg-[#6D5BFF]/20 dark:text-[#6D5BFF]';
       break;
     case 'info':
       variantStyles = 'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300';

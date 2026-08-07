@@ -3,6 +3,8 @@ import { googleCalendarService } from './calendar.service';
 import { googleTasksService } from './tasks.service';
 import { authService } from './auth.service';
 import { Task, CalendarEvent } from '../../types';
+import { useCalendarStore } from '../../store/useCalendarStore';
+import { useTaskStore } from '../../store/useTaskStore';
 
 export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'success';
 
@@ -96,11 +98,19 @@ class SyncService {
           } else if (existing.syncStatus !== 'pending') {
             await db.tasks.put({ ...rTask, syncStatus: 'synced' });
           }
+
+          // Persist to MongoDB so backend has all Google Tasks
+          fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(rTask),
+          }).catch(() => {});
         }
+        useTaskStore.getState().loadFromDB();
       }
 
-      // 3. Sync Google Calendar Events
-      const remoteEvents = await googleCalendarService.fetchEvents('primary');
+      // 3. Sync ALL Google Calendar Events (Primary + All Secondary Calendars)
+      const remoteEvents = await googleCalendarService.fetchAllCalendarsEvents();
       if (remoteEvents.length > 0) {
         for (const rEvt of remoteEvents) {
           const existing = await db.events.get(rEvt.id);
@@ -109,7 +119,15 @@ class SyncService {
           } else if (existing.syncStatus !== 'pending') {
             await db.events.put({ ...rEvt, syncStatus: 'synced' });
           }
+
+          // Persist to MongoDB API
+          fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(rEvt),
+          }).catch((err) => console.warn('Failed to post synced event to MongoDB API', err));
         }
+        await useCalendarStore.getState().loadFromDB();
       }
 
       // 4. Auto-generate Top 3 MITs for today if none selected

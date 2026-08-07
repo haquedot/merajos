@@ -170,7 +170,7 @@ export default function WeeklyPlannerPage() {
 
           <button
             onClick={handleReviewSave}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-500/20"
+            className="btn-primary px-4 py-2 rounded-xl text-xs"
           >
             Save Weekly Review
           </button>
