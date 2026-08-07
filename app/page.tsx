@@ -37,6 +37,8 @@ import { StatisticCard } from '../components/ui/StatisticCard';
 import { Badge } from '../components/ui/Badge';
 import { HighchartsLine } from '../components/ui/HighchartsComponents';
 
+import { isUserAuthenticated } from '../lib/authCheck';
+
 export default function DashboardHome() {
   const [greeting, setGreeting] = useState('Good day');
   const [mounted, setMounted] = useState(false);
@@ -57,14 +59,17 @@ export default function DashboardHome() {
     else if (hour < 17) setGreeting('Good afternoon');
     else setGreeting('Good evening');
 
-    fetch('/api/analytics')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.snapshots) {
-          setLatestSnapshots(data.snapshots.slice(0, 3));
-        }
-      })
-      .catch((err) => console.warn('Dashboard could not fetch snapshots:', err));
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return;
+      fetch('/api/analytics')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.snapshots) {
+            setLatestSnapshots(data.snapshots.slice(0, 3));
+          }
+        })
+        .catch((err) => console.warn('Dashboard could not fetch snapshots:', err));
+    });
   }, [tasks]);
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -87,7 +92,7 @@ export default function DashboardHome() {
 
   // Real research progress calculation
   const totalPapers = researchPapers.length;
-  const researchSubtitle = researchOverview.thesisTitle || researchOverview.paperTitle || (researchPapers[0]?.title ?? 'Thesis Research');
+  const researchSubtitle = researchOverview.thesisTitle || researchOverview.paperTitle || (researchPapers[0]?.title ?? 'No research added yet');
   const realResearchProgress = totalPapers > 0
     ? Math.round((researchPapers.filter((p) => p.status === 'cited' || p.status === 'reading').length / totalPapers) * 100)
     : (researchOverview.progress || 0);
@@ -97,7 +102,7 @@ export default function DashboardHome() {
   const dsaTotalQuestions = dsaTopics.reduce((acc, t) => acc + (t.easyTotal || 0) + (t.mediumTotal || 0) + (t.hardTotal || 0), 0);
   const dsaSubtitle = dsaTopics.length > 0
     ? dsaTopics.slice(0, 3).map((t) => t.name).join(', ')
-    : 'Arrays, DP & Trees';
+    : 'No DSA topics added';
   const dsaProgressPercent = dsaTotalQuestions > 0 ? Math.round((dsaTotalSolved / dsaTotalQuestions) * 100) : 0;
 
   // Real Habits Completed calculation

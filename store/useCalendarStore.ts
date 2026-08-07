@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { CalendarEvent } from '../types';
 import { db } from '../database/dexie';
 import { syncService } from '../services/google/sync.service';
+import { isUserAuthenticated } from '../lib/authCheck';
 
 interface CalendarState {
   events: CalendarEvent[];
@@ -41,18 +42,21 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
     });
 
     // Fetch from MongoDB API
-    fetch('/api/events')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.events && Array.isArray(data.events)) {
-          set((state) => {
-            const merged = mergeEvents(state.events, data.events);
-            db.events.bulkPut(merged);
-            return { events: merged };
-          });
-        }
-      })
-      .catch((err) => console.warn('[MongoDB EventSync] Offline or API unreachable', err));
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return;
+      fetch('/api/events')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.events && Array.isArray(data.events)) {
+            set((state) => {
+              const merged = mergeEvents(state.events, data.events);
+              db.events.bulkPut(merged);
+              return { events: merged };
+            });
+          }
+        })
+        .catch((err) => console.warn('[MongoDB EventSync] Offline or API unreachable', err));
+    });
   }
 
   return {
@@ -65,6 +69,9 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       if (localItems && localItems.length > 0) {
         set((state) => ({ events: mergeEvents(state.events, localItems) }));
       }
+
+      const authenticated = await isUserAuthenticated();
+      if (!authenticated) return;
 
       try {
         const res = await fetch('/api/events');

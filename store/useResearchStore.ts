@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Paper, WritingSection, ResearchOverview } from '../types';
+import { isUserAuthenticated } from '../lib/authCheck';
 
 interface ResearchState {
   overview: ResearchOverview;
@@ -21,9 +22,9 @@ interface ResearchState {
 }
 
 const DEFAULT_OVERVIEW: ResearchOverview = {
-  topic: 'Research & Thesis Dashboard',
-  thesisTitle: 'My Thesis Title',
-  paperTitle: 'Research Topic',
+  topic: '',
+  thesisTitle: '',
+  paperTitle: '',
   progress: 0,
   hoursSpent: 0,
   papersRead: 0,
@@ -32,21 +33,26 @@ const DEFAULT_OVERVIEW: ResearchOverview = {
 
 export const useResearchStore = create<ResearchState>((set, get) => {
   if (typeof window !== 'undefined') {
-    fetch('/api/research')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.research) {
-          set({
-            overview: data.research.overview || DEFAULT_OVERVIEW,
-            papers: data.research.papers || [],
-            writingSections: data.research.writingSections || [],
-          });
-        }
-      })
-      .catch((err) => console.warn('[MongoDB ResearchSync] Offline or API unreachable', err));
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return;
+      fetch('/api/research')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.research) {
+            set({
+              overview: data.research.overview || DEFAULT_OVERVIEW,
+              papers: data.research.papers || [],
+              writingSections: data.research.writingSections || [],
+            });
+          }
+        })
+        .catch((err) => console.warn('[MongoDB ResearchSync] Offline or API unreachable', err));
+    });
   }
 
-  const syncToDB = (state: Partial<ResearchState>) => {
+  const syncToDB = async (state: Partial<ResearchState>) => {
+    const authenticated = await isUserAuthenticated();
+    if (!authenticated) return;
     const currentState = get();
     const payload = {
       overview: state.overview || currentState.overview,
@@ -69,6 +75,8 @@ export const useResearchStore = create<ResearchState>((set, get) => {
     selectedStatusFilter: 'all',
 
     loadFromDB: async () => {
+      const authenticated = await isUserAuthenticated();
+      if (!authenticated) return;
       try {
         const res = await fetch('/api/research');
         const data = await res.json();

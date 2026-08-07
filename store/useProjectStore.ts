@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Project, ProjectFeature, ProjectBug } from '../types';
+import { isUserAuthenticated } from '../lib/authCheck';
 
 interface ProjectState {
   projects: Project[];
@@ -21,16 +22,19 @@ interface ProjectState {
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => {
-  // Sync with MongoDB API on store load
+  // Sync with MongoDB API on store load (if authenticated)
   if (typeof window !== 'undefined') {
-    fetch('/api/projects')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.projects) {
-          set({ projects: data.projects });
-        }
-      })
-      .catch((err) => console.warn('[MongoDB ProjectSync] Offline or API unreachable', err));
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return;
+      fetch('/api/projects')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.projects) {
+            set({ projects: data.projects });
+          }
+        })
+        .catch((err) => console.warn('[MongoDB ProjectSync] Offline or API unreachable', err));
+    });
   }
 
   return {
@@ -38,6 +42,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     activeProjectId: '',
 
     loadFromDB: async () => {
+      const authenticated = await isUserAuthenticated();
+      if (!authenticated) return;
       try {
         const res = await fetch('/api/projects');
         const data = await res.json();

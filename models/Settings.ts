@@ -15,8 +15,23 @@ const SettingsSchema: Schema = new Schema(
     soundEnabled: { type: Boolean, default: true },
     emailNotificationsEnabled: { type: Boolean, default: false },
     notificationEmail: { type: String, default: '' },
+    onboarding: {
+      displayName: { type: String, default: '' },
+      role: {
+        type: String,
+        enum: ['student', 'freelancer', 'researcher', 'professional', 'custom'],
+        default: 'custom',
+      },
+      enabledModules: { type: [String], default: [] },
+      workStartTime: { type: String, default: '09:00' },
+      workEndTime: { type: String, default: '18:00' },
+      primaryGoal: { type: String, default: '' },
+      onboardingCompleted: { type: Boolean, default: false },
+      onboardingCompletedAt: { type: String, default: null },
+    },
   },
   { timestamps: true, _id: false }
 );
 
 export default mongoose.models.Settings || mongoose.model<SettingsDocument>('Settings', SettingsSchema);
+

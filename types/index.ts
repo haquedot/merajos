@@ -209,6 +209,31 @@ export interface Note {
   updatedAt: string;
 }
 
+export type UserRole = 'student' | 'freelancer' | 'researcher' | 'professional' | 'custom';
+
+export type ModuleKey =
+  | 'tasks'
+  | 'calendar'
+  | 'habits'
+  | 'goals'
+  | 'notes'
+  | 'weekly_planner'
+  | 'analytics'
+  | 'clients'
+  | 'research'
+  | 'career';
+
+export interface OnboardingProfile {
+  displayName: string;
+  role: UserRole;
+  enabledModules: ModuleKey[];
+  workStartTime: string;    // "09:00"
+  workEndTime: string;      // "18:00"
+  primaryGoal: string;
+  onboardingCompleted: boolean;
+  onboardingCompletedAt?: string;
+}
+
 export interface UserSettings {
   id?: string;
   theme: 'light' | 'dark' | 'system';
@@ -218,4 +243,5 @@ export interface UserSettings {
   soundEnabled: boolean;
   emailNotificationsEnabled?: boolean;
   notificationEmail?: string;
+  onboarding?: OnboardingProfile;
 }

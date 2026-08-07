@@ -37,6 +37,8 @@ import {
 } from '../../components/ui/HighchartsComponents';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 
+import { isUserAuthenticated } from '../../lib/authCheck';
+
 export default function AnalyticsPage() {
   const { tasks } = useTaskStore();
   const { projects } = useProjectStore();
@@ -49,22 +51,25 @@ export default function AnalyticsPage() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [expandedSnapshotDate, setExpandedSnapshotDate] = useState<string | null>(null);
 
-  // Fetch live MongoDB analytics and snapshots
+  // Fetch live MongoDB analytics and snapshots (if authenticated)
   useEffect(() => {
-    fetch('/api/analytics')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.summary) {
-          setMongoStats(data.summary);
-        }
-        if (data.snapshots) {
-          setSnapshots(data.snapshots);
-          if (data.snapshots.length > 0) {
-            setExpandedSnapshotDate(data.snapshots[0].date);
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return;
+      fetch('/api/analytics')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.summary) {
+            setMongoStats(data.summary);
           }
-        }
-      })
-      .catch((err) => console.warn('Could not fetch MongoDB analytics:', err));
+          if (data.snapshots) {
+            setSnapshots(data.snapshots);
+            if (data.snapshots.length > 0) {
+              setExpandedSnapshotDate(data.snapshots[0].date);
+            }
+          }
+        })
+        .catch((err) => console.warn('Could not fetch MongoDB analytics:', err));
+    });
   }, [tasks]);
 
   const triggerDaily1145PMCalculation = async () => {

@@ -15,6 +15,7 @@ import {
   LogOut,
   User,
   Zap,
+  HelpCircle,
 } from 'lucide-react';
 import { useTaskStore } from '../../store/useTaskStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -27,6 +28,7 @@ interface NavbarProps {
   onToggleRightPanel: () => void;
   onOpenQuickAdd: () => void;
   onOpenSearch: () => void;
+  onOpenTour?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -34,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleRightPanel,
   onOpenQuickAdd,
   onOpenSearch,
+  onOpenTour,
 }) => {
   const { theme, toggleTheme } = useTheme();
   const { tasks } = useTaskStore();
@@ -169,6 +172,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </button>
 
+        {/* Platform Tour Button */}
+        {onOpenTour && (
+          <button
+            onClick={onOpenTour}
+            className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
+            aria-label="Platform Tour"
+            title="Take Platform Tour"
+          >
+            <HelpCircle className="w-4 h-4 text-blue-500" />
+          </button>
+        )}
+
         {/* Right Panel Toggle */}
         <button
           onClick={onToggleRightPanel}
@@ -234,7 +249,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-800 space-y-1">
+                {onOpenTour && (
+                  <button
+                    onClick={() => {
+                      onOpenTour();
+                      setProfileMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 transition-colors"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    Take Platform Tour
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     signOut();

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Habit } from '../types';
 import { db } from '../database/dexie';
+import { isUserAuthenticated } from '../lib/authCheck';
 
 interface HabitState {
   habits: Habit[];
@@ -35,18 +36,21 @@ export const useHabitStore = create<HabitState>((set, get) => {
       }
     });
 
-    fetch('/api/habits')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.habits && Array.isArray(data.habits)) {
-          set((state) => {
-            const merged = mergeHabits(state.habits, data.habits);
-            db.habits.bulkPut(merged);
-            return { habits: merged };
-          });
-        }
-      })
-      .catch((err) => console.warn('[MongoDB HabitSync] Offline or API unreachable', err));
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return;
+      fetch('/api/habits')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.habits && Array.isArray(data.habits)) {
+            set((state) => {
+              const merged = mergeHabits(state.habits, data.habits);
+              db.habits.bulkPut(merged);
+              return { habits: merged };
+            });
+          }
+        })
+        .catch((err) => console.warn('[MongoDB HabitSync] Offline or API unreachable', err));
+    });
   }
 
   return {
@@ -59,7 +63,9 @@ export const useHabitStore = create<HabitState>((set, get) => {
         set((state) => ({ habits: mergeHabits(state.habits, localItems) }));
       }
 
-      // 2. MongoDB API sync
+      // 2. MongoDB API sync (if authenticated)
+      const authenticated = await isUserAuthenticated();
+      if (!authenticated) return;
       try {
         const res = await fetch('/api/habits');
         const data = await res.json();

@@ -22,23 +22,24 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { Logo } from '../common/Logo';
 import { BRAND } from '../../lib/branding';
 
 export const sidebarItems = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Today', href: '/today', icon: Sun },
-  { name: 'Calendar', href: '/calendar', icon: CalendarIcon },
-  { name: 'Tasks', href: '/tasks', icon: CheckSquare },
-  { name: 'Clients', href: '/clients', icon: Briefcase },
-  { name: 'Research', href: '/research', icon: BookOpen },
-  { name: 'Career & DSA', href: '/career', icon: GraduationCap },
-  { name: 'Habits', href: '/habits', icon: Activity },
-  { name: 'Weekly Planner', href: '/weekly-planner', icon: CalendarDays },
-  { name: 'Goals', href: '/goals', icon: Target },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Notes & Brain Dump', href: '/notes', icon: FileText },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard',        href: '/',               icon: LayoutDashboard, moduleKey: null,            alwaysShow: true },
+  { name: 'Today',            href: '/today',          icon: Sun,             moduleKey: null,            alwaysShow: true },
+  { name: 'Calendar',        href: '/calendar',       icon: CalendarIcon,    moduleKey: 'calendar',      alwaysShow: true },
+  { name: 'Tasks',            href: '/tasks',          icon: CheckSquare,     moduleKey: 'tasks',         alwaysShow: true },
+  { name: 'Clients',          href: '/clients',        icon: Briefcase,       moduleKey: 'clients',       alwaysShow: false },
+  { name: 'Research',         href: '/research',       icon: BookOpen,        moduleKey: 'research',      alwaysShow: false },
+  { name: 'Career & DSA',     href: '/career',         icon: GraduationCap,   moduleKey: 'career',        alwaysShow: false },
+  { name: 'Habits',           href: '/habits',         icon: Activity,        moduleKey: 'habits',        alwaysShow: false },
+  { name: 'Weekly Planner',   href: '/weekly-planner', icon: CalendarDays,    moduleKey: 'weekly_planner',alwaysShow: false },
+  { name: 'Goals',            href: '/goals',          icon: Target,          moduleKey: 'goals',         alwaysShow: false },
+  { name: 'Analytics',        href: '/analytics',      icon: BarChart3,       moduleKey: 'analytics',     alwaysShow: false },
+  { name: 'Notes & Brain Dump', href: '/notes',        icon: FileText,        moduleKey: 'notes',         alwaysShow: false },
+  { name: 'Settings',         href: '/settings',       icon: Settings,        moduleKey: null,            alwaysShow: true },
 ];
 
 interface SidebarProps {
@@ -49,7 +50,32 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) => {
   const pathname = usePathname();
   const { settings, toggleSidebar } = useSettingsStore();
+  const { session } = useGoogleAuth();
   const collapsed = settings.sidebarCollapsed;
+
+  // Modules shown to unauthenticated (guest) users
+  const GUEST_MODULES = ['tasks', 'calendar', 'notes'];
+
+  // Determine which modules to show:
+  // - Guest (no session): only GUEST_MODULES
+  // - Signed-in, onboarding complete: user's chosen enabledModules
+  // - Signed-in, onboarding not done yet: show all (will be gated by onboarding modal)
+  const enabledModules = settings.onboarding?.enabledModules ?? null;
+
+  const visibleItems = sidebarItems.filter((item) => {
+    // Dashboard, Today, Settings always visible
+    if (item.alwaysShow && !item.moduleKey) return true;
+
+    if (!session) {
+      // Guest mode: only allow Tasks, Calendar, Notes (and always-on items)
+      return !item.moduleKey || GUEST_MODULES.includes(item.moduleKey);
+    }
+
+    // Signed-in: filter by onboarding module selection
+    if (item.alwaysShow) return true;
+    if (!enabledModules) return true; // onboarding not done yet — show all
+    return enabledModules.includes(item.moduleKey as any);
+  });
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white dark:bg-[#101827] border-r border-[#E2E8F0] dark:border-[#243244] transition-all duration-300">
@@ -75,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
 
       {/* Navigation List */}
       <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {sidebarItems.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
 
