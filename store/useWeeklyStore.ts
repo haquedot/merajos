@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { WeeklyPlan } from '../types';
 
 const DEFAULT_WEEKLY_PLAN: WeeklyPlan = {
@@ -22,35 +21,64 @@ const DEFAULT_WEEKLY_PLAN: WeeklyPlan = {
 interface WeeklyState {
   plan: WeeklyPlan;
 
-  updatePlan: (updates: Partial<WeeklyPlan>) => void;
-  updateReview: (updates: Partial<WeeklyPlan['review']>) => void;
+  loadFromDB: () => Promise<void>;
+  updatePlan: (updates: Partial<WeeklyPlan>) => Promise<void>;
+  updateReview: (updates: Partial<WeeklyPlan['review']>) => Promise<void>;
   resetWeekly: () => void;
 }
 
-export const useWeeklyStore = create<WeeklyState>()(
-  persist(
-    (set) => ({
-      plan: DEFAULT_WEEKLY_PLAN,
+export const useWeeklyStore = create<WeeklyState>((set, get) => {
+  if (typeof window !== 'undefined') {
+    fetch('/api/weekly')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.plan) {
+          set({ plan: data.plan });
+        }
+      })
+      .catch((err) => console.warn('[MongoDB WeeklySync] Offline or API unreachable', err));
+  }
 
-      updatePlan: (updates) => {
-        set((state) => ({ plan: { ...state.plan, ...updates } }));
-      },
+  return {
+    plan: DEFAULT_WEEKLY_PLAN,
 
-      updateReview: (reviewUpdates) => {
-        set((state) => ({
-          plan: {
-            ...state.plan,
-            review: { ...state.plan.review, ...reviewUpdates },
-          },
-        }));
-      },
+    loadFromDB: async () => {
+      try {
+        const res = await fetch('/api/weekly');
+        const data = await res.json();
+        if (data.plan) {
+          set({ plan: data.plan });
+        }
+      } catch (err) {
+        console.warn('Failed to load weekly plan from MongoDB API', err);
+      }
+    },
 
-      resetWeekly: () => set({ plan: DEFAULT_WEEKLY_PLAN }),
-    }),
-    {
-      name: 'meraj_os_weekly',
-      version: 1,
-      storage: createJSONStorage(() => localStorage),
-    }
-  )
-);
+    updatePlan: async (updates) => {
+      const updatedPlan = { ...get().plan, ...updates };
+      set({ plan: updatedPlan });
+
+      fetch('/api/weekly', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPlan),
+      }).catch((err) => console.warn('Failed to update weekly plan in MongoDB API', err));
+    },
+
+    updateReview: async (reviewUpdates) => {
+      const updatedPlan = {
+        ...get().plan,
+        review: { ...get().plan.review, ...reviewUpdates },
+      };
+      set({ plan: updatedPlan });
+
+      fetch('/api/weekly', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPlan),
+      }).catch((err) => console.warn('Failed to update review in MongoDB API', err));
+    },
+
+    resetWeekly: () => set({ plan: DEFAULT_WEEKLY_PLAN }),
+  };
+});

@@ -17,6 +17,8 @@ import {
   Clock,
   Sparkles,
   ChevronDown,
+  GripVertical,
+  MoveRight,
 } from 'lucide-react';
 import { useTaskStore } from '../../store/useTaskStore';
 import { useProjectStore } from '../../store/useProjectStore';
@@ -25,9 +27,13 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 
 export default function TasksPage() {
-  const [viewMode, setViewMode] = useState<'list' | 'board' | 'priority'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Drag and Drop State
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [draggedOverCol, setDraggedOverCol] = useState<TaskStatus | null>(null);
 
   const {
     tasks,
@@ -130,10 +136,47 @@ export default function TasksPage() {
     setIsModalOpen(false);
   };
 
-  const boardColumns: { key: TaskStatus; label: string; color: string }[] = [
-    { key: 'todo', label: 'To Do', color: 'border-blue-500' },
-    { key: 'in_progress', label: 'In Progress', color: 'border-amber-500' },
-    { key: 'completed', label: 'Completed', color: 'border-emerald-500' },
+  // Drag and Drop Event Handlers
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData('text/plain', id);
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedTaskId(id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, colKey: TaskStatus) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedOverCol !== colKey) {
+      setDraggedOverCol(colKey);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent, colKey: TaskStatus) => {
+    e.preventDefault();
+    setDraggedOverCol(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, colKey: TaskStatus) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData('text/plain') || draggedTaskId;
+    setDraggedOverCol(null);
+    setDraggedTaskId(null);
+
+    if (id) {
+      const task = tasks.find((t) => t.id === id);
+      if (task && task.status !== colKey) {
+        updateTask(id, {
+          status: colKey,
+          actualHours: colKey === 'completed' ? task.estimatedHours : task.actualHours,
+        });
+      }
+    }
+  };
+
+  const boardColumns: { key: TaskStatus; label: string; color: string; badgeBg: string }[] = [
+    { key: 'todo', label: 'To Do', color: 'border-blue-500', badgeBg: 'bg-blue-500/10 text-blue-500' },
+    { key: 'in_progress', label: 'In Progress', color: 'border-amber-500', badgeBg: 'bg-amber-500/10 text-amber-500' },
+    { key: 'completed', label: 'Completed', color: 'border-emerald-500', badgeBg: 'bg-emerald-500/10 text-emerald-500' },
   ];
 
   return (
@@ -149,7 +192,7 @@ export default function TasksPage() {
               </h1>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Organize, filter, track estimated hours, and prioritize all work items
+              Drag and drop cards across columns to update task progress dynamically
             </p>
           </div>
 
@@ -157,32 +200,32 @@ export default function TasksPage() {
             {/* View Mode Toggle */}
             <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold">
               <button
-                onClick={() => setViewMode('list')}
-                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
-                  viewMode === 'list'
-                    ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <List className="w-3.5 h-3.5" />
-                List View
-              </button>
-              <button
                 onClick={() => setViewMode('board')}
                 className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
                   viewMode === 'board'
-                    ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                    ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <Kanban className="w-3.5 h-3.5" />
                 Kanban Board
               </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                List View
+              </button>
             </div>
 
             <button
               onClick={openCreateModal}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20"
+              className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
               Create Task
@@ -241,6 +284,124 @@ export default function TasksPage() {
           </select>
         </div>
       </div>
+
+      {/* Kanban Board View with Drag & Drop */}
+      {viewMode === 'board' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {boardColumns.map((col) => {
+            const colTasks = filteredTasks.filter((t) => t.status === col.key);
+            const isTarget = draggedOverCol === col.key;
+
+            return (
+              <div
+                key={col.key}
+                onDragOver={(e) => handleDragOver(e, col.key)}
+                onDragLeave={(e) => handleDragLeave(e, col.key)}
+                onDrop={(e) => handleDrop(e, col.key)}
+                className={`p-4 rounded-3xl transition-all duration-200 min-h-[500px] flex flex-col ${
+                  isTarget
+                    ? 'bg-blue-500/5 dark:bg-blue-500/10 border-2 border-dashed border-blue-500/50 shadow-lg scale-[1.01]'
+                    : 'bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs'
+                }`}
+              >
+                {/* Column Header */}
+                <div className={`flex items-center justify-between pb-3 mb-3 border-b-2 ${col.color}`}>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
+                      {col.label}
+                    </h3>
+                  </div>
+                  <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${col.badgeBg}`}>
+                    {colTasks.length}
+                  </span>
+                </div>
+
+                {/* Column Drop Area */}
+                <div className="flex-1 space-y-3">
+                  {colTasks.length === 0 ? (
+                    <div className="h-36 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 dark:border-gray-800/80 rounded-2xl text-gray-400 text-xs italic text-center p-4">
+                      <span>Drag tasks here</span>
+                    </div>
+                  ) : (
+                    colTasks.map((t) => {
+                      const isBeingDragged = draggedTaskId === t.id;
+
+                      return (
+                        <div
+                          key={t.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, t.id)}
+                          onDragEnd={() => {
+                            setDraggedTaskId(null);
+                            setDraggedOverCol(null);
+                          }}
+                          className={`group p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800/80 space-y-3 cursor-grab active:cursor-grabbing transition-all duration-200 shadow-2xs hover:shadow-md hover:border-gray-200 dark:hover:border-gray-700 ${
+                            isBeingDragged ? 'opacity-40 scale-95 border-blue-500' : ''
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2">
+                              <GripVertical className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
+                              <span className="text-xs font-bold text-gray-900 dark:text-white leading-snug">
+                                {t.title}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => toggleTaskStatus(t.id)}
+                              className={`w-4 h-4 rounded-sm border shrink-0 flex items-center justify-center transition-colors ${
+                                t.status === 'completed'
+                                  ? 'bg-emerald-500 border-emerald-500 text-white'
+                                  : 'border-gray-300 dark:border-gray-600 hover:border-blue-500'
+                              }`}
+                            >
+                              {t.status === 'completed' && <CheckCircle2 className="w-3 h-3" />}
+                            </button>
+                          </div>
+
+                          {t.description && (
+                            <p className="text-[11px] text-gray-400 line-clamp-2 pl-6">
+                              {t.description}
+                            </p>
+                          )}
+
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800/80 text-[10px] text-gray-400 pl-6">
+                            <div className="flex items-center gap-1.5">
+                              <Badge variant="outline" size="sm">
+                                {t.category}
+                              </Badge>
+                              {t.priority === 'urgent' && (
+                                <Badge variant="danger" size="sm">
+                                  Urgent
+                                </Badge>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => openEditModal(t)}
+                                className="p-1 hover:text-[#1F3B99] dark:hover:text-[#6D5BFF] text-gray-400 transition-colors"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => deleteTask(t.id)}
+                                className="p-1 hover:text-rose-500 text-gray-400 transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* List View */}
       {viewMode === 'list' && (
@@ -319,7 +480,7 @@ export default function TasksPage() {
                       <div className="flex items-center gap-1 pl-2 border-l border-gray-200 dark:border-gray-700">
                         <button
                           onClick={() => openEditModal(t)}
-                          className="p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-[#1F3B99] dark:hover:text-[#6D5BFF] rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </button>
@@ -336,65 +497,6 @@ export default function TasksPage() {
               })}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Kanban Board View */}
-      {viewMode === 'board' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {boardColumns.map((col) => {
-            const colTasks = filteredTasks.filter((t) => t.status === col.key);
-            return (
-              <div
-                key={col.key}
-                className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3 min-h-[400px]"
-              >
-                <div className={`flex items-center justify-between pb-3 border-b-2 ${col.color}`}>
-                  <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
-                    {col.label}
-                  </h3>
-                  <span className="text-xs font-bold text-gray-400 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800">
-                    {colTasks.length}
-                  </span>
-                </div>
-
-                <div className="space-y-3 pt-1">
-                  {colTasks.map((t) => (
-                    <motion.div
-                      key={t.id}
-                      whileHover={{ y: -2 }}
-                      className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3 shadow-2xs"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-xs font-bold text-gray-900 dark:text-white">
-                          {t.title}
-                        </span>
-                        <button
-                          onClick={() => toggleTaskStatus(t.id)}
-                          className={`w-4 h-4 rounded-sm border shrink-0 ${
-                            t.status === 'completed' ? 'bg-emerald-500 text-white' : 'border-gray-300'
-                          }`}
-                        />
-                      </div>
-
-                      {t.description && (
-                        <p className="text-[11px] text-gray-400 line-clamp-2">
-                          {t.description}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800 text-[10px] text-gray-400">
-                        <Badge variant="outline" size="sm">
-                          {t.category}
-                        </Badge>
-                        <span>Due {t.dueDate}</span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
         </div>
       )}
 
@@ -499,7 +601,7 @@ export default function TasksPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
               {editingTask ? 'Update Task' : 'Save Task'}
             </button>

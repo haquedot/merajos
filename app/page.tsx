@@ -21,8 +21,11 @@ import {
   CheckSquare,
   Sparkles,
   TrendingUp,
+  XCircle,
+  Database,
 } from 'lucide-react';
 import { useTaskStore } from '../store/useTaskStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 import { useProjectStore } from '../store/useProjectStore';
 import { useResearchStore } from '../store/useResearchStore';
 import { useCareerStore } from '../store/useCareerStore';
@@ -32,15 +35,16 @@ import { useCalendarStore } from '../store/useCalendarStore';
 import { CircularProgress } from '../components/ui/CircularProgress';
 import { StatisticCard } from '../components/ui/StatisticCard';
 import { Badge } from '../components/ui/Badge';
-import { SVGLineChart, SVGDonutChart } from '../components/ui/SVGCharts';
+import { HighchartsLine } from '../components/ui/HighchartsComponents';
 
 export default function DashboardHome() {
   const [greeting, setGreeting] = useState('Good day');
   const [mounted, setMounted] = useState(false);
+  const [latestSnapshots, setLatestSnapshots] = useState<any[]>([]);
 
   const { tasks, toggleTaskStatus } = useTaskStore();
   const { projects } = useProjectStore();
-  const { overview: researchOverview } = useResearchStore();
+  const { overview: researchOverview, papers: researchPapers } = useResearchStore();
   const { jobs, dsaTopics } = useCareerStore();
   const { habits, toggleHabitForDate } = useHabitStore();
   const { goals } = useGoalStore();
@@ -52,7 +56,16 @@ export default function DashboardHome() {
     if (hour < 12) setGreeting('Good morning');
     else if (hour < 17) setGreeting('Good afternoon');
     else setGreeting('Good evening');
-  }, []);
+
+    fetch('/api/analytics')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.snapshots) {
+          setLatestSnapshots(data.snapshots.slice(0, 3));
+        }
+      })
+      .catch((err) => console.warn('Dashboard could not fetch snapshots:', err));
+  }, [tasks]);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const todayTasks = tasks.filter((t) => t.dueDate === todayStr);
@@ -62,25 +75,56 @@ export default function DashboardHome() {
   const mits = tasks.filter((t) => t.mit);
   const upcomingTasks = tasks.filter((t) => t.status !== 'completed' && t.dueDate >= todayStr).slice(0, 4);
 
-  // Overall statistics
-  const activeProjectsCount = projects.filter((p) => p.status === 'active').length;
-  const dsaTotalSolved = dsaTopics.reduce((acc, t) => acc + t.easySolved + t.mediumSolved + t.hardSolved, 0);
+  // Real active projects calculation
+  const activeProjects = projects.filter((p) => p.status === 'active');
+  const activeProjectsCount = activeProjects.length;
+  const activeProjectSubtitle = activeProjects.length > 0
+    ? activeProjects.slice(0, 2).map((p) => p.name).join(' & ')
+    : (projects[0]?.name ?? 'No active projects');
+  const avgProjectProgress = projects.length > 0
+    ? Math.round(projects.reduce((acc, p) => acc + (p.progress || 0), 0) / projects.length)
+    : 0;
 
-  // Productivity Score Calculation
+  // Real research progress calculation
+  const totalPapers = researchPapers.length;
+  const researchSubtitle = researchOverview.thesisTitle || researchOverview.paperTitle || (researchPapers[0]?.title ?? 'Thesis Research');
+  const realResearchProgress = totalPapers > 0
+    ? Math.round((researchPapers.filter((p) => p.status === 'cited' || p.status === 'reading').length / totalPapers) * 100)
+    : (researchOverview.progress || 0);
+
+  // Real DSA Solved calculation
+  const dsaTotalSolved = dsaTopics.reduce((acc, t) => acc + t.easySolved + t.mediumSolved + t.hardSolved, 0);
+  const dsaTotalQuestions = dsaTopics.reduce((acc, t) => acc + (t.easyTotal || 0) + (t.mediumTotal || 0) + (t.hardTotal || 0), 0);
+  const dsaSubtitle = dsaTopics.length > 0
+    ? dsaTopics.slice(0, 3).map((t) => t.name).join(', ')
+    : 'Arrays, DP & Trees';
+  const dsaProgressPercent = dsaTotalQuestions > 0 ? Math.round((dsaTotalSolved / dsaTotalQuestions) * 100) : 0;
+
+  // Real Habits Completed calculation
   const habitCompletedToday = habits.filter((h) => !!h.history[todayStr]).length;
+  const habitSubtitle = habits.length > 0
+    ? habits.slice(0, 3).map((h) => h.name).join(', ')
+    : 'No habits defined';
   const habitCompletionRate = habits.length > 0 ? Math.round((habitCompletedToday / habits.length) * 100) : 100;
   const dailyScore = Math.round(taskCompletionRate * 0.6 + habitCompletionRate * 0.4);
 
-  // Productivity Trend line chart data
-  const trendData = [
-    { label: 'Mon', value: 75 },
-    { label: 'Tue', value: 85 },
-    { label: 'Wed', value: 65 },
-    { label: 'Thu', value: 90 },
-    { label: 'Fri', value: 82 },
-    { label: 'Sat', value: 95 },
-    { label: 'Sun', value: dailyScore },
-  ];
+  // Real Highcharts data from latest snapshots
+  const sortedSnapshots = [...latestSnapshots].sort((a, b) => a.date.localeCompare(b.date));
+
+  const chartCategories = sortedSnapshots.length > 0
+    ? sortedSnapshots.map((s) => s.date.slice(5))
+    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Today'];
+
+  const chartScores = sortedSnapshots.length > 0
+    ? sortedSnapshots.map((s) => s.productivityScore ?? s.taskCompletionRate ?? 0)
+    : [dailyScore, dailyScore, dailyScore, dailyScore, dailyScore, dailyScore, dailyScore];
+
+  const lastScore = chartScores[chartScores.length - 1] ?? dailyScore;
+  const prevScore = chartScores.length > 1 ? chartScores[chartScores.length - 2] : dailyScore;
+  const scoreDiff = lastScore - prevScore;
+  const trendLabel = sortedSnapshots.length > 1
+    ? `${scoreDiff >= 0 ? '+' : ''}${scoreDiff}% vs prev snapshot`
+    : `${dailyScore}% Score Today`;
 
   return (
     <div className="space-y-6">
@@ -88,20 +132,14 @@ export default function DashboardHome() {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-6 md:p-8 rounded-3xl bg-linear-to-r from-blue-600 via-blue-700 to-indigo-800 text-white shadow-xl shadow-blue-500/10 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+        className="p-6 md:p-8 rounded-3xl bg-[#1F3B99] dark:bg-[#172033] text-white border border-[#E2E8F0] dark:border-[#243244] relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
       >
         <div className="relative z-10 space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider text-blue-100 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 fill-current text-amber-300" />
-              Meraj Personal Operating System
-            </span>
-          </div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            {greeting}, Meraj 👋
+            {greeting} 👋
           </h1>
           <p className="text-blue-100/90 text-xs md:text-sm max-w-xl">
-            You have <span className="font-bold text-white">{todayTasks.length - completedToday} tasks</span> remaining today and {mits.length} priority focus items. Keep up the high momentum!
+            Plan. Focus. Execute. Grow. — You have <span className="font-bold text-white">{todayTasks.length - completedToday} tasks</span> remaining today.
           </p>
         </div>
 
@@ -131,38 +169,38 @@ export default function DashboardHome() {
         <StatisticCard
           title="Active Projects"
           value={activeProjectsCount}
-          subtitle="Sanab & MasjidMadarsa"
+          subtitle={activeProjectSubtitle}
           icon={Briefcase}
           iconBgColor="bg-purple-50 dark:bg-purple-950/40"
           iconColor="text-purple-500"
-          trend={{ value: '78% Avg Prog', positive: true }}
+          trend={{ value: `${avgProjectProgress}% Avg Prog`, positive: avgProjectProgress >= 50 }}
         />
         <StatisticCard
           title="Research Progress"
-          value={`${researchOverview.progress}%`}
-          subtitle="Transformer Thesis Paper"
+          value={`${realResearchProgress}%`}
+          subtitle={researchSubtitle}
           icon={BookOpen}
           iconBgColor="bg-blue-50 dark:bg-blue-950/40"
           iconColor="text-blue-500"
-          trend={{ value: '34 Papers', positive: true }}
+          trend={{ value: `${totalPapers} Paper${totalPapers === 1 ? '' : 's'}`, positive: totalPapers > 0 }}
         />
         <StatisticCard
           title="DSA Solved"
           value={dsaTotalSolved}
-          subtitle="Arrays, DP & Trees"
+          subtitle={dsaSubtitle}
           icon={GraduationCap}
           iconBgColor="bg-emerald-50 dark:bg-emerald-950/40"
           iconColor="text-emerald-500"
-          trend={{ value: 'Active Prep', positive: true }}
+          trend={{ value: `${dsaProgressPercent}% Goal`, positive: dsaProgressPercent > 0 }}
         />
         <StatisticCard
           title="Habits Completed"
           value={`${habitCompletedToday}/${habits.length}`}
-          subtitle="Fajr, Quran, Exercise, Code"
+          subtitle={habitSubtitle}
           icon={Activity}
           iconBgColor="bg-amber-50 dark:bg-amber-950/40"
           iconColor="text-amber-500"
-          trend={{ value: `${habitCompletionRate}% Today`, positive: habitCompletionRate > 60 }}
+          trend={{ value: `${habitCompletionRate}% Today`, positive: habitCompletionRate >= 50 }}
         />
       </div>
 
@@ -186,7 +224,7 @@ export default function DashboardHome() {
               </div>
               <Link
                 href="/today"
-                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1"
               >
                 View Today <ArrowUpRight className="w-3.5 h-3.5" />
               </Link>
@@ -209,19 +247,17 @@ export default function DashboardHome() {
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-colors ${
-                            isDone
+                          className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-colors ${isDone
                               ? 'bg-emerald-500 border-emerald-500 text-white'
                               : 'border-gray-300 dark:border-gray-600 hover:border-blue-500'
-                          }`}
+                            }`}
                         >
                           {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
                         </div>
                         <div>
                           <span
-                            className={`text-sm font-semibold block ${
-                              isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
-                            }`}
+                            className={`text-sm font-semibold block ${isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
+                              }`}
                           >
                             {task.title}
                           </span>
@@ -243,8 +279,8 @@ export default function DashboardHome() {
                           task.priority === 'urgent'
                             ? 'danger'
                             : task.priority === 'high'
-                            ? 'warning'
-                            : 'secondary'
+                              ? 'warning'
+                              : 'secondary'
                         }
                         size="sm"
                       >
@@ -257,7 +293,100 @@ export default function DashboardHome() {
             </div>
           </div>
 
-          {/* Upcoming Tasks & Calendar Preview */}
+          {/* 11:45 PM Node Cron History Widget */}
+          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Database className="w-5 h-5 text-purple-600" />
+                <div>
+                  <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+                    Daily task and habit history
+                  </h3>
+                  <p className="text-xs text-gray-500">Automated daily snapshot of completed vs pending tasks</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {process.env.NEXT_PUBLIC_RUN_CRON_JOB === 'true' && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const currentTasks = useTaskStore.getState().tasks;
+                        const settings = useSettingsStore.getState().settings;
+                        const res = await fetch('/api/cron/calculate-daily-tasks', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            tasks: currentTasks,
+                            emailOptions: {
+                              enabled: settings.emailNotificationsEnabled ?? true,
+                              recipientEmail: settings.notificationEmail,
+                            },
+                          }),
+                        });
+                        const data = await res.json();
+                        if (data.snapshot) {
+                          setLatestSnapshots((prev) => [data.snapshot, ...prev.filter((s) => s.date !== data.snapshot.date)]);
+                          alert(`✅ Daily Summary Executed!\n\nAll ${currentTasks.length} tasks persisted & Daily Snapshot saved for ${data.snapshot.date}!`);
+                        }
+                      } catch (err: any) {
+                        alert(`Error running summary: ${err.message}`);
+                      }
+                    }}
+                    className="btn-secondary px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Run Daily Summary</span>
+                  </button>
+                )}
+                <Link
+                  href="/analytics"
+                  className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1"
+                >
+                  Full Analytics <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            {latestSnapshots.length === 0 ? (
+              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 text-center text-xs text-gray-400">
+                Node Cron calculates daily snapshots at 11:45 PM. Visit Analytics to trigger an instant run.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {latestSnapshots.map((snap) => (
+                  <div
+                    key={snap.date}
+                    className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="px-2.5 py-1 rounded-lg bg-[#1F3B99] text-white font-bold">
+                        {snap.date}
+                      </span>
+                      <div>
+                        <span className="font-bold text-gray-900 dark:text-white block">
+                          Productivity Score: {snap.productivityScore || snap.taskCompletionRate}%
+                        </span>
+                        <span className="text-gray-400 text-[11px]">
+                          {snap.completedTasks} completed • {snap.pendingTasks ?? (snap.totalTasks - snap.completedTasks)} pending
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold text-[10px]">
+                        ✓ {snap.completedTasks} Done
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 font-bold text-[10px]">
+                        ● {snap.pendingTasks ?? (snap.totalTasks - snap.completedTasks)} Pending
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Upcoming Tasks */}
           <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -268,7 +397,7 @@ export default function DashboardHome() {
               </div>
               <Link
                 href="/tasks"
-                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1"
               >
                 All Tasks <ArrowUpRight className="w-3.5 h-3.5" />
               </Link>
@@ -311,10 +440,20 @@ export default function DashboardHome() {
                   Productivity Score Trend
                 </h3>
               </div>
-              <span className="text-xs font-bold text-emerald-500">+12% vs last week</span>
+              <span className="text-xs font-bold text-emerald-500">{trendLabel}</span>
             </div>
 
-            <SVGLineChart data={trendData} height={160} color="#10b981" />
+            <HighchartsLine
+              categories={chartCategories}
+              seriesData={[
+                {
+                  name: 'Productivity Score',
+                  data: chartScores,
+                  color: '#6D5BFF',
+                },
+              ]}
+              height={180}
+            />
           </div>
 
           {/* Quick Habits */}
@@ -326,7 +465,7 @@ export default function DashboardHome() {
                   Habit Streaks
                 </h3>
               </div>
-              <Link href="/habits" className="text-xs font-bold text-blue-500 hover:underline">
+              <Link href="/habits" className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline">
                 View All
               </Link>
             </div>
@@ -342,9 +481,8 @@ export default function DashboardHome() {
                   >
                     <div className="flex items-center gap-2.5">
                       <div
-                        className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] ${
-                          isDone ? 'bg-amber-500 text-white' : 'border border-gray-300 dark:border-gray-600'
-                        }`}
+                        className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] ${isDone ? 'bg-amber-500 text-white' : 'border border-gray-300 dark:border-gray-600'
+                          }`}
                       >
                         {isDone && '✓'}
                       </div>

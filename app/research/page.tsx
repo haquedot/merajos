@@ -100,7 +100,7 @@ export default function ResearchPage() {
 
           <button
             onClick={() => setIsPaperModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20"
+            className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
             Add Research Paper
@@ -269,7 +269,7 @@ export default function ResearchPage() {
                     href={paper.pdfUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-blue-500 hover:underline flex items-center gap-1 font-bold"
+                    className="text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1 font-bold"
                   >
                     View PDF <ExternalLink className="w-3 h-3" />
                   </a>
@@ -376,7 +376,7 @@ export default function ResearchPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
               Save Paper
             </button>

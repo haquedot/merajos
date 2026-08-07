@@ -8,18 +8,19 @@ import {
   Moon,
   PanelRight,
   Menu,
-  Sparkles,
-  Flame,
   CheckCircle2,
   Cloud,
   CloudOff,
   RefreshCw,
   LogOut,
   User,
+  Zap,
 } from 'lucide-react';
-import { useSettingsStore } from '../../store/useSettingsStore';
 import { useTaskStore } from '../../store/useTaskStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
+import { Tagline } from '../common/Tagline';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
+import { useTheme } from '../../providers/ThemeProvider';
 
 interface NavbarProps {
   onOpenMobileSidebar: () => void;
@@ -34,39 +35,55 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenQuickAdd,
   onOpenSearch,
 }) => {
-  const { settings, updateSettings } = useSettingsStore();
+  const { theme, toggleTheme } = useTheme();
   const { tasks } = useTaskStore();
   const { session, syncState, syncMessage, signIn, signOut, syncNow } = useGoogleAuth();
 
   const [mounted, setMounted] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [isCronRunning, setIsCronRunning] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleRunCronJob = async () => {
+    setIsCronRunning(true);
+    try {
+      const currentTasks = useTaskStore.getState().tasks;
+      const settings = useSettingsStore.getState().settings;
+      const res = await fetch('/api/cron/calculate-daily-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tasks: currentTasks,
+          emailOptions: {
+            enabled: settings.emailNotificationsEnabled ?? true,
+            recipientEmail: session?.email || settings.notificationEmail,
+          },
+        }),
+      });
+      const data = await res.json();
+      alert(`✅ Cron Job Executed Successfully!\n\nAll ${currentTasks.length} tasks persisted into MongoDB!\n\n${data.message}`);
+    } catch (err: any) {
+      alert(`❌ Cron execution error: ${err.message}`);
+    } finally {
+      setIsCronRunning(false);
+    }
+  };
 
   const todayStr = new Date().toISOString().split('T')[0];
   const todayTasks = tasks.filter((t) => t.dueDate === todayStr);
   const completedToday = todayTasks.filter((t) => t.status === 'completed').length;
   const completionRate = todayTasks.length > 0 ? Math.round((completedToday / todayTasks.length) * 100) : 100;
 
-  const toggleTheme = () => {
-    const nextTheme = settings.theme === 'dark' ? 'light' : 'dark';
-    updateSettings({ theme: nextTheme });
-    if (nextTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
-
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-[#090d16]/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800/80 px-4 md:px-6 flex items-center justify-between transition-colors">
+    <header className="sticky top-0 z-30 h-16 bg-white dark:bg-[#101827] border-b border-[#E2E8F0] dark:border-[#243244] px-4 md:px-6 flex items-center justify-between transition-colors">
       {/* Left section: Mobile menu & Quick search */}
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenMobileSidebar}
-          className="lg:hidden p-2 rounded-xl text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="md:hidden p-2 rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           aria-label="Open Mobile Navigation"
         >
           <Menu className="w-5 h-5" />
@@ -75,32 +92,50 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Global Search trigger */}
         <button
           onClick={onOpenSearch}
-          className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-gray-100/70 dark:bg-gray-800/50 hover:bg-gray-200/70 dark:hover:bg-gray-800 text-xs text-gray-400 dark:text-gray-400 border border-transparent dark:border-gray-700/50 transition-all w-48 md:w-64"
+          className="flex items-center gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 border border-[#E2E8F0] dark:border-[#243244] transition-all w-10 sm:w-44 md:w-56"
         >
-          <Search className="w-3.5 h-3.5 text-gray-400" />
-          <span className="flex-1 text-left truncate">Search tasks, research, projects...</span>
-          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono font-semibold text-gray-400 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+          <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <span className="flex-1 text-left truncate">Search...</span>
+          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 rounded border border-[#E2E8F0] dark:border-[#243244]">
             ⌘K
           </kbd>
         </button>
+
+        {/* Orbit Brand Header & Tagline (Desktop) */}
+        <div className="hidden xl:flex items-center gap-3 ml-2 border-l border-[#E2E8F0] dark:border-[#243244] pl-4">
+          <Tagline size="xs" />
+        </div>
       </div>
 
-      {/* Right section: Sync Status, Theme Toggle, Profile Menu */}
-      <div className="flex items-center gap-2.5">
+      {/* Right section: Sync Status, Run Cron, Theme Toggle, Profile Menu */}
+      <div className="flex items-center gap-1 sm:gap-2.5">
+        {/* Run Daily Summary Button (Shown when RUN_CRON_JOB is true) */}
+        {process.env.NEXT_PUBLIC_RUN_CRON_JOB === 'true' && (
+          <button
+            onClick={handleRunCronJob}
+            disabled={isCronRunning}
+            className="btn-secondary px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 disabled:opacity-50"
+            title="Calculate and log daily task performance summary"
+          >
+            <Zap className={`w-3.5 h-3.5 ${isCronRunning ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isCronRunning ? 'Calculating...' : 'Run Daily Summary'}</span>
+          </button>
+        )}
+
         {/* Google Sync Status Pill */}
         <button
           onClick={syncNow}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-[11px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-[#E2E8F0] dark:border-[#243244] transition-all"
           title={syncMessage || 'Click to synchronize with Google'}
         >
           {syncState === 'syncing' ? (
-            <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-500" />
+            <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#3B82F6]" />
           ) : syncState === 'offline' ? (
-            <CloudOff className="w-3.5 h-3.5 text-amber-500" />
+            <CloudOff className="w-3.5 h-3.5 text-[#F59E0B]" />
           ) : (
-            <Cloud className="w-3.5 h-3.5 text-emerald-500" />
+            <Cloud className="w-3.5 h-3.5 text-[#22C55E]" />
           )}
-          <span className="hidden sm:inline">
+          <span className="hidden md:inline">
             {syncState === 'syncing'
               ? 'Syncing...'
               : syncState === 'offline'
@@ -111,38 +146,33 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </button>
 
-        {/* Today completion pill */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-900/50">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-          <span>{completionRate}% Today</span>
-        </div>
-
-        {/* Quick Add Button */}
+        {/* Quick Add Button (Primary Orbit Blue) */}
         <button
           onClick={onOpenQuickAdd}
-          className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-blue-500/20 transition-all"
+          className="btn-primary px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5"
         >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Quick Add</span>
         </button>
 
-        {/* Theme Toggle */}
+        {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-xl text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
           aria-label="Toggle Theme"
+          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
         >
-          {mounted && settings.theme === 'dark' ? (
+          {mounted && theme === 'dark' ? (
             <Sun className="w-4 h-4 text-amber-400" />
           ) : (
-            <Moon className="w-4 h-4 text-gray-600" />
+            <Moon className="w-4 h-4 text-slate-700" />
           )}
         </button>
 
         {/* Right Panel Toggle */}
         <button
           onClick={onToggleRightPanel}
-          className="p-2 rounded-xl text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
           aria-label="Toggle Focus Panel"
         >
           <PanelRight className="w-4 h-4" />
@@ -164,7 +194,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           ) : (
             <button
               onClick={signIn}
-              className="px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 transition-colors"
+              className="px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 border border-gray-200 dark:border-gray-700 transition-colors"
             >
               <User className="w-3.5 h-3.5 text-blue-500" />
               <span>Sign in</span>
@@ -173,8 +203,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Profile Dropdown */}
           {profileMenuOpen && session && (
-            <div className="absolute right-0 mt-2 w-64 p-3 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xl space-y-3 z-50">
-              <div className="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+            <div className="absolute right-0 mt-2 w-64 p-3 rounded-2xl bg-white dark:bg-[#111622] border border-gray-200 dark:border-gray-800 space-y-3 z-50">
+              <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-800">
                 <img
                   src={session.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                   alt={session.name || 'User'}
@@ -184,7 +214,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <h4 className="text-xs font-extrabold text-gray-900 dark:text-white truncate">
                     {session.name || 'Merajul Haque'}
                   </h4>
-                  <p className="text-[11px] text-gray-400 truncate">
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
                     {session.email || 'meraj@gmail.com'}
                   </p>
                 </div>
@@ -194,23 +224,23 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="px-2 py-1 text-[10px] uppercase text-gray-400 font-extrabold">
                   Connected Google Services
                 </div>
-                <div className="px-2 py-1 flex items-center justify-between text-gray-600 dark:text-gray-300">
+                <div className="px-2 py-1 flex items-center justify-between text-gray-700 dark:text-gray-300">
                   <span>Google Calendar</span>
-                  <span className="text-emerald-500 font-bold">● Active</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">● Active</span>
                 </div>
-                <div className="px-2 py-1 flex items-center justify-between text-gray-600 dark:text-gray-300">
+                <div className="px-2 py-1 flex items-center justify-between text-gray-700 dark:text-gray-300">
                   <span>Google Tasks</span>
-                  <span className="text-emerald-500 font-bold">● Active</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">● Active</span>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
                 <button
                   onClick={() => {
                     signOut();
                     setProfileMenuOpen(false);
                   }}
-                  className="w-full px-3 py-2 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-colors"
+                  className="w-full px-3 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   Disconnect Google Account

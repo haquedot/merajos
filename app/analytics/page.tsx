@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart3,
@@ -11,46 +11,103 @@ import {
   BookOpen,
   GraduationCap,
   PieChart,
-  Plus,
   Cloud,
+  Database,
+  Zap,
+  Calendar,
+  CheckSquare,
+  XCircle,
+  Activity,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useTaskStore } from '../../store/useTaskStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { useProjectStore } from '../../store/useProjectStore';
 import { useResearchStore } from '../../store/useResearchStore';
 import { useCareerStore } from '../../store/useCareerStore';
 import { useHabitStore } from '../../store/useHabitStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { StatisticCard } from '../../components/ui/StatisticCard';
+import { Badge } from '../../components/ui/Badge';
 import {
   HighchartsLine,
   HighchartsColumn,
   HighchartsDonut,
-  HighchartsArea,
 } from '../../components/ui/HighchartsComponents';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 
 export default function AnalyticsPage() {
   const { tasks } = useTaskStore();
   const { projects } = useProjectStore();
-  const { papers, writingSections } = useResearchStore();
-  const { jobs, dsaTopics } = useCareerStore();
+  const { jobs } = useCareerStore();
   const { habits } = useHabitStore();
-  const { events } = useCalendarStore();
-  const { signIn } = useGoogleAuth();
+  const { signIn, session } = useGoogleAuth();
 
-  // Dynamic calculations from real user/synced data
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((t) => t.status === 'completed').length;
+  const [mongoStats, setMongoStats] = useState<any>(null);
+  const [snapshots, setSnapshots] = useState<any[]>([]);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [expandedSnapshotDate, setExpandedSnapshotDate] = useState<string | null>(null);
+
+  // Fetch live MongoDB analytics and snapshots
+  useEffect(() => {
+    fetch('/api/analytics')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.summary) {
+          setMongoStats(data.summary);
+        }
+        if (data.snapshots) {
+          setSnapshots(data.snapshots);
+          if (data.snapshots.length > 0) {
+            setExpandedSnapshotDate(data.snapshots[0].date);
+          }
+        }
+      })
+      .catch((err) => console.warn('Could not fetch MongoDB analytics:', err));
+  }, [tasks]);
+
+  const triggerDaily1145PMCalculation = async () => {
+    setIsCalculating(true);
+    try {
+      const currentTasks = useTaskStore.getState().tasks;
+      const settings = useSettingsStore.getState().settings;
+      const res = await fetch('/api/cron/calculate-daily-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tasks: currentTasks,
+          emailOptions: {
+            enabled: settings.emailNotificationsEnabled ?? true,
+            recipientEmail: session?.email || settings.notificationEmail,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.snapshot) {
+        setSnapshots((prev) => [data.snapshot, ...prev.filter((s) => s.date !== data.snapshot.date)]);
+        setExpandedSnapshotDate(data.snapshot.date);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+  // Dynamic calculations from real live items
+  const totalTasks = mongoStats?.totalTasks ?? tasks.length;
+  const completedTasks = mongoStats?.completedTasks ?? tasks.filter((t) => t.status === 'completed').length;
   const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  const totalEstHours = tasks.reduce((acc, t) => acc + (t.estimatedHours || 0), 0);
-  const totalActualHours = tasks.reduce((acc, t) => acc + (t.actualHours || 0), 0);
+  const totalEstHours = mongoStats?.totalEstHours ?? tasks.reduce((acc, t) => acc + (t.estimatedHours || 0), 0);
+  const totalActualHours = mongoStats?.totalActualHours ?? tasks.reduce((acc, t) => acc + (t.actualHours || 0), 0);
 
   // Category task distribution from REAL tasks
-  const clientTaskCount = tasks.filter((t) => t.category === 'Client').length;
-  const researchTaskCount = tasks.filter((t) => t.category === 'Research').length;
-  const careerTaskCount = tasks.filter((t) => t.category === 'Career').length;
-  const personalTaskCount = tasks.filter((t) => t.category === 'Personal' || t.category === 'Habit').length;
+  const clientTaskCount = mongoStats?.clientTasksCount ?? tasks.filter((t) => t.category === 'Client').length;
+  const researchTaskCount = mongoStats?.researchTasksCount ?? tasks.filter((t) => t.category === 'Research').length;
+  const careerTaskCount = mongoStats?.careerTasksCount ?? tasks.filter((t) => t.category === 'Career').length;
+  const personalTaskCount = mongoStats?.personalTasksCount ?? tasks.filter((t) => t.category === 'Personal' || t.category === 'Habit').length;
 
   const realCategoryDonutData = [
     { name: 'Client Projects', y: clientTaskCount, color: '#8b5cf6' },
@@ -72,79 +129,95 @@ export default function AnalyticsPage() {
     { name: 'Offer', y: jobOfferCount, color: '#8b5cf6' },
   ].filter((d) => d.y > 0);
 
-  // Compute 7 days task completion trajectory dynamically
-  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const dailyTaskCompletion = daysOfWeek.map((day, idx) => {
-    // Count real completed tasks per day offset
-    return tasks.filter((t) => t.status === 'completed').length + (idx * 2);
-  });
+  // Highcharts series data mapped chronologically
+  const sortedChronological = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+  const snapshotDates = sortedChronological.length > 0 ? sortedChronological.map((s) => s.date) : ['Today'];
+  const snapshotRates = sortedChronological.length > 0 ? sortedChronological.map((s) => s.taskCompletionRate) : [taskCompletionRate];
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600">
-              <BarChart3 className="w-6 h-6" />
+            <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600">
+              <Activity className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-                Live Highcharts Analytics & Metrics
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
+                  Performance & Productivity Insights
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-semibold text-[10px]">
+                  Daily Summary @ 11:45 PM
+                </span>
+              </div>
               <p className="text-xs text-gray-500">
-                All metrics and interactive charts are powered 100% by real IndexedDB and synced Google Tasks & Calendar items
+                Daily task and habit history is automatically calculated every evening at 11:45 PM.
               </p>
             </div>
           </div>
 
-          <button
-            onClick={signIn}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-blue-500/20"
-          >
-            <Cloud className="w-4 h-4" />
-            <span>Sync Google Data</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {process.env.NEXT_PUBLIC_RUN_CRON_JOB === 'true' && (
+              <button
+                onClick={triggerDaily1145PMCalculation}
+                disabled={isCalculating}
+                className="btn-secondary px-3.5 py-2 rounded-xl text-xs flex items-center gap-2 disabled:opacity-50"
+              >
+                <Zap className="w-4 h-4" />
+                <span>{isCalculating ? 'Calculating...' : 'Run Daily Summary'}</span>
+              </button>
+            )}
+
+            <button
+              onClick={signIn}
+              className="btn-primary px-3.5 py-2 rounded-xl text-xs flex items-center gap-2"
+            >
+              <Cloud className="w-4 h-4" />
+              <span>Sync Google</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Overview Stat Cards computed strictly from live stores */}
+      {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatisticCard
-          title="Overall Task Completion"
+          title="Task Completion Rate"
           value={`${taskCompletionRate}%`}
-          subtitle={`${completedTasks} of ${totalTasks} real tasks completed`}
+          subtitle={`${completedTasks} of ${totalTasks} tasks completed`}
           icon={CheckCircle2}
           iconBgColor="bg-emerald-50 dark:bg-emerald-950/40"
           iconColor="text-emerald-500"
           trend={{ value: `${completedTasks} Completed`, positive: true }}
         />
         <StatisticCard
-          title="Logged Work Hours"
+          title="Logged Hours"
           value={`${totalActualHours}h`}
           subtitle={`Target: ${totalEstHours}h estimated`}
           icon={Clock}
           iconBgColor="bg-blue-50 dark:bg-blue-950/40"
           iconColor="text-blue-500"
-          trend={{ value: `${tasks.length} Active Items`, positive: true }}
+          trend={{ value: `${totalTasks} Active Tasks`, positive: true }}
         />
         <StatisticCard
           title="Active Projects"
           value={projects.length}
-          subtitle={`${projects.filter((p) => p.status === 'active').length} in active progress`}
+          subtitle={`${projects.filter((p) => p.status === 'active').length} active projects`}
           icon={Briefcase}
           iconBgColor="bg-purple-50 dark:bg-purple-950/40"
           iconColor="text-purple-500"
-          trend={{ value: 'Real Client Work', positive: true }}
+          trend={{ value: 'Client Projects', positive: true }}
         />
         <StatisticCard
-          title="Job Pipeline Applications"
+          title="Job Pipeline"
           value={jobs.length}
           subtitle={`${jobInterviewCount} interviewing, ${jobOACount} OA`}
           icon={GraduationCap}
           iconBgColor="bg-amber-50 dark:bg-amber-950/40"
           iconColor="text-amber-500"
-          trend={{ value: 'Real Applications', positive: true }}
+          trend={{ value: 'Job Applications', positive: true }}
         />
       </div>
 
@@ -156,26 +229,18 @@ export default function AnalyticsPage() {
             <div className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-500" />
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
-                Task Completion Trajectory (Highcharts Spline)
+                Daily Completion Trend
               </h3>
             </div>
           </div>
 
-          {totalTasks > 0 ? (
-            <HighchartsLine
-              categories={daysOfWeek}
-              seriesData={[
-                { name: 'Completed Tasks', data: dailyTaskCompletion, color: '#3b82f6' },
-              ]}
-              height={260}
-            />
-          ) : (
-            <div className="h-64 flex flex-col items-center justify-center text-center text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
-              <CheckCircle2 className="w-10 h-10 mb-2 text-gray-300" />
-              <p className="text-xs">No task completion data recorded yet.</p>
-              <span className="text-[11px] text-gray-400">Add tasks or sync with Google Tasks to view live charts.</span>
-            </div>
-          )}
+          <HighchartsLine
+            categories={snapshotDates}
+            seriesData={[
+              { name: 'Completion Rate %', data: snapshotRates, color: '#3b82f6' },
+            ]}
+            height={260}
+          />
         </div>
 
         {/* Highcharts Column Chart */}
@@ -184,7 +249,7 @@ export default function AnalyticsPage() {
             <div className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-purple-500" />
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
-                Real Task Hours Breakdown by Category (Highcharts Column)
+                Work Hours Breakdown by Category
               </h3>
             </div>
           </div>
@@ -218,45 +283,188 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Highcharts Grid Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Category Share Highcharts Donut */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+      {/* 11:45 PM Daily History Log Section */}
+      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <PieChart className="w-5 h-5 text-emerald-500" />
-            <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
-              Real Task Distribution by Category (Highcharts Donut)
-            </h3>
+            <Calendar className="w-5 h-5 text-purple-600" />
+            <div>
+              <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+                Daily History & Performance Log
+              </h3>
+              <p className="text-xs text-gray-500">
+                Detailed record of completed tasks, pending tasks, habits, and daily productivity scores
+              </p>
+            </div>
           </div>
 
-          {realCategoryDonutData.length > 0 ? (
-            <HighchartsDonut data={realCategoryDonutData} height={260} />
-          ) : (
-            <div className="h-64 flex flex-col items-center justify-center text-center text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
-              <PieChart className="w-10 h-10 mb-2 text-gray-300" />
-              <p className="text-xs">No tasks categorised yet.</p>
-            </div>
-          )}
+          <Badge variant="purple">{snapshots.length} Daily Snapshots Saved</Badge>
         </div>
 
-        {/* Job Applications Highcharts Donut */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 text-amber-500" />
-            <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
-              Real Job Pipeline Status (Highcharts Donut)
-            </h3>
+        {snapshots.length === 0 ? (
+          <div className="p-8 text-center text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
+            No snapshots stored yet. Click "Run 11:45 PM Cron" to generate today's snapshot!
           </div>
+        ) : (
+          <div className="space-y-3">
+            {snapshots.map((snap) => {
+              const isExpanded = expandedSnapshotDate === snap.date;
 
-          {realJobDonutData.length > 0 ? (
-            <HighchartsDonut data={realJobDonutData} height={260} />
-          ) : (
-            <div className="h-64 flex flex-col items-center justify-center text-center text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
-              <GraduationCap className="w-10 h-10 mb-2 text-gray-300" />
-              <p className="text-xs">No job applications logged yet.</p>
-            </div>
-          )}
-        </div>
+              return (
+                <div
+                  key={snap.date}
+                  className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden bg-gray-50/50 dark:bg-gray-800/20"
+                >
+                  {/* Snapshot Accordion Header */}
+                  <div
+                    onClick={() => setExpandedSnapshotDate(isExpanded ? null : snap.date)}
+                    className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/60 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="px-3 py-1 rounded-xl bg-purple-600 text-white font-bold text-xs">
+                        {snap.date}
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="font-extrabold text-gray-900 dark:text-white">
+                          Score: {snap.productivityScore || snap.taskCompletionRate}%
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                          {snap.completedTasks} Completed
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                          {snap.pendingTasks ?? (snap.totalTasks - snap.completedTasks)} Pending
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {snap.habitCompletionRate !== undefined && (
+                        <Badge variant="outline" size="sm">
+                          Habits: {snap.completedHabitsCount ?? 0}/{snap.totalHabitsCount ?? 0} ({snap.habitCompletionRate}%)
+                        </Badge>
+                      )}
+                      {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+                    </div>
+                  </div>
+
+                  {/* Expanded Snapshot Breakdown */}
+                  {isExpanded && (
+                    <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-4 text-xs">
+                      {/* Completed vs Non-Completed Task Lists */}
+                      {(() => {
+                        const completedList =
+                          snap.completedTaskDetails && snap.completedTaskDetails.length > 0
+                            ? snap.completedTaskDetails
+                            : snap.completedTaskTitles && snap.completedTaskTitles.length > 0
+                            ? snap.completedTaskTitles.map((t: string) => ({ title: t }))
+                            : tasks.filter((t) => t.status === 'completed').map((t) => ({ title: t.title, category: t.category, priority: t.priority }));
+
+                        const pendingList =
+                          snap.pendingTaskDetails && snap.pendingTaskDetails.length > 0
+                            ? snap.pendingTaskDetails
+                            : snap.pendingTaskTitles && snap.pendingTaskTitles.length > 0
+                            ? snap.pendingTaskTitles.map((t: string) => ({ title: t }))
+                            : tasks.filter((t) => t.status !== 'completed').map((t) => ({ title: t.title, category: t.category, priority: t.priority }));
+
+                        return (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Completed Tasks List */}
+                            <div className="p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 space-y-2">
+                              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-extrabold text-xs">
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>Completed Tasks ({completedList.length})</span>
+                              </div>
+                              {completedList.length > 0 ? (
+                                <ul className="space-y-1.5 pl-1">
+                                  {completedList.map((tItem: any, idx: number) => (
+                                    <li key={idx} className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-900/50">
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                        <span className="font-bold text-gray-900 dark:text-white">{tItem.title || tItem}</span>
+                                      </div>
+                                      {tItem.category && (
+                                        <Badge variant="outline" size="sm">
+                                          {tItem.category}
+                                        </Badge>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-gray-400 italic">No tasks completed on this date.</p>
+                              )}
+                            </div>
+
+                            {/* Non-Completed (Pending) Tasks List */}
+                            <div className="p-3.5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 space-y-2">
+                              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-extrabold text-xs">
+                                <XCircle className="w-4 h-4" />
+                                <span>Non-Completed / Pending Tasks ({pendingList.length})</span>
+                              </div>
+                              {pendingList.length > 0 ? (
+                                <ul className="space-y-1.5 pl-1">
+                                  {pendingList.map((tItem: any, idx: number) => (
+                                    <li key={idx} className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-amber-100 dark:border-amber-900/50">
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                                        <span className="font-bold text-gray-900 dark:text-white">{tItem.title || tItem}</span>
+                                      </div>
+                                      {tItem.category && (
+                                        <Badge variant="outline" size="sm">
+                                          {tItem.category}
+                                        </Badge>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-gray-400 italic">All tasks were completed!</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Category & Priority Metrics */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase block">Client Tasks</span>
+                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
+                            {snap.categoryBreakdown?.Client?.completed ?? 0} Done / {snap.categoryBreakdown?.Client?.pending ?? 0} Pending
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase block">Research Tasks</span>
+                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
+                            {snap.categoryBreakdown?.Research?.completed ?? 0} Done / {snap.categoryBreakdown?.Research?.pending ?? 0} Pending
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase block">Career Tasks</span>
+                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
+                            {snap.categoryBreakdown?.Career?.completed ?? 0} Done / {snap.categoryBreakdown?.Career?.pending ?? 0} Pending
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase block">Logged Hours</span>
+                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
+                            {snap.totalActualHours}h / {snap.totalEstHours}h est
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

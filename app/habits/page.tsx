@@ -65,7 +65,7 @@ export default function HabitsPage() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20"
+            className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
             Create Habit
@@ -176,7 +176,7 @@ export default function HabitsPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-md"
+              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
               Save Habit
             </button>

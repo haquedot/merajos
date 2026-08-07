@@ -26,11 +26,22 @@ interface TaskState {
 }
 
 export const useTaskStore = create<TaskState>((set, get) => {
-  // Load real data from Dexie DB
+  // Load real data from Dexie DB & MongoDB API
   if (typeof window !== 'undefined') {
     db.tasks.toArray().then((items) => {
       set({ tasks: items || [] });
     });
+
+    // Sync with MongoDB API
+    fetch('/api/tasks')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.tasks && data.tasks.length > 0) {
+          set({ tasks: data.tasks });
+          db.tasks.bulkPut(data.tasks);
+        }
+      })
+      .catch((err) => console.warn('[MongoDB TaskSync] Offline or API unreachable', err));
   }
 
   return {
@@ -62,6 +73,13 @@ export const useTaskStore = create<TaskState>((set, get) => {
       await db.tasks.add(newTask);
       set((state) => ({ tasks: [newTask, ...state.tasks] }));
 
+      // Save to MongoDB API
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTask),
+      }).catch((err) => console.warn('Failed to post task to MongoDB API', err));
+
       // Queue background sync to Google Tasks
       syncService.queueMutation('create', 'task', id, newTask);
       return id;
@@ -78,6 +96,13 @@ export const useTaskStore = create<TaskState>((set, get) => {
         tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
       }));
 
+      // Update in MongoDB API
+      fetch('/api/tasks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask),
+      }).catch((err) => console.warn('Failed to update task in MongoDB API', err));
+
       syncService.queueMutation('update', 'task', id, updatedTask);
     },
 
@@ -88,6 +113,11 @@ export const useTaskStore = create<TaskState>((set, get) => {
       set((state) => ({
         tasks: state.tasks.filter((t) => t.id !== id),
       }));
+
+      // Delete from MongoDB API
+      fetch(`/api/tasks?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      }).catch((err) => console.warn('Failed to delete task from MongoDB API', err));
 
       if (existing) {
         syncService.queueMutation('delete', 'task', id, existing);

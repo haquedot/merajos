@@ -97,7 +97,7 @@ export default function TodayPage() {
                 onClick={() => setViewMode('checklist')}
                 className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
                   viewMode === 'checklist'
-                    ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                    ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -108,7 +108,7 @@ export default function TodayPage() {
                 onClick={() => setViewMode('timeline')}
                 className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
                   viewMode === 'timeline'
-                    ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                    ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -119,7 +119,7 @@ export default function TodayPage() {
 
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20"
+              className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
               Add Task
@@ -133,14 +133,14 @@ export default function TodayPage() {
             <span className="text-gray-600 dark:text-gray-400">
               Today's Completion ({completedCount}/{todayTasks.length} Completed)
             </span>
-            <span className="text-blue-600 dark:text-blue-400 font-bold">{progressPercent}%</span>
+            <span className="text-[#1F3B99] dark:text-[#6D5BFF] font-bold">{progressPercent}%</span>
           </div>
           <div className="w-full h-2.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="h-full bg-linear-to-r from-blue-500 to-emerald-500 rounded-full"
+              className="h-full bg-[#1F3B99] dark:bg-[#6D5BFF] rounded-full"
             />
           </div>
         </div>
@@ -350,7 +350,7 @@ export default function TodayPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
               Save Today's Task
             </button>

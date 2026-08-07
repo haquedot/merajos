@@ -111,11 +111,14 @@ export async function seedDexieDatabaseIfEmpty() {
   const settingsCount = await db.settings.count();
   if (settingsCount === 0) {
     await db.settings.add({
+      id: 'default',
       theme: 'dark',
       accentColor: '#3b82f6',
       sidebarCollapsed: false,
       pomodoroTime: 25,
       soundEnabled: true,
+      emailNotificationsEnabled: true,
+      notificationEmail: 'merajulhaque.official@gmail.com',
     });
   }
 }

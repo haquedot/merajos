@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { Paper, WritingSection, ResearchOverview } from '../types';
 
 interface ResearchState {
@@ -9,12 +8,13 @@ interface ResearchState {
   searchQuery: string;
   selectedStatusFilter: string;
 
-  updateOverview: (updates: Partial<ResearchOverview>) => void;
-  addPaper: (paper: Omit<Paper, 'id'>) => void;
-  updatePaper: (id: string, updates: Partial<Paper>) => void;
-  deletePaper: (id: string) => void;
+  loadFromDB: () => Promise<void>;
+  updateOverview: (updates: Partial<ResearchOverview>) => Promise<void>;
+  addPaper: (paper: Omit<Paper, 'id'>) => Promise<void>;
+  updatePaper: (id: string, updates: Partial<Paper>) => Promise<void>;
+  deletePaper: (id: string) => Promise<void>;
 
-  updateWritingSection: (id: string, updates: Partial<WritingSection>) => void;
+  updateWritingSection: (id: string, updates: Partial<WritingSection>) => Promise<void>;
   setSearchQuery: (query: string) => void;
   setSelectedStatusFilter: (status: string) => void;
   resetResearch: () => void;
@@ -30,80 +30,114 @@ const DEFAULT_OVERVIEW: ResearchOverview = {
   writingProgress: 0,
 };
 
-export const useResearchStore = create<ResearchState>()(
-  persist(
-    (set) => ({
-      overview: DEFAULT_OVERVIEW,
-      papers: [],
-      writingSections: [],
-      searchQuery: '',
-      selectedStatusFilter: 'all',
+export const useResearchStore = create<ResearchState>((set, get) => {
+  if (typeof window !== 'undefined') {
+    fetch('/api/research')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.research) {
+          set({
+            overview: data.research.overview || DEFAULT_OVERVIEW,
+            papers: data.research.papers || [],
+            writingSections: data.research.writingSections || [],
+          });
+        }
+      })
+      .catch((err) => console.warn('[MongoDB ResearchSync] Offline or API unreachable', err));
+  }
 
-      updateOverview: (updates) => {
-        set((state) => ({ overview: { ...state.overview, ...updates } }));
-      },
+  const syncToDB = (state: Partial<ResearchState>) => {
+    const currentState = get();
+    const payload = {
+      overview: state.overview || currentState.overview,
+      papers: state.papers || currentState.papers,
+      writingSections: state.writingSections || currentState.writingSections,
+    };
 
-      addPaper: (paperData) => {
-        const newPaper: Paper = {
-          ...paperData,
-          id: `paper-${Date.now()}`,
-        };
-        set((state) => {
-          const papers = [newPaper, ...state.papers];
-          const papersRead = papers.filter((p) => p.status === 'cited' || p.status === 'reading').length;
-          return {
-            papers,
-            overview: { ...state.overview, papersRead },
-          };
-        });
-      },
+    fetch('/api/research', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch((err) => console.warn('Failed to sync research to MongoDB API', err));
+  };
 
-      updatePaper: (id, updates) => {
-        set((state) => {
-          const papers = state.papers.map((p) => (p.id === id ? { ...p, ...updates } : p));
-          const papersRead = papers.filter((p) => p.status === 'cited' || p.status === 'reading').length;
-          return {
-            papers,
-            overview: { ...state.overview, papersRead },
-          };
-        });
-      },
+  return {
+    overview: DEFAULT_OVERVIEW,
+    papers: [],
+    writingSections: [],
+    searchQuery: '',
+    selectedStatusFilter: 'all',
 
-      deletePaper: (id) => {
-        set((state) => ({
-          papers: state.papers.filter((p) => p.id !== id),
-        }));
-      },
+    loadFromDB: async () => {
+      try {
+        const res = await fetch('/api/research');
+        const data = await res.json();
+        if (data.research) {
+          set({
+            overview: data.research.overview || DEFAULT_OVERVIEW,
+            papers: data.research.papers || [],
+            writingSections: data.research.writingSections || [],
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to load research from MongoDB API', err);
+      }
+    },
 
-      updateWritingSection: (id, updates) => {
-        set((state) => {
-          const writingSections = state.writingSections.map((w) =>
-            w.id === id ? { ...w, ...updates } : w
-          );
-          const totalTarget = writingSections.reduce((acc, curr) => acc + curr.targetWords, 0);
-          const totalCurrent = writingSections.reduce((acc, curr) => acc + curr.currentWords, 0);
-          const writingProgress = totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
+    updateOverview: async (updates) => {
+      const newOverview = { ...get().overview, ...updates };
+      set({ overview: newOverview });
+      syncToDB({ overview: newOverview });
+    },
 
-          return {
-            writingSections,
-            overview: { ...state.overview, writingProgress },
-          };
-        });
-      },
+    addPaper: async (paperData) => {
+      const newPaper: Paper = {
+        ...paperData,
+        id: `paper-${Date.now()}`,
+      };
 
-      setSearchQuery: (query) => set({ searchQuery: query }),
-      setSelectedStatusFilter: (status) => set({ selectedStatusFilter: status }),
-      resetResearch: () =>
-        set({
-          overview: DEFAULT_OVERVIEW,
-          papers: [],
-          writingSections: [],
-        }),
-    }),
-    {
-      name: 'meraj_os_research',
-      version: 1,
-      storage: createJSONStorage(() => localStorage),
-    }
-  )
-);
+      const updatedPapers = [newPaper, ...get().papers];
+      const papersRead = updatedPapers.filter((p) => p.status === 'cited' || p.status === 'reading').length;
+      const newOverview = { ...get().overview, papersRead };
+
+      set({ papers: updatedPapers, overview: newOverview });
+      syncToDB({ papers: updatedPapers, overview: newOverview });
+    },
+
+    updatePaper: async (id, updates) => {
+      const updatedPapers = get().papers.map((p) => (p.id === id ? { ...p, ...updates } : p));
+      const papersRead = updatedPapers.filter((p) => p.status === 'cited' || p.status === 'reading').length;
+      const newOverview = { ...get().overview, papersRead };
+
+      set({ papers: updatedPapers, overview: newOverview });
+      syncToDB({ papers: updatedPapers, overview: newOverview });
+    },
+
+    deletePaper: async (id) => {
+      const updatedPapers = get().papers.filter((p) => p.id !== id);
+      const papersRead = updatedPapers.filter((p) => p.status === 'cited' || p.status === 'reading').length;
+      const newOverview = { ...get().overview, papersRead };
+
+      set({ papers: updatedPapers, overview: newOverview });
+      syncToDB({ papers: updatedPapers, overview: newOverview });
+    },
+
+    updateWritingSection: async (id, updates) => {
+      const updatedSections = get().writingSections.map((s) =>
+        s.id === id ? { ...s, ...updates } : s
+      );
+
+      const totalTarget = updatedSections.reduce((acc, s) => acc + s.targetWords, 0);
+      const totalCurrent = updatedSections.reduce((acc, s) => acc + s.currentWords, 0);
+      const writingProgress = totalTarget > 0 ? Math.min(100, Math.round((totalCurrent / totalTarget) * 100)) : 0;
+      const newOverview = { ...get().overview, writingProgress };
+
+      set({ writingSections: updatedSections, overview: newOverview });
+      syncToDB({ writingSections: updatedSections, overview: newOverview });
+    },
+
+    setSearchQuery: (query) => set({ searchQuery: query }),
+    setSelectedStatusFilter: (status) => set({ selectedStatusFilter: status }),
+    resetResearch: () => set({ overview: DEFAULT_OVERVIEW, papers: [], writingSections: [] }),
+  };
+});

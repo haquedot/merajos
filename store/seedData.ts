@@ -56,6 +56,8 @@ export const INITIAL_SETTINGS: UserSettings = {
   sidebarCollapsed: false,
   pomodoroTime: 25,
   soundEnabled: true,
+  emailNotificationsEnabled: true,
+  notificationEmail: '',
 };
 export const INITIAL_EVENTS: CalendarEvent[] = [];
 

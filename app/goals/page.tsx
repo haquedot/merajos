@@ -108,7 +108,7 @@ export default function GoalsPage() {
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-rose-500/20"
+              className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
               New Goal
@@ -274,7 +274,7 @@ export default function GoalsPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md"
+              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
               Save Goal
             </button>

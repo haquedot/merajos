@@ -82,13 +82,21 @@ export const RightProductivityPanel: React.FC<RightPanelProps> = ({ isOpen, onCl
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.aside
-          initial={{ x: '100%', opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: '100%', opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-          className="fixed top-16 right-0 bottom-0 z-30 w-80 bg-white dark:bg-gray-900 border-l border-gray-100 dark:border-gray-800 shadow-xl overflow-y-auto flex flex-col p-4 space-y-6"
-        >
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40"
+          />
+          <motion.aside
+            initial={{ x: '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '100%', opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+            className="fixed top-0 sm:top-16 right-0 bottom-0 z-50 w-full sm:w-80 bg-white dark:bg-[#172033] border-l border-[#E2E8F0] dark:border-[#243244] shadow-xl overflow-y-auto flex flex-col p-4 space-y-6"
+          >
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-2">
@@ -124,7 +132,7 @@ export const RightProductivityPanel: React.FC<RightPanelProps> = ({ isOpen, onCl
                 className={`px-4 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-white shadow-xs transition-transform active:scale-95 ${
                   isRunning
                     ? 'bg-amber-500 hover:bg-amber-600'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'btn-primary'
                 }`}
               >
                 {isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
@@ -238,6 +246,7 @@ export const RightProductivityPanel: React.FC<RightPanelProps> = ({ isOpen, onCl
             />
           </div>
         </motion.aside>
+      </>
       )}
     </AnimatePresence>
   );

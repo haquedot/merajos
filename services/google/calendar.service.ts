@@ -33,33 +33,73 @@ export class GoogleCalendarService {
     if (!headers) return [];
 
     try {
-      const timeMin = new Date(Date.now() - 30 * 86400000).toISOString();
-      const res = await fetch(`${BASE_URL}/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${timeMin}&singleEvents=true`, { headers });
-      if (!res.ok) return [];
-      const data = await res.json();
+      // 1 Year in the past to 1 Year in the future
+      const timeMin = new Date(Date.now() - 365 * 86400000).toISOString();
+      const timeMax = new Date(Date.now() + 365 * 86400000).toISOString();
+      
+      let allItems: any[] = [];
+      let pageToken: string | undefined = undefined;
 
-      return (data.items || []).map((item: any) => this.mapGoogleEventToMeraj(item));
+      do {
+        let url = `${BASE_URL}/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&maxResults=2500`;
+        if (pageToken) {
+          url += `&pageToken=${encodeURIComponent(pageToken)}`;
+        }
+
+        const res = await fetch(url, { headers });
+        if (!res.ok) break;
+        
+        const data = await res.json();
+        if (data.items) {
+          allItems.push(...data.items);
+        }
+        pageToken = data.nextPageToken;
+      } while (pageToken);
+
+      return allItems.map((item: any) => this.mapGoogleEventToMeraj(item, calendarId));
     } catch (err) {
-      console.warn('[CalendarService] Error fetching events:', err);
+      console.warn(`[CalendarService] Error fetching events for ${calendarId}:`, err);
       return [];
     }
+  }
+
+  public async fetchAllCalendarsEvents(): Promise<CalendarEvent[]> {
+    const calendars = await this.fetchCalendars();
+    if (!calendars || calendars.length === 0) {
+      return this.fetchEvents('primary');
+    }
+
+    const allEventsPromises = calendars.map((cal) => this.fetchEvents(cal.id));
+    const eventsArrays = await Promise.all(allEventsPromises);
+    
+    // Flatten and deduplicate by event ID
+    const eventMap = new Map<string, CalendarEvent>();
+    eventsArrays.flat().forEach((evt) => {
+      eventMap.set(evt.id, evt);
+    });
+
+    return Array.from(eventMap.values());
   }
 
   public async createEvent(event: CalendarEvent, calendarId: string = 'primary'): Promise<CalendarEvent | null> {
     const headers = await this.getHeaders();
     if (!headers) return null;
 
-    const body = {
+    const isAllDay = !event.startTime || event.startTime === 'All Day';
+    
+    const body: any = {
       summary: event.title,
       description: event.description || '',
       location: event.location || '',
-      start: {
-        dateTime: `${event.startDate}T${event.startTime || '09:00'}:00Z`,
-      },
-      end: {
-        dateTime: `${event.endDate}T${event.endTime || '10:00'}:00Z`,
-      },
     };
+
+    if (isAllDay) {
+      body.start = { date: event.startDate };
+      body.end = { date: event.endDate || event.startDate };
+    } else {
+      body.start = { dateTime: `${event.startDate}T${event.startTime}:00Z` };
+      body.end = { dateTime: `${event.endDate || event.startDate}T${event.endTime || '23:59'}:00Z` };
+    }
 
     try {
       const res = await fetch(`${BASE_URL}/calendars/${encodeURIComponent(calendarId)}/events`, {
@@ -70,7 +110,7 @@ export class GoogleCalendarService {
 
       if (!res.ok) return null;
       const data = await res.json();
-      return this.mapGoogleEventToMeraj(data);
+      return this.mapGoogleEventToMeraj(data, calendarId);
     } catch (err) {
       console.warn('[CalendarService] Error creating event:', err);
       return null;
@@ -82,16 +122,19 @@ export class GoogleCalendarService {
     const headers = await this.getHeaders();
     if (!headers) return false;
 
-    const body = {
+    const isAllDay = !event.startTime || event.startTime === 'All Day';
+    const body: any = {
       summary: event.title,
       description: event.description || '',
-      start: {
-        dateTime: `${event.startDate}T${event.startTime || '09:00'}:00Z`,
-      },
-      end: {
-        dateTime: `${event.endDate}T${event.endTime || '10:00'}:00Z`,
-      },
     };
+
+    if (isAllDay) {
+      body.start = { date: event.startDate };
+      body.end = { date: event.endDate || event.startDate };
+    } else {
+      body.start = { dateTime: `${event.startDate}T${event.startTime}:00Z` };
+      body.end = { dateTime: `${event.endDate || event.startDate}T${event.endTime || '23:59'}:00Z` };
+    }
 
     try {
       const res = await fetch(`${BASE_URL}/calendars/${encodeURIComponent(calendarId)}/events/${event.googleEventId}`, {
@@ -122,23 +165,31 @@ export class GoogleCalendarService {
     }
   }
 
-  private mapGoogleEventToMeraj(item: any): CalendarEvent {
+  private mapGoogleEventToMeraj(item: any, calendarId: string): CalendarEvent {
+    const isAllDay = !item.start?.dateTime;
     const startStr = item.start?.dateTime || item.start?.date || new Date().toISOString();
     const endStr = item.end?.dateTime || item.end?.date || new Date().toISOString();
 
     const startDate = startStr.split('T')[0];
     const endDate = endStr.split('T')[0];
-    const startTime = startStr.includes('T') ? startStr.split('T')[1].substring(0, 5) : '09:00';
-    const endTime = endStr.includes('T') ? endStr.split('T')[1].substring(0, 5) : '10:00';
+    const startTime = isAllDay ? 'All Day' : (startStr.includes('T') ? startStr.split('T')[1].substring(0, 5) : '09:00');
+    const endTime = isAllDay ? '' : (endStr.includes('T') ? endStr.split('T')[1].substring(0, 5) : '10:00');
 
     let category: Category = 'Personal';
     if (item.summary?.toLowerCase().includes('research') || item.summary?.toLowerCase().includes('thesis')) {
       category = 'Research';
-    } else if (item.summary?.toLowerCase().includes('client') || item.summary?.toLowerCase().includes('sanab')) {
+    } else if (item.summary?.toLowerCase().includes('client') || item.summary?.toLowerCase().includes('sanab') || item.summary?.toLowerCase().includes('meeting')) {
       category = 'Client';
-    } else if (item.summary?.toLowerCase().includes('interview') || item.summary?.toLowerCase().includes('dsa')) {
+    } else if (item.summary?.toLowerCase().includes('interview') || item.summary?.toLowerCase().includes('dsa') || item.summary?.toLowerCase().includes('work')) {
       category = 'Career';
     }
+
+    const colorMap: Record<string, string> = {
+      Client: '#8b5cf6',
+      Research: '#3b82f6',
+      Career: '#10b981',
+      Personal: '#f59e0b',
+    };
 
     return {
       id: item.id,
@@ -149,7 +200,7 @@ export class GoogleCalendarService {
       startTime,
       endTime,
       category,
-      color: item.colorId ? '#3b82f6' : '#8b5cf6',
+      color: colorMap[category] || '#3b82f6',
       description: item.description || '',
       location: item.location || '',
       lastSyncedAt: new Date().toISOString(),

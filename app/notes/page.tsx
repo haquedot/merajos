@@ -65,7 +65,7 @@ export default function NotesPage() {
 
           <button
             onClick={handleCreateNote}
-            className="p-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all shadow-xs"
+            className="btn-primary p-2 rounded-xl transition-all shadow-xs"
             title="Create New Note"
           >
             <Plus className="w-4 h-4" />
