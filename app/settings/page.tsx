@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Settings,
@@ -23,6 +23,8 @@ import {
   Mail,
   MailCheck,
   MailX,
+  LayoutGrid,
+  Sliders,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useTaskStore } from '../../store/useTaskStore';
@@ -37,12 +39,28 @@ import { useWeeklyStore } from '../../store/useWeeklyStore';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Logo } from '../../components/common/Logo';
+import { OnboardingModal } from '../../components/onboarding/OnboardingModal';
 import { BRAND } from '../../lib/branding';
+import { ModuleKey } from '../../types';
+
+const MODULE_OPTIONS: { key: ModuleKey; label: string; description: string; alwaysOn?: boolean }[] = [
+  { key: 'tasks',          label: 'Tasks',            description: 'Daily task management & priorities', alwaysOn: true },
+  { key: 'calendar',       label: 'Calendar',         description: 'Events, meetings & scheduling',      alwaysOn: true },
+  { key: 'habits',         label: 'Habits',           description: 'Daily habits & streak tracking' },
+  { key: 'goals',          label: 'Goals',            description: 'Long & short term goals' },
+  { key: 'notes',          label: 'Notes',            description: 'Notes, ideas & brain dump' },
+  { key: 'weekly_planner', label: 'Weekly Planner',   description: 'Week planning & reviews' },
+  { key: 'analytics',      label: 'Analytics',        description: 'Productivity charts & insights' },
+  { key: 'clients',        label: 'Client Projects',  description: 'Manage clients, bugs & features' },
+  { key: 'research',       label: 'Research',         description: 'Papers, thesis & writing tracker' },
+  { key: 'career',         label: 'Career & DSA',     description: 'Job applications, interviews & DSA' },
+];
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettingsStore();
   const { theme, setTheme } = useTheme();
   const { session, syncState, syncMessage, signIn, signOut, syncNow } = useGoogleAuth();
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   React.useEffect(() => {
     if (session?.email && settings.notificationEmail !== session.email) {
@@ -222,6 +240,90 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {/* === Workspace Personalisation === */}
+      <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+              <LayoutGrid className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold text-gray-900 dark:text-white">Your Workspace</h2>
+              <p className="text-xs text-gray-500">Toggle which sections appear in your sidebar</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            Re-run Setup
+          </button>
+        </div>
+
+        {settings.onboarding?.displayName && (
+          <div className="px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 text-xs text-blue-700 dark:text-blue-300 font-medium">
+            ✦ Workspace configured for <strong>{settings.onboarding.displayName}</strong> · Role: <strong className="capitalize">{settings.onboarding.role}</strong>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {MODULE_OPTIONS.map((mod) => {
+            const enabled = mod.alwaysOn || (settings.onboarding?.enabledModules ?? []).includes(mod.key);
+            const handleToggle = () => {
+              if (mod.alwaysOn) return;
+              const current: ModuleKey[] = settings.onboarding?.enabledModules ?? [];
+              const next: ModuleKey[] = enabled
+                ? current.filter((m) => m !== mod.key)
+                : [...current, mod.key];
+              updateSettings({
+                onboarding: {
+                  ...(settings.onboarding ?? {
+                    displayName: '',
+                    role: 'custom',
+                    enabledModules: [],
+                    workStartTime: '09:00',
+                    workEndTime: '18:00',
+                    primaryGoal: '',
+                    onboardingCompleted: true,
+                  }),
+                  enabledModules: next,
+                },
+              });
+            };
+            return (
+              <button
+                key={mod.key}
+                onClick={handleToggle}
+                disabled={mod.alwaysOn}
+                className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
+                  enabled
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40'
+                    : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
+                } ${mod.alwaysOn ? 'cursor-default' : 'hover:shadow-sm'}`}
+              >
+                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
+                  enabled ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
+                }`}>
+                  {enabled && <Check className="w-3 h-3 text-white" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className={`text-xs font-bold ${
+                    enabled ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                  }`}>
+                    {mod.label}
+                    {mod.alwaysOn && (
+                      <span className="ml-1.5 text-[9px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full">Always on</span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">{mod.description}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Daily Email Performance Log Switch Section */}
       <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
@@ -367,6 +469,11 @@ export default function SettingsPage() {
           Orbit is an intelligent productivity platform designed to help professionals, students, developers, researchers, and creators organize their work, stay focused, and make consistent progress toward their goals.
         </p>
       </div>
+
+      {/* Re-run Setup modal trigger from Settings */}
+      {showOnboarding && (
+        <OnboardingModal onComplete={() => setShowOnboarding(false)} />
+      )}
     </div>
   );
 }

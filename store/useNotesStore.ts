@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Note } from '../types';
+import { isUserAuthenticated } from '../lib/authCheck';
 
 interface NotesState {
   notes: Note[];
@@ -20,14 +21,17 @@ interface NotesState {
 
 export const useNotesStore = create<NotesState>((set, get) => {
   if (typeof window !== 'undefined') {
-    fetch('/api/notes')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.notes) {
-          set({ notes: data.notes });
-        }
-      })
-      .catch((err) => console.warn('[MongoDB NoteSync] Offline or API unreachable', err));
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return;
+      fetch('/api/notes')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.notes) {
+            set({ notes: data.notes });
+          }
+        })
+        .catch((err) => console.warn('[MongoDB NoteSync] Offline or API unreachable', err));
+    });
   }
 
   return {
@@ -37,6 +41,8 @@ export const useNotesStore = create<NotesState>((set, get) => {
     selectedCategory: 'all',
 
     loadFromDB: async () => {
+      const authenticated = await isUserAuthenticated();
+      if (!authenticated) return;
       try {
         const res = await fetch('/api/notes');
         const data = await res.json();

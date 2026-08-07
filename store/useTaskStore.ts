@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Task, TaskStatus, Priority, Category } from '../types';
 import { db } from '../database/dexie';
 import { syncService } from '../services/google/sync.service';
+import { isUserAuthenticated } from '../lib/authCheck';
 
 interface TaskState {
   tasks: Task[];
@@ -26,22 +27,24 @@ interface TaskState {
 }
 
 export const useTaskStore = create<TaskState>((set, get) => {
-  // Load real data from Dexie DB & MongoDB API
+  // Load real data from Dexie DB & MongoDB API (if authenticated)
   if (typeof window !== 'undefined') {
     db.tasks.toArray().then((items) => {
       set({ tasks: items || [] });
     });
 
-    // Sync with MongoDB API
-    fetch('/api/tasks')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.tasks && data.tasks.length > 0) {
-          set({ tasks: data.tasks });
-          db.tasks.bulkPut(data.tasks);
-        }
-      })
-      .catch((err) => console.warn('[MongoDB TaskSync] Offline or API unreachable', err));
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return; // Guest mode: Dexie only
+      fetch('/api/tasks')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.tasks && data.tasks.length > 0) {
+            set({ tasks: data.tasks });
+            db.tasks.bulkPut(data.tasks);
+          }
+        })
+        .catch((err) => console.warn('[MongoDB TaskSync] Offline or API unreachable', err));
+    });
   }
 
   return {

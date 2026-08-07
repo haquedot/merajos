@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { WeeklyPlan } from '../types';
+import { isUserAuthenticated } from '../lib/authCheck';
 
 const DEFAULT_WEEKLY_PLAN: WeeklyPlan = {
   weekId: 'Current-Week',
@@ -29,20 +30,25 @@ interface WeeklyState {
 
 export const useWeeklyStore = create<WeeklyState>((set, get) => {
   if (typeof window !== 'undefined') {
-    fetch('/api/weekly')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.plan) {
-          set({ plan: data.plan });
-        }
-      })
-      .catch((err) => console.warn('[MongoDB WeeklySync] Offline or API unreachable', err));
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return;
+      fetch('/api/weekly')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.plan) {
+            set({ plan: data.plan });
+          }
+        })
+        .catch((err) => console.warn('[MongoDB WeeklySync] Offline or API unreachable', err));
+    });
   }
 
   return {
     plan: DEFAULT_WEEKLY_PLAN,
 
     loadFromDB: async () => {
+      const authenticated = await isUserAuthenticated();
+      if (!authenticated) return;
       try {
         const res = await fetch('/api/weekly');
         const data = await res.json();

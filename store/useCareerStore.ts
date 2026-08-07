@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { JobApplication, InterviewTopic, DSATopic } from '../types';
+import { isUserAuthenticated } from '../lib/authCheck';
 
 interface CareerState {
   jobs: JobApplication[];
@@ -26,21 +27,26 @@ interface CareerState {
 
 export const useCareerStore = create<CareerState>((set, get) => {
   if (typeof window !== 'undefined') {
-    fetch('/api/career')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.career) {
-          set({
-            jobs: data.career.jobs || [],
-            interviewTopics: data.career.interviewTopics || [],
-            dsaTopics: data.career.dsaTopics || [],
-          });
-        }
-      })
-      .catch((err) => console.warn('[MongoDB CareerSync] Offline or API unreachable', err));
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return;
+      fetch('/api/career')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.career) {
+            set({
+              jobs: data.career.jobs || [],
+              interviewTopics: data.career.interviewTopics || [],
+              dsaTopics: data.career.dsaTopics || [],
+            });
+          }
+        })
+        .catch((err) => console.warn('[MongoDB CareerSync] Offline or API unreachable', err));
+    });
   }
 
-  const syncToDB = (state: Partial<CareerState>) => {
+  const syncToDB = async (state: Partial<CareerState>) => {
+    const authenticated = await isUserAuthenticated();
+    if (!authenticated) return;
     const currentState = get();
     const payload = {
       jobs: state.jobs || currentState.jobs,
@@ -63,6 +69,8 @@ export const useCareerStore = create<CareerState>((set, get) => {
     dsaSearchQuery: '',
 
     loadFromDB: async () => {
+      const authenticated = await isUserAuthenticated();
+      if (!authenticated) return;
       try {
         const res = await fetch('/api/career');
         const data = await res.json();
