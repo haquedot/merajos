@@ -64,8 +64,8 @@ export default function CareerPage() {
       role: role.trim(),
       appliedDate: new Date().toISOString().split('T')[0],
       status,
-      salary: salary.trim() || '$150,000+',
-      location: location.trim() || 'Remote',
+      salary: salary.trim(),
+      location: location.trim(),
       notes: notes.trim(),
     });
 

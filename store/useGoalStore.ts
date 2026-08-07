@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Goal, GoalTier, Milestone } from '../types';
+import { isUserAuthenticated } from '../lib/authCheck';
 
 interface GoalState {
   goals: Goal[];
@@ -17,14 +18,17 @@ interface GoalState {
 
 export const useGoalStore = create<GoalState>((set, get) => {
   if (typeof window !== 'undefined') {
-    fetch('/api/goals')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.goals) {
-          set({ goals: data.goals });
-        }
-      })
-      .catch((err) => console.warn('[MongoDB GoalSync] Offline or API unreachable', err));
+    isUserAuthenticated().then((authenticated) => {
+      if (!authenticated) return;
+      fetch('/api/goals')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.goals) {
+            set({ goals: data.goals });
+          }
+        })
+        .catch((err) => console.warn('[MongoDB GoalSync] Offline or API unreachable', err));
+    });
   }
 
   return {
@@ -32,6 +36,8 @@ export const useGoalStore = create<GoalState>((set, get) => {
     selectedTierFilter: 'all',
 
     loadFromDB: async () => {
+      const authenticated = await isUserAuthenticated();
+      if (!authenticated) return;
       try {
         const res = await fetch('/api/goals');
         const data = await res.json();
