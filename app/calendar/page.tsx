@@ -46,6 +46,108 @@ import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 
 import { PageHeader } from '../../components/ui/PageHeader';
 
+const HOUR_HEIGHT = 60; // 60px per hour = 1px per minute
+
+interface PositionedEvent {
+  event: CalendarEvent;
+  top: number;
+  height: number;
+  colIndex: number;
+  totalCols: number;
+}
+
+function getPositionedDayEvents(dayEvents: CalendarEvent[]): PositionedEvent[] {
+  const parsed = dayEvents.map((evt) => {
+    let startMins = 9 * 60;
+    if (evt.startTime) {
+      const parts = evt.startTime.split(':').map(Number);
+      if (!isNaN(parts[0])) {
+        startMins = parts[0] * 60 + (parts[1] || 0);
+      }
+    }
+
+    let endMins = startMins + 60;
+    if (evt.endTime) {
+      const parts = evt.endTime.split(':').map(Number);
+      if (!isNaN(parts[0])) {
+        const computedEnd = parts[0] * 60 + (parts[1] || 0);
+        if (computedEnd > startMins) {
+          endMins = computedEnd;
+        }
+      }
+    }
+
+    const top = (startMins / 60) * HOUR_HEIGHT;
+    const duration = endMins - startMins;
+    const height = Math.max((duration / 60) * HOUR_HEIGHT, 28);
+
+    return { evt, startMins, endMins, top, height };
+  });
+
+  parsed.sort((a, b) => a.startMins - b.startMins || (b.endMins - b.startMins) - (a.endMins - a.startMins));
+
+  const results: PositionedEvent[] = [];
+  let currentGroup: typeof parsed = [];
+  let groupEnd = 0;
+
+  const processGroup = (group: typeof parsed) => {
+    if (group.length === 0) return;
+    const columns: number[] = [];
+
+    group.forEach((item) => {
+      let placed = false;
+      for (let c = 0; c < columns.length; c++) {
+        if (columns[c] <= item.startMins) {
+          columns[c] = item.endMins;
+          results.push({
+            event: item.evt,
+            top: item.top,
+            height: item.height,
+            colIndex: c,
+            totalCols: 1,
+          });
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        columns.push(item.endMins);
+        results.push({
+          event: item.evt,
+          top: item.top,
+          height: item.height,
+          colIndex: columns.length - 1,
+          totalCols: 1,
+        });
+      }
+    });
+
+    const maxCols = columns.length;
+    results.forEach((res) => {
+      if (group.some((g) => g.evt.id === res.event.id)) {
+        res.totalCols = maxCols;
+      }
+    });
+  };
+
+  parsed.forEach((item) => {
+    if (currentGroup.length === 0) {
+      currentGroup.push(item);
+      groupEnd = item.endMins;
+    } else if (item.startMins < groupEnd) {
+      currentGroup.push(item);
+      if (item.endMins > groupEnd) groupEnd = item.endMins;
+    } else {
+      processGroup(currentGroup);
+      currentGroup = [item];
+      groupEnd = item.endMins;
+    }
+  });
+  processGroup(currentGroup);
+
+  return results;
+}
+
 export default function CalendarPage() {
   const { events, selectedDate, viewMode, addEvent, updateEvent, deleteEvent, setSelectedDate, setViewMode } = useCalendarStore();
   const { session, syncState, syncNow } = useGoogleAuth();
@@ -199,16 +301,29 @@ export default function CalendarPage() {
     }
   };
 
+  const timelineScrollRef = React.useRef<HTMLDivElement>(null);
+
   // Category filter
   const filteredEvents = events.filter((e) => {
     if (activeCategoryFilter === 'all') return true;
     return e.category === activeCategoryFilter;
   });
 
-  const timeSlots = [
-    '08:00', '09:00', '10:00', '11:00', '12:00', '13:00',
-    '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00',
-  ];
+  // 24 Hour Slots (12:00 AM to 11:00 PM)
+  const timeSlots = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+
+  // Auto-scroll timeline to current time or 8am on mount / view change
+  useEffect(() => {
+    if (viewMode === 'day' && timelineScrollRef.current) {
+      const now = new Date();
+      const isSelectedToday = isToday(currDate);
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const currentTimeTop = (currentMinutes / 60) * 60;
+      const targetScroll = isSelectedToday ? Math.max(0, currentTimeTop - 150) : 8 * 60;
+
+      timelineScrollRef.current.scrollTop = targetScroll;
+    }
+  }, [viewMode, selectedDate]);
 
   // Helper for resilient date string matching
   const getEventDateStr = (sDate?: string) => {
@@ -516,51 +631,131 @@ export default function CalendarPage() {
             </div>
           )}
 
-          {/* Day Hourly View */}
-          {viewMode === 'day' && (
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#111622] border border-gray-200 dark:border-gray-800 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="text-base font-extrabold text-gray-900 dark:text-white">
-                  {format(currDate, 'EEEE, MMMM d, yyyy')}
-                </h3>
-                <Badge variant="purple">{filteredEvents.filter((e) => getEventDateStr(e.startDate) === selectedDate).length} Events Today</Badge>
-              </div>
+          {/* Day Hourly View (24-Hour Continuous Proportional Timeline) */}
+          {viewMode === 'day' && (() => {
+            const dayEvents = filteredEvents.filter((e) => getEventDateStr(e.startDate) === selectedDate);
+            const positionedEvents = getPositionedDayEvents(dayEvents);
+            const now = new Date();
+            const isSelectedToday = isToday(currDate);
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const currentTimeTop = (currentMinutes / 60) * HOUR_HEIGHT;
 
-              <div className="space-y-2">
-                {timeSlots.map((slot) => {
-                  const slotEvents = filteredEvents.filter(
-                    (e) => getEventDateStr(e.startDate) === selectedDate && e.startTime?.startsWith(slot.substring(0, 2))
-                  );
+            return (
+              <div className="p-4 sm:p-6 rounded-3xl bg-white dark:bg-[#111622] border border-gray-200 dark:border-gray-800 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-800">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-extrabold text-gray-900 dark:text-white">
+                      {format(currDate, 'EEEE, MMMM d, yyyy')}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      24-Hour Schedule (12:00 AM – 11:59 PM)
+                    </p>
+                  </div>
+                  <Badge variant="purple">{dayEvents.length} Events Today</Badge>
+                </div>
 
-                  return (
-                    <div
-                      key={slot}
-                      onClick={() => {
-                        setStartTime(slot);
-                        openCreateModalForDate(selectedDate);
-                      }}
-                      className="flex items-start gap-4 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800/80 hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer transition-colors"
-                    >
-                      <span className="text-xs font-bold font-mono text-gray-400 w-12 pt-1">{slot}</span>
-                      <div className="flex-1 min-h-[36px] flex flex-wrap gap-2">
-                        {slotEvents.map((evt) => (
+                <div
+                  ref={timelineScrollRef}
+                  className="relative overflow-y-auto max-h-[680px] border border-gray-200 dark:border-gray-800/80 rounded-2xl bg-gray-50/30 dark:bg-gray-900/30 touch-scroll"
+                >
+                  <div className="relative min-w-[300px]" style={{ height: `${24 * HOUR_HEIGHT}px` }}>
+                    {/* Hour Grid Lines & Labels (00:00 to 23:00) */}
+                    {timeSlots.map((slot, hourIndex) => {
+                      const topPos = hourIndex * HOUR_HEIGHT;
+                      return (
+                        <React.Fragment key={slot}>
+                          <div
+                            className="absolute left-0 right-0 flex items-center group cursor-pointer border-t border-gray-200/80 dark:border-gray-800/80 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 transition-colors"
+                            style={{ top: `${topPos}px`, height: `${HOUR_HEIGHT}px` }}
+                            onClick={() => {
+                              setStartTime(slot);
+                              setEndTime(`${String((hourIndex + 1) % 24).padStart(2, '0')}:00`);
+                              openCreateModalForDate(selectedDate);
+                            }}
+                          >
+                            <span className="w-14 shrink-0 text-[11px] font-bold font-mono text-gray-400 pl-3 select-none">
+                              {slot}
+                            </span>
+                            <div className="flex-1 border-t border-gray-200/60 dark:border-gray-800/60 h-0" />
+                          </div>
+
+                          <div
+                            className="absolute left-14 right-0 border-t border-dashed border-gray-200/40 dark:border-gray-800/40 pointer-events-none"
+                            style={{ top: `${topPos + 30}px` }}
+                          />
+                        </React.Fragment>
+                      );
+                    })}
+
+                    {/* Current Time Indicator Red Line */}
+                    {isSelectedToday && (
+                      <div
+                        className="absolute left-0 right-0 z-30 flex items-center pointer-events-none"
+                        style={{ top: `${currentTimeTop}px` }}
+                      >
+                        <div className="w-14 flex items-center justify-end pr-1">
+                          <span className="text-[9px] font-extrabold font-mono text-rose-500 bg-rose-50 dark:bg-rose-950 px-1 py-0.5 rounded-xs border border-rose-200 dark:border-rose-900">
+                            {format(now, 'HH:mm')}
+                          </span>
+                        </div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-rose-500 -ml-1.25 shrink-0 shadow-xs animate-pulse" />
+                        <div className="flex-1 border-t-2 border-rose-500 shadow-xs" />
+                      </div>
+                    )}
+
+                    {/* Positioned Events Blocks */}
+                    <div className="absolute left-14 right-2 top-0 bottom-0 pointer-events-none">
+                      {positionedEvents.map(({ event: evt, top, height, colIndex, totalCols }) => {
+                        const widthPct = 100 / totalCols;
+                        const leftPct = widthPct * colIndex;
+
+                        return (
                           <div
                             key={evt.id}
                             onClick={(e) => handleEventClick(evt, e)}
-                            className="p-2 rounded-xl text-white text-xs font-bold shadow-xs flex items-center justify-between min-w-[200px] cursor-pointer hover:brightness-110 transition-all"
-                            style={{ backgroundColor: evt.color || '#3b82f6' }}
+                            className="absolute p-2 rounded-xl text-white shadow-sm border-l-4 border-white/40 cursor-pointer pointer-events-auto transition-all hover:scale-[1.01] hover:z-20 overflow-hidden flex flex-col justify-between"
+                            style={{
+                              top: `${top}px`,
+                              height: `${height}px`,
+                              left: `calc(${leftPct}% + 4px)`,
+                              width: `calc(${widthPct}% - 8px)`,
+                              backgroundColor: evt.color || '#3b82f6',
+                            }}
+                            title={`${evt.title} (${evt.startTime || ''} - ${evt.endTime || ''})`}
                           >
-                            <span>{evt.title}</span>
-                            <span className="text-[10px] opacity-90">{evt.startTime} {evt.endTime ? `- ${evt.endTime}` : ''}</span>
+                            <div className="min-w-0">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-extrabold text-xs truncate leading-tight">
+                                  {evt.title}
+                                </span>
+                                {evt.category && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-black/20 shrink-0 hidden sm:inline-block">
+                                    {evt.category}
+                                  </span>
+                                )}
+                              </div>
+                              {evt.startTime && (
+                                <span className="text-[10px] opacity-90 font-mono font-semibold block truncate mt-0.5">
+                                  {evt.startTime} {evt.endTime ? `– ${evt.endTime}` : ''}
+                                </span>
+                              )}
+                            </div>
+
+                            {height >= 50 && evt.location && (
+                              <div className="text-[10px] opacity-85 truncate flex items-center gap-1 mt-1">
+                                <MapPin className="w-3 h-3 shrink-0" />
+                                <span className="truncate">{evt.location}</span>
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Agenda View */}
           {viewMode === 'agenda' && (

@@ -142,24 +142,49 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
 
       {/* Quick Action Controls in Sidebar (Mobile & Desktop) */}
       <div className="p-3 border-t border-[#E2E8F0] dark:border-[#243244] space-y-1.5 bg-gray-50/50 dark:bg-gray-900/40">
-        {/* Theme Toggle */}
+        {/* Modern Theme Switch Toggle */}
         <button
           onClick={toggleTheme}
-          className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800 flex items-center justify-between transition-colors"
+          className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800/80 flex items-center justify-between transition-colors group cursor-pointer"
           title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
             {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400 shrink-0" />
+              <Moon className="w-4 h-4 text-indigo-400 shrink-0" />
             ) : (
-              <Moon className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
+              <Sun className="w-4 h-4 text-amber-500 shrink-0" />
             )}
-            {!collapsed && <span className="truncate">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+            {!collapsed && (
+              <span className="truncate">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+            )}
           </div>
-          {!collapsed && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 capitalize">
-              {theme}
-            </span>
+
+          {!collapsed ? (
+            <div
+              className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0 relative flex items-center ${
+                theme === 'dark'
+                  ? 'bg-indigo-600 dark:bg-indigo-600'
+                  : 'bg-gray-300 dark:bg-gray-700'
+              }`}
+            >
+              <div
+                className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out flex items-center justify-center ${
+                  theme === 'dark' ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              >
+                {theme === 'dark' ? (
+                  <Moon className="w-2.5 h-2.5 text-indigo-600" />
+                ) : (
+                  <Sun className="w-2.5 h-2.5 text-amber-500" />
+                )}
+              </div>
+            </div>
+          ) : (
+            <div
+              className={`w-2 h-2 rounded-full transition-all shrink-0 ${
+                theme === 'dark' ? 'bg-indigo-400' : 'bg-amber-400'
+              }`}
+            />
           )}
         </button>
 
