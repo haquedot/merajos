@@ -44,6 +44,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 
+import { PageHeader } from '../../components/ui/PageHeader';
+
 export default function CalendarPage() {
   const { events, selectedDate, viewMode, addEvent, updateEvent, deleteEvent, setSelectedDate, setViewMode } = useCalendarStore();
   const { session, syncState, syncNow } = useGoogleAuth();
@@ -217,40 +219,41 @@ export default function CalendarPage() {
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-[#111622] border border-gray-200 dark:border-gray-800 space-y-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-blue-600 text-white font-bold">
-              <CalendarIcon className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
-                Calendar & Events
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
-                  {filteredEvents.length} Total
-                </span>
-              </h1>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-0.5">
-                Google Calendar Sync & Productivity Schedule
-              </p>
-            </div>
-          </div>
-
-          {/* Nav Controls */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Sync Button */}
+      <PageHeader
+        icon={CalendarIcon}
+        iconBgColor="bg-blue-600 text-white"
+        title="Calendar & Events"
+        badgeText={`${filteredEvents.length} Total`}
+        badgeVariant="blue"
+        subtitle="Google Calendar Sync & Productivity Schedule"
+        actions={
+          <>
             {session && (
               <button
                 onClick={syncNow}
                 disabled={syncState === 'syncing'}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center gap-1.5 transition-all"
+                className="px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center gap-1.5 transition-all shrink-0"
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-blue-500 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
-                <span>{syncState === 'syncing' ? 'Syncing...' : 'Sync Calendar'}</span>
+                <span>{syncState === 'syncing' ? 'Syncing...' : 'Sync'}</span>
               </button>
             )}
 
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => openCreateModalForDate(selectedDate)}
+              className="px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5 shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Event</span>
+            </button>
+          </>
+        }
+      >
+        {/* Date Navigation & View Mode Switcher Toolbar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-4 pt-2 border-t border-gray-100 dark:border-gray-800/80">
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            {/* Prev / Today / Next controls */}
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700 shrink-0">
               <button
                 onClick={handlePrev}
                 className="p-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 transition-colors"
@@ -260,7 +263,7 @@ export default function CalendarPage() {
               </button>
               <button
                 onClick={handleToday}
-                className="px-3 py-1 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="px-2.5 sm:px-3 py-1 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 Today
               </button>
@@ -273,40 +276,68 @@ export default function CalendarPage() {
               </button>
             </div>
 
-            {/* View Switcher */}
-            <div className="flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-xl text-xs font-bold border border-gray-200 dark:border-gray-700">
-              {(['day', 'week', 'month', 'agenda'] as const).map((m) => (
+            <span className="text-xs font-extrabold text-gray-900 dark:text-white sm:hidden truncate">
+              {format(currDate, viewMode === 'month' ? 'MMMM yyyy' : 'MMM d, yyyy')}
+            </span>
+          </div>
+
+          {/* View Mode Switcher */}
+          <div className="flex items-center justify-around sm:justify-end p-1 bg-gray-100 dark:bg-gray-800 rounded-xl text-xs font-bold border border-gray-200 dark:border-gray-700 w-full sm:w-auto">
+            {(['day', 'week', 'month', 'agenda'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setViewMode(m)}
+                className={`flex-1 sm:flex-initial px-3 sm:px-3.5 py-1.5 rounded-lg capitalize transition-all text-xs text-center ${
+                  viewMode === m
+                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+      </PageHeader>
+
+      {/* Main Google Calendar Layout (Sidebar + Main Calendar Grid) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+        {/* Left Sidebar: Mini Month Picker & Category Filters */}
+        <div className="lg:col-span-3 space-y-4 sm:space-y-6">
+          {/* Categories & Calendars Filter (Horizontal Scroll on Mobile, Vertical Stack on Desktop) */}
+          <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#111622] border border-gray-200 dark:border-gray-800 space-y-2.5 sm:space-y-3">
+            <h3 className="font-extrabold text-[11px] sm:text-xs text-gray-900 dark:text-white uppercase tracking-wider px-1">
+              My Calendars
+            </h3>
+            <div className="flex lg:flex-col items-center lg:items-stretch gap-1.5 overflow-x-auto no-scrollbar touch-scroll max-w-full pb-1 lg:pb-0 text-xs font-semibold">
+              {[
+                { name: 'all', label: 'All Calendars', color: '#3b82f6' },
+                { name: 'Client', label: 'Client Work', color: '#8b5cf6' },
+                { name: 'Research', label: 'Research', color: '#3b82f6' },
+                { name: 'Career', label: 'Career', color: '#10b981' },
+                { name: 'Personal', label: 'Personal', color: '#f59e0b' },
+              ].map((cat) => (
                 <button
-                  key={m}
-                  onClick={() => setViewMode(m)}
-                  className={`px-3 py-1.5 rounded-lg capitalize transition-all ${
-                    viewMode === m
-                      ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  key={cat.name}
+                  onClick={() => setActiveCategoryFilter(cat.name)}
+                  className={`px-3 py-1.5 rounded-xl flex items-center justify-between gap-2 transition-colors shrink-0 ${
+                    activeCategoryFilter === cat.name
+                      ? 'bg-blue-50 dark:bg-gray-800 text-blue-600 dark:text-white font-bold'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
                   }`}
                 >
-                  {m}
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                    <span className="truncate">{cat.label}</span>
+                  </div>
+                  {activeCategoryFilter === cat.name && <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0 hidden lg:block" />}
                 </button>
               ))}
             </div>
-
-            <button
-              onClick={() => openCreateModalForDate(selectedDate)}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" />
-              Add Event
-            </button>
           </div>
-        </div>
-      </div>
 
-      {/* Main Google Calendar Layout (Sidebar + Main Calendar Grid) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Sidebar: Mini Month Picker & Category Filters */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Mini Calendar Picker */}
-          <div className="p-4 rounded-3xl bg-white dark:bg-[#111622] border border-gray-200 dark:border-gray-800 space-y-3">
+          {/* Mini Calendar Picker (Collapsible / Compact on Mobile) */}
+          <div className="hidden lg:block p-4 rounded-3xl bg-white dark:bg-[#111622] border border-gray-200 dark:border-gray-800 space-y-3">
             <div className="flex items-center justify-between font-bold text-xs text-gray-900 dark:text-white px-1">
               <span>{format(currDate, 'MMMM yyyy')}</span>
               <div className="flex items-center gap-1">
@@ -356,46 +387,14 @@ export default function CalendarPage() {
               })}
             </div>
           </div>
-
-          {/* Categories & Calendars Filter */}
-          <div className="p-4 rounded-3xl bg-white dark:bg-[#111622] border border-gray-200 dark:border-gray-800 space-y-3">
-            <h3 className="font-extrabold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
-              My Calendars
-            </h3>
-            <div className="space-y-1.5 text-xs font-semibold">
-              {[
-                { name: 'all', label: 'All Calendars', color: '#3b82f6' },
-                { name: 'Client', label: 'Client Work', color: '#8b5cf6' },
-                { name: 'Research', label: 'Research & Thesis', color: '#3b82f6' },
-                { name: 'Career', label: 'Career & DSA', color: '#10b981' },
-                { name: 'Personal', label: 'Personal', color: '#f59e0b' },
-              ].map((cat) => (
-                <button
-                  key={cat.name}
-                  onClick={() => setActiveCategoryFilter(cat.name)}
-                  className={`w-full px-3 py-2 rounded-xl flex items-center justify-between transition-colors ${
-                    activeCategoryFilter === cat.name
-                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                    <span>{cat.label}</span>
-                  </div>
-                  {activeCategoryFilter === cat.name && <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Right Main Grid Area */}
         <div className="lg:col-span-9">
           {/* Week View */}
           {viewMode === 'week' && (
-            <div className="p-4 rounded-3xl bg-white dark:bg-[#111622] border border-gray-200 dark:border-gray-800 space-y-4 overflow-x-auto">
-              <div className="grid grid-cols-7 gap-2 min-w-[700px]">
+            <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#111622] border border-gray-200 dark:border-gray-800 space-y-4 overflow-x-auto no-scrollbar touch-scroll">
+              <div className="grid grid-cols-7 gap-2 min-w-[680px]">
                 {weekDays.map((day, idx) => {
                   const dayStr = format(day, 'yyyy-MM-dd');
                   const isCurrentDay = isToday(day);
@@ -405,7 +404,7 @@ export default function CalendarPage() {
                     <div
                       key={idx}
                       onClick={() => openCreateModalForDate(dayStr)}
-                      className={`p-3 rounded-2xl border min-h-[450px] space-y-3 cursor-pointer transition-all ${
+                      className={`p-2.5 rounded-2xl border min-h-[420px] space-y-2.5 cursor-pointer transition-all ${
                         isCurrentDay
                           ? 'bg-blue-50/40 dark:bg-blue-950/20 border-blue-500'
                           : 'bg-gray-50/50 dark:bg-gray-800/30 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
@@ -417,9 +416,9 @@ export default function CalendarPage() {
                           {format(day, 'EEE')}
                         </span>
                         <span
-                          className={`text-base font-extrabold inline-flex items-center justify-center mt-0.5 ${
+                          className={`text-sm font-extrabold inline-flex items-center justify-center mt-0.5 ${
                             isCurrentDay
-                              ? 'w-7 h-7 rounded-full bg-blue-600 text-white mx-auto'
+                              ? 'w-6 h-6 rounded-full bg-blue-600 text-white mx-auto'
                               : 'text-gray-900 dark:text-white'
                           }`}
                         >
@@ -428,17 +427,17 @@ export default function CalendarPage() {
                       </div>
 
                       {/* Day Event List */}
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {dayEvents.map((evt) => (
                           <div
                             key={evt.id}
                             onClick={(e) => handleEventClick(evt, e)}
-                            className="p-2.5 rounded-xl text-white text-xs font-bold relative group shadow-2xs cursor-pointer hover:brightness-110 transition-all"
+                            className="p-2 rounded-xl text-white text-[11px] font-bold relative group shadow-2xs cursor-pointer hover:brightness-110 transition-all min-w-0"
                             style={{ backgroundColor: evt.color || '#3b82f6' }}
                           >
                             <span className="block truncate">{evt.title}</span>
                             {evt.startTime && (
-                              <span className="text-[10px] opacity-90 block font-semibold mt-0.5">
+                              <span className="text-[9px] opacity-90 block font-semibold mt-0.5 truncate">
                                 {evt.startTime} {evt.endTime ? `- ${evt.endTime}` : ''}
                               </span>
                             )}

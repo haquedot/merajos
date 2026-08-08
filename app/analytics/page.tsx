@@ -36,6 +36,7 @@ import {
   HighchartsDonut,
 } from '../../components/ui/HighchartsComponents';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 import { isUserAuthenticated } from '../../lib/authCheck';
 
@@ -140,54 +141,41 @@ export default function AnalyticsPage() {
   const snapshotRates = sortedChronological.length > 0 ? sortedChronological.map((s) => s.taskCompletionRate) : [taskCompletionRate];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600">
-              <Activity className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-                  Performance & Productivity Insights
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-semibold text-[10px]">
-                  Daily Summary @ 11:45 PM
-                </span>
-              </div>
-              <p className="text-xs text-gray-500">
-                Daily task and habit history is automatically calculated every evening at 11:45 PM.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
+      <PageHeader
+        icon={Activity}
+        iconBgColor="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
+        title="Performance & Productivity Insights"
+        badgeText="Summary @ 11:45 PM"
+        badgeVariant="emerald"
+        subtitle="Daily task and habit history is automatically calculated every evening at 11:45 PM"
+        actions={
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap justify-end">
             {process.env.NEXT_PUBLIC_RUN_CRON_JOB === 'true' && (
               <button
                 onClick={triggerDaily1145PMCalculation}
                 disabled={isCalculating}
-                className="btn-secondary px-3.5 py-2 rounded-xl text-xs flex items-center gap-2 disabled:opacity-50"
+                className="btn-secondary px-3 sm:px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 disabled:opacity-50 shrink-0"
               >
                 <Zap className="w-4 h-4" />
-                <span>{isCalculating ? 'Calculating...' : 'Run Daily Summary'}</span>
+                <span>{isCalculating ? 'Calculating...' : 'Run Summary'}</span>
               </button>
             )}
 
             <button
               onClick={signIn}
-              className="btn-primary px-3.5 py-2 rounded-xl text-xs flex items-center gap-2"
+              className="btn-primary px-3 sm:px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0"
             >
               <Cloud className="w-4 h-4" />
               <span>Sync Google</span>
             </button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Overview Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatisticCard
           title="Task Completion Rate"
           value={`${taskCompletionRate}%`}
@@ -227,13 +215,13 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Highcharts Grid Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Highcharts Line Chart */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-500" />
-              <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
+              <TrendingUp className="w-5 h-5 text-blue-500 shrink-0" />
+              <h3 className="font-extrabold text-sm text-gray-900 dark:text-white truncate">
                 Daily Completion Trend
               </h3>
             </div>
@@ -249,11 +237,11 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Highcharts Column Chart */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-purple-500" />
-              <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
+              <BarChart3 className="w-5 h-5 text-purple-500 shrink-0" />
+              <h3 className="font-extrabold text-sm text-gray-900 dark:text-white truncate">
                 Work Hours Breakdown by Category
               </h3>
             </div>
@@ -289,10 +277,10 @@ export default function AnalyticsPage() {
       </div>
 
       {/* 11:45 PM Daily History Log Section */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-purple-600" />
+      <div className="p-4 sm:p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <Calendar className="w-5 h-5 text-purple-600 shrink-0" />
             <div>
               <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
                 Daily History & Performance Log
@@ -303,12 +291,14 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <Badge variant="purple">{snapshots.length} Daily Snapshots Saved</Badge>
+          <Badge variant="purple" size="sm" className="self-start sm:self-auto shrink-0">
+            {snapshots.length} Snapshots
+          </Badge>
         </div>
 
         {snapshots.length === 0 ? (
-          <div className="p-8 text-center text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
-            No snapshots stored yet. Click "Run 11:45 PM Cron" to generate today's snapshot!
+          <div className="p-6 sm:p-8 text-center text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
+            No snapshots stored yet. Click "Run Summary" to generate today's snapshot!
           </div>
         ) : (
           <div className="space-y-3">
@@ -323,41 +313,45 @@ export default function AnalyticsPage() {
                   {/* Snapshot Accordion Header */}
                   <div
                     onClick={() => setExpandedSnapshotDate(isExpanded ? null : snap.date)}
-                    className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/60 transition-colors"
+                    className="p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/60 transition-colors"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="px-3 py-1 rounded-xl bg-purple-600 text-white font-bold text-xs">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                      <div className="px-3 py-1 rounded-xl bg-purple-600 text-white font-bold text-xs shrink-0">
                         {snap.date}
                       </div>
 
-                      <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 flex-wrap text-xs">
                         <span className="font-extrabold text-gray-900 dark:text-white">
                           Score: {snap.productivityScore || snap.taskCompletionRate}%
                         </span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                        <span className="text-gray-300 dark:text-gray-600 hidden xs:inline">•</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                           {snap.completedTasks} Completed
                         </span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                        <span className="text-gray-300 dark:text-gray-600 hidden xs:inline">•</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-bold">
                           {snap.pendingTasks ?? (snap.totalTasks - snap.completedTasks)} Pending
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-200 dark:border-gray-800">
                       {snap.habitCompletionRate !== undefined && (
-                        <Badge variant="outline" size="sm">
+                        <Badge variant="outline" size="sm" className="text-[10px]">
                           Habits: {snap.completedHabitsCount ?? 0}/{snap.totalHabitsCount ?? 0} ({snap.habitCompletionRate}%)
                         </Badge>
                       )}
-                      {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-gray-500 shrink-0" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
+                      )}
                     </div>
                   </div>
 
                   {/* Expanded Snapshot Breakdown */}
                   {isExpanded && (
-                    <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-4 text-xs">
+                    <div className="p-3.5 sm:p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-4 text-xs">
                       {/* Completed vs Non-Completed Task Lists */}
                       {(() => {
                         const completedList =
@@ -375,23 +369,28 @@ export default function AnalyticsPage() {
                             : tasks.filter((t) => t.status !== 'completed').map((t) => ({ title: t.title, category: t.category, priority: t.priority }));
 
                         return (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
                             {/* Completed Tasks List */}
-                            <div className="p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 space-y-2">
+                            <div className="p-3 sm:p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 space-y-2">
                               <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-extrabold text-xs">
-                                <CheckCircle2 className="w-4 h-4" />
+                                <CheckCircle2 className="w-4 h-4 shrink-0" />
                                 <span>Completed Tasks ({completedList.length})</span>
                               </div>
                               {completedList.length > 0 ? (
-                                <ul className="space-y-1.5 pl-1">
+                                <ul className="space-y-1.5">
                                   {completedList.map((tItem: any, idx: number) => (
-                                    <li key={idx} className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-900/50">
-                                      <div className="flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                                        <span className="font-bold text-gray-900 dark:text-white">{tItem.title || tItem}</span>
+                                    <li
+                                      key={idx}
+                                      className="flex items-start sm:items-center justify-between gap-2 p-2 rounded-xl bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-900/50"
+                                    >
+                                      <div className="flex items-start sm:items-center gap-2 min-w-0 flex-1">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 mt-1 sm:mt-0" />
+                                        <span className="font-bold text-gray-900 dark:text-white text-xs leading-snug break-words">
+                                          {tItem.title || tItem}
+                                        </span>
                                       </div>
                                       {tItem.category && (
-                                        <Badge variant="outline" size="sm">
+                                        <Badge variant="outline" size="sm" className="shrink-0 text-[10px]">
                                           {tItem.category}
                                         </Badge>
                                       )}
@@ -404,21 +403,26 @@ export default function AnalyticsPage() {
                             </div>
 
                             {/* Non-Completed (Pending) Tasks List */}
-                            <div className="p-3.5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 space-y-2">
+                            <div className="p-3 sm:p-3.5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 space-y-2">
                               <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-extrabold text-xs">
-                                <XCircle className="w-4 h-4" />
+                                <XCircle className="w-4 h-4 shrink-0" />
                                 <span>Non-Completed / Pending Tasks ({pendingList.length})</span>
                               </div>
                               {pendingList.length > 0 ? (
-                                <ul className="space-y-1.5 pl-1">
+                                <ul className="space-y-1.5">
                                   {pendingList.map((tItem: any, idx: number) => (
-                                    <li key={idx} className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-amber-100 dark:border-amber-900/50">
-                                      <div className="flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                                        <span className="font-bold text-gray-900 dark:text-white">{tItem.title || tItem}</span>
+                                    <li
+                                      key={idx}
+                                      className="flex items-start sm:items-center justify-between gap-2 p-2 rounded-xl bg-white dark:bg-gray-800 border border-amber-100 dark:border-amber-900/50"
+                                    >
+                                      <div className="flex items-start sm:items-center gap-2 min-w-0 flex-1">
+                                        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 mt-1 sm:mt-0" />
+                                        <span className="font-bold text-gray-900 dark:text-white text-xs leading-snug break-words">
+                                          {tItem.title || tItem}
+                                        </span>
                                       </div>
                                       {tItem.category && (
-                                        <Badge variant="outline" size="sm">
+                                        <Badge variant="outline" size="sm" className="shrink-0 text-[10px]">
                                           {tItem.category}
                                         </Badge>
                                       )}
@@ -434,31 +438,31 @@ export default function AnalyticsPage() {
                       })()}
 
                       {/* Category & Priority Metrics */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-2">
                         <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800">
                           <span className="text-[10px] text-gray-400 font-bold uppercase block">Client Tasks</span>
-                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
+                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block text-xs">
                             {snap.categoryBreakdown?.Client?.completed ?? 0} Done / {snap.categoryBreakdown?.Client?.pending ?? 0} Pending
                           </span>
                         </div>
 
                         <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800">
                           <span className="text-[10px] text-gray-400 font-bold uppercase block">Research Tasks</span>
-                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
+                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block text-xs">
                             {snap.categoryBreakdown?.Research?.completed ?? 0} Done / {snap.categoryBreakdown?.Research?.pending ?? 0} Pending
                           </span>
                         </div>
 
                         <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800">
                           <span className="text-[10px] text-gray-400 font-bold uppercase block">Career Tasks</span>
-                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
+                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block text-xs">
                             {snap.categoryBreakdown?.Career?.completed ?? 0} Done / {snap.categoryBreakdown?.Career?.pending ?? 0} Pending
                           </span>
                         </div>
 
                         <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800">
                           <span className="text-[10px] text-gray-400 font-bold uppercase block">Logged Hours</span>
-                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
+                          <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block text-xs">
                             {snap.totalActualHours}h / {snap.totalEstHours}h est
                           </span>
                         </div>

@@ -30,9 +30,9 @@ export const useCareerStore = create<CareerState>((set, get) => {
     isUserAuthenticated().then((authenticated) => {
       if (!authenticated) return;
       fetch('/api/career')
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data.career) {
+          if (data && data.career) {
             set({
               jobs: data.career.jobs || [],
               interviewTopics: data.career.interviewTopics || [],
@@ -73,6 +73,7 @@ export const useCareerStore = create<CareerState>((set, get) => {
       if (!authenticated) return;
       try {
         const res = await fetch('/api/career');
+        if (!res.ok) return;
         const data = await res.json();
         if (data.career) {
           set({

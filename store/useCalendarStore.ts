@@ -45,9 +45,9 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
     isUserAuthenticated().then((authenticated) => {
       if (!authenticated) return;
       fetch('/api/events')
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data.events && Array.isArray(data.events)) {
+          if (data && data.events && Array.isArray(data.events)) {
             set((state) => {
               const merged = mergeEvents(state.events, data.events);
               db.events.bulkPut(merged);
@@ -75,6 +75,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
 
       try {
         const res = await fetch('/api/events');
+        if (!res.ok) return;
         const data = await res.json();
         if (data.events && Array.isArray(data.events)) {
           set((state) => {

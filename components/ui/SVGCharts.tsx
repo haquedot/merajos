@@ -214,15 +214,15 @@ export const HabitHeatmap: React.FC<HeatmapProps> = ({ history, daysCount = 60 }
   }
 
   return (
-    <div className="w-full overflow-x-auto pb-2">
-      <div className="flex flex-wrap gap-1.5 min-w-[300px]">
+    <div className="w-full overflow-x-auto pb-1 no-scrollbar">
+      <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] gap-1 sm:gap-1.5 min-w-[260px]">
         {days.map((day, idx) => (
           <div
             key={idx}
             title={`${day.dateStr}: ${day.completed ? 'Completed' : 'Not completed'}`}
-            className={`w-3.5 h-3.5 rounded-xs transition-colors ${
+            className={`aspect-square rounded-xs sm:rounded-sm transition-colors ${
               day.completed
-                ? 'bg-blue-500 shadow-xs'
+                ? 'bg-blue-500 dark:bg-blue-400 shadow-xs'
                 : 'bg-gray-100 dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700/50'
             }`}
           />

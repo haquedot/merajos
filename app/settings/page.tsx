@@ -42,6 +42,7 @@ import { Logo } from '../../components/common/Logo';
 import { OnboardingModal } from '../../components/onboarding/OnboardingModal';
 import { BRAND } from '../../lib/branding';
 import { ModuleKey } from '../../types';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 const MODULE_OPTIONS: { key: ModuleKey; label: string; description: string; alwaysOn?: boolean }[] = [
   { key: 'tasks',          label: 'Tasks',            description: 'Daily task management & priorities', alwaysOn: true },
@@ -61,6 +62,11 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { session, syncState, syncMessage, signIn, signOut, syncNow } = useGoogleAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   React.useEffect(() => {
     if (session?.email && settings.notificationEmail !== session.email) {
@@ -135,30 +141,23 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
-            <Settings className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-              Google Sync & System Preferences
-            </h1>
-            <p className="text-xs text-gray-500">
-              Manage Google Calendar & Tasks integration, email notification preferences, and local data cache
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        icon={Settings}
+        iconBgColor="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200"
+        title="Google Sync & Preferences"
+        badgeText="System"
+        badgeVariant="gray"
+        subtitle="Manage Google Calendar & Tasks integration, notification preferences, and local data cache"
+      />
 
       {/* Google Account & Sync Status Section */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-2">
-            <Cloud className="w-5 h-5 text-blue-500" />
-            <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
+            <Cloud className="w-5 h-5 text-blue-500 shrink-0" />
+            <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">
               Google Account & Synchronization
             </h2>
           </div>
@@ -166,33 +165,33 @@ export default function SettingsPage() {
           <button
             onClick={syncNow}
             disabled={syncState === 'syncing'}
-            className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-2 disabled:opacity-50"
+            className="btn-primary px-3.5 sm:px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 disabled:opacity-50 shrink-0 self-start sm:self-auto"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
-            <span>{syncState === 'syncing' ? 'Syncing...' : 'Manual Sync Now'}</span>
+            <span>{syncState === 'syncing' ? 'Syncing...' : 'Manual Sync'}</span>
           </button>
         </div>
 
         {session ? (
-          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <img
                   src={session.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                   alt={session.name || 'User'}
-                  className="w-12 h-12 rounded-full border-2 border-emerald-500 object-cover"
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-emerald-500 object-cover shrink-0"
                 />
-                <div>
-                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white truncate">
                     {session.name || 'Merajul Haque'}
                   </h3>
-                  <span className="text-xs text-gray-400 block">{session.email}</span>
+                  <span className="text-xs text-gray-400 block truncate">{session.email}</span>
                 </div>
               </div>
 
               <button
                 onClick={signOut}
-                className="px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                className="px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/40 shrink-0 self-start sm:self-auto"
               >
                 Disconnect
               </button>
@@ -205,8 +204,8 @@ export default function SettingsPage() {
                 </span>
                 {session.connectedCalendars.map((cal) => (
                   <div key={cal.id} className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                    <span>{cal.summary}</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
+                    <span className="truncate">{cal.summary}</span>
                   </div>
                 ))}
               </div>
@@ -217,8 +216,8 @@ export default function SettingsPage() {
                 </span>
                 {session.connectedTaskLists.map((lst) => (
                   <div key={lst.id} className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                    <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>{lst.title}</span>
+                    <CheckSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span className="truncate">{lst.title}</span>
                   </div>
                 ))}
               </div>
@@ -241,10 +240,10 @@ export default function SettingsPage() {
       </div>
 
       {/* === Workspace Personalisation === */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+            <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 shrink-0">
               <LayoutGrid className="w-5 h-5" />
             </div>
             <div>
@@ -254,15 +253,18 @@ export default function SettingsPage() {
           </div>
           <button
             onClick={() => setShowOnboarding(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all shrink-0 self-start sm:self-auto"
           >
             <Sliders className="w-3.5 h-3.5" />
             Re-run Setup
           </button>
         </div>
 
-        {settings.onboarding?.displayName && (
-          <div className="px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 text-xs text-blue-700 dark:text-blue-300 font-medium">
+        {mounted && settings.onboarding?.displayName && (
+          <div
+            suppressHydrationWarning
+            className="px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 text-xs text-blue-700 dark:text-blue-300 font-medium leading-relaxed"
+          >
             ✦ Workspace configured for <strong>{settings.onboarding.displayName}</strong> · Role: <strong className="capitalize">{settings.onboarding.role}</strong>
           </div>
         )}
@@ -316,7 +318,7 @@ export default function SettingsPage() {
                       <span className="ml-1.5 text-[9px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full">Always on</span>
                     )}
                   </div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">{mod.description}</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5 truncate">{mod.description}</div>
                 </div>
               </button>
             );
@@ -325,10 +327,10 @@ export default function SettingsPage() {
       </div>
 
       {/* Daily Email Performance Log Switch Section */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
+      <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+            <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5 sm:mt-0">
               <Mail className="w-5 h-5" />
             </div>
             <div>
@@ -348,7 +350,7 @@ export default function SettingsPage() {
                 emailNotificationsEnabled: !(settings.emailNotificationsEnabled ?? true),
               })
             }
-            className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-xs ${
+            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-xs shrink-0 self-start sm:self-auto ${
               (settings.emailNotificationsEnabled ?? true)
                 ? 'btn-primary'
                 : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700'
@@ -356,19 +358,19 @@ export default function SettingsPage() {
           >
             {(settings.emailNotificationsEnabled ?? true) ? (
               <>
-                <MailCheck className="w-4 h-4" />
+                <MailCheck className="w-4 h-4 shrink-0" />
                 <span>Receive Emails (ON)</span>
               </>
             ) : (
               <>
-                <MailX className="w-4 h-4" />
+                <MailX className="w-4 h-4 shrink-0" />
                 <span>Emails Muted (OFF)</span>
               </>
             )}
           </button>
         </div>
 
-        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-3">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-3">
           <label className="text-xs font-extrabold text-gray-700 dark:text-gray-300 block">
             Notification Recipient Email Address
           </label>
@@ -377,7 +379,7 @@ export default function SettingsPage() {
             readOnly
             disabled
             value={session?.email || settings.notificationEmail || 'No Google Account Connected'}
-            className="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 cursor-not-allowed select-none opacity-90 font-medium"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 cursor-not-allowed select-none opacity-90 font-medium truncate"
           />
           <p className="text-[11px] text-gray-400">
             Automatically synchronized with your signed-in Google Account (non-editable).
@@ -394,72 +396,72 @@ export default function SettingsPage() {
       </div>
 
       {/* Theme Settings */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
         <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
           Appearance & Theme
         </h2>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <button
             onClick={() => setTheme('light')}
-            className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${
+            className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${
               theme === 'light'
                 ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 font-bold'
                 : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400'
             }`}
           >
-            <Sun className="w-6 h-6 text-amber-500" />
+            <Sun className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
             <span className="text-xs">Light Mode</span>
           </button>
 
           <button
             onClick={() => setTheme('dark')}
-            className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${
+            className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${
               theme === 'dark'
                 ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 font-bold'
                 : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400'
             }`}
           >
-            <Moon className="w-6 h-6 text-blue-500" />
+            <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
             <span className="text-xs">Dark Mode</span>
           </button>
         </div>
       </div>
 
       {/* Local Data Backup & Restore */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+      {/* <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
         <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
           Data Backup & IndexedDB Cache
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <button
             onClick={handleExportData}
-            className="btn-primary p-4 rounded-xl text-xs flex items-center justify-center gap-2"
+            className="btn-primary p-3.5 sm:p-4 rounded-xl text-xs flex items-center justify-center gap-2"
           >
-            <Download className="w-4 h-4" />
-            Export JSON Backup
+            <Download className="w-4 h-4 shrink-0" />
+            <span>Export JSON Backup</span>
           </button>
 
-          <label className="btn-secondary p-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer">
-            <Upload className="w-4 h-4" />
-            Import JSON Backup
+          <label className="btn-secondary p-3.5 sm:p-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer">
+            <Upload className="w-4 h-4 shrink-0" />
+            <span>Import JSON Backup</span>
             <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
           </label>
 
           <button
             onClick={handleResetAll}
-            className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center justify-center gap-2 hover:bg-rose-100"
+            className="p-3.5 sm:p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center justify-center gap-2 hover:bg-rose-100"
           >
-            <RotateCcw className="w-4 h-4" />
-            Reset Data to Default
+            <RotateCcw className="w-4 h-4 shrink-0" />
+            <span>Reset Data to Default</span>
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* About Orbit Section */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="p-4 sm:p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <Logo variant="horizontal" size={32} showTagline={true} />
           <span className="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-100 dark:border-indigo-900">
             v{BRAND.version}

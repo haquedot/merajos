@@ -94,6 +94,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Global Search trigger */}
         <button
+          id="tour-search"
           onClick={onOpenSearch}
           className="flex items-center gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 border border-[#E2E8F0] dark:border-[#243244] transition-all w-10 sm:w-44 md:w-56"
         >
@@ -111,24 +112,25 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Right section: Sync Status, Run Cron, Theme Toggle, Profile Menu */}
-      <div className="flex items-center gap-1 sm:gap-2.5">
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
         {/* Run Daily Summary Button (Shown when RUN_CRON_JOB is true) */}
         {process.env.NEXT_PUBLIC_RUN_CRON_JOB === 'true' && (
           <button
             onClick={handleRunCronJob}
             disabled={isCronRunning}
-            className="btn-secondary px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 disabled:opacity-50"
+            className="hidden sm:flex btn-secondary px-3 py-1.5 rounded-xl text-xs items-center gap-1.5 disabled:opacity-50"
             title="Calculate and log daily task performance summary"
           >
             <Zap className={`w-3.5 h-3.5 ${isCronRunning ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{isCronRunning ? 'Calculating...' : 'Run Daily Summary'}</span>
+            <span>{isCronRunning ? 'Calculating...' : 'Run Daily Summary'}</span>
           </button>
         )}
 
         {/* Google Sync Status Pill */}
         <button
+          id="tour-google-sync"
           onClick={syncNow}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-[#E2E8F0] dark:border-[#243244] transition-all"
+          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-[#E2E8F0] dark:border-[#243244] transition-all"
           title={syncMessage || 'Click to synchronize with Google'}
         >
           {syncState === 'syncing' ? (
@@ -138,7 +140,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           ) : (
             <Cloud className="w-3.5 h-3.5 text-[#22C55E]" />
           )}
-          <span className="hidden md:inline">
+          <span>
             {syncState === 'syncing'
               ? 'Syncing...'
               : syncState === 'offline'
@@ -151,17 +153,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Quick Add Button (Primary Orbit Blue) */}
         <button
+          id="tour-quick-add"
           onClick={onOpenQuickAdd}
-          className="btn-primary px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5"
+          className="btn-primary px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5"
         >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Quick Add</span>
         </button>
 
-        {/* Theme Toggle Button */}
+        {/* Theme Toggle Button (Desktop navbar, accessible via Sidebar on mobile) */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
+          className="hidden sm:flex p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
           aria-label="Toggle Theme"
           title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
         >
@@ -175,8 +178,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Platform Tour Button */}
         {onOpenTour && (
           <button
+            id="tour-help-icon"
             onClick={onOpenTour}
-            className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
+            className="hidden sm:flex p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
             aria-label="Platform Tour"
             title="Take Platform Tour"
           >
@@ -186,6 +190,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Panel Toggle */}
         <button
+          id="tour-focus-panel"
           onClick={onToggleRightPanel}
           className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
           aria-label="Toggle Focus Panel"
@@ -194,7 +199,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         {/* Google User Profile Menu */}
-        <div className="relative">
+        <div id="tour-user-profile" className="relative">
           {session ? (
             <button
               onClick={() => setProfileMenuOpen((prev) => !prev)}

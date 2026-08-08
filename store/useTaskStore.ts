@@ -36,9 +36,9 @@ export const useTaskStore = create<TaskState>((set, get) => {
     isUserAuthenticated().then((authenticated) => {
       if (!authenticated) return; // Guest mode: Dexie only
       fetch('/api/tasks')
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data.tasks && data.tasks.length > 0) {
+          if (data && data.tasks && data.tasks.length > 0) {
             set({ tasks: data.tasks });
             db.tasks.bulkPut(data.tasks);
           }

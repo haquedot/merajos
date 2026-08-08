@@ -25,6 +25,7 @@ import { useProjectStore } from '../../store/useProjectStore';
 import { Task, Priority, TaskStatus, Category } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 export default function TasksPage() {
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
@@ -180,90 +181,83 @@ export default function TasksPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header & Controls */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <CheckSquare className="w-6 h-6 text-blue-500" />
-              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-                Task Management & Board
-              </h1>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Drag and drop cards across columns to update task progress dynamically
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
+      <PageHeader
+        icon={CheckSquare}
+        iconBgColor="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400"
+        title="Task Management & Board"
+        badgeText={`${filteredTasks.length} Tasks`}
+        badgeVariant="blue"
+        subtitle="Drag and drop cards across columns to update task progress dynamically"
+        actions={
+          <>
             {/* View Mode Toggle */}
-            <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold">
+            <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold shrink-0">
               <button
                 onClick={() => setViewMode('board')}
-                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-xs ${
                   viewMode === 'board'
                     ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <Kanban className="w-3.5 h-3.5" />
-                Kanban Board
+                <span className="inline">Board</span>
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-xs ${
                   viewMode === 'list'
                     ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <List className="w-3.5 h-3.5" />
-                List View
+                <span className="inline">List</span>
               </button>
             </div>
 
             <button
               onClick={openCreateModal}
-              className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
+              className="btn-primary px-3 sm:px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0"
             >
               <Plus className="w-4 h-4" />
-              Create Task
+              <span>Create Task</span>
             </button>
-          </div>
-        </div>
-
+          </>
+        }
+      >
         {/* Filters and Search Bar */}
-        <div className="flex flex-wrap items-center gap-3 pt-2">
-          <div className="relative flex-1 min-w-[200px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 pt-2 border-t border-gray-100 dark:border-gray-800/80">
+          <div className="relative w-full">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
             <input
               type="text"
+              placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <select
             value={selectedCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
           >
             <option value="all">All Categories</option>
-            <option value="Client">Client</option>
+            <option value="Client Work">Client Work</option>
             <option value="Research">Research</option>
             <option value="Career">Career</option>
             <option value="Personal">Personal</option>
-            <option value="College">College</option>
             <option value="Habit">Habit</option>
           </select>
 
           <select
             value={selectedPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
           >
             <option value="all">All Priorities</option>
             <option value="urgent">Urgent</option>
@@ -275,7 +269,7 @@ export default function TasksPage() {
           <select
             value={selectedStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
           >
             <option value="all">All Statuses</option>
             <option value="todo">To Do</option>
@@ -283,7 +277,7 @@ export default function TasksPage() {
             <option value="completed">Completed</option>
           </select>
         </div>
-      </div>
+      </PageHeader>
 
       {/* Kanban Board View with Drag & Drop */}
       {viewMode === 'board' && (
@@ -405,8 +399,8 @@ export default function TasksPage() {
 
       {/* List View */}
       {viewMode === 'list' && (
-        <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3">
-          <div className="flex items-center justify-between text-xs font-bold text-gray-400 uppercase tracking-wider px-2">
+        <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3">
+          <div className="hidden sm:flex items-center justify-between text-xs font-bold text-gray-400 uppercase tracking-wider px-2">
             <span>Task Title & Details</span>
             <span>Category & Priority</span>
           </div>
@@ -423,61 +417,63 @@ export default function TasksPage() {
                   <motion.div
                     key={t.id}
                     layout
-                    className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex items-center justify-between hover:bg-gray-100/70 dark:hover:bg-gray-800 transition-colors"
+                    className="p-3.5 sm:p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 hover:bg-gray-100/70 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <div className="flex items-center gap-3.5">
+                    <div className="flex items-start sm:items-center gap-3 min-w-0 w-full sm:w-auto">
                       <button
                         onClick={() => toggleTaskStatus(t.id)}
-                        className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                        className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors shrink-0 mt-0.5 sm:mt-0 ${
                           isDone ? 'bg-emerald-500 text-white' : 'border border-gray-300 dark:border-gray-600'
                         }`}
                       >
                         {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
                       </button>
 
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span
-                            className={`text-sm font-bold ${
+                            className={`text-xs sm:text-sm font-bold ${
                               isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
                             }`}
                           >
                             {t.title}
                           </span>
                           {t.mit && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 shrink-0">
                               ★ MIT
                             </span>
                           )}
                         </div>
 
                         {t.description && (
-                          <p className="text-xs text-gray-400 mt-0.5 max-w-xl truncate">
+                          <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5 truncate max-w-md">
                             {t.description}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <Badge variant={t.category === 'Client' ? 'purple' : t.category === 'Research' ? 'info' : 'secondary'} size="sm">
-                        {t.category}
-                      </Badge>
+                    <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge variant={t.category === 'Client' ? 'purple' : t.category === 'Research' ? 'info' : 'secondary'} size="sm">
+                          {t.category}
+                        </Badge>
 
-                      <Badge
-                        variant={
-                          t.priority === 'urgent'
-                            ? 'danger'
-                            : t.priority === 'high'
-                            ? 'warning'
-                            : 'secondary'
-                        }
-                        size="sm"
-                      >
-                        {t.priority}
-                      </Badge>
+                        <Badge
+                          variant={
+                            t.priority === 'urgent'
+                              ? 'danger'
+                              : t.priority === 'high'
+                              ? 'warning'
+                              : 'secondary'
+                          }
+                          size="sm"
+                        >
+                          {t.priority}
+                        </Badge>
+                      </div>
 
-                      <div className="flex items-center gap-1 pl-2 border-l border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-1 pl-2 border-l border-gray-200 dark:border-gray-700 shrink-0">
                         <button
                           onClick={() => openEditModal(t)}
                           className="p-1.5 text-gray-400 hover:text-[#1F3B99] dark:hover:text-[#6D5BFF] rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"

@@ -36,9 +36,9 @@ export const useResearchStore = create<ResearchState>((set, get) => {
     isUserAuthenticated().then((authenticated) => {
       if (!authenticated) return;
       fetch('/api/research')
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data.research) {
+          if (data && data.research) {
             set({
               overview: data.research.overview || DEFAULT_OVERVIEW,
               papers: data.research.papers || [],
@@ -79,6 +79,7 @@ export const useResearchStore = create<ResearchState>((set, get) => {
       if (!authenticated) return;
       try {
         const res = await fetch('/api/research');
+        if (!res.ok) return;
         const data = await res.json();
         if (data.research) {
           set({

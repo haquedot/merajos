@@ -20,6 +20,7 @@ import { useCareerStore } from '../../store/useCareerStore';
 import { JobApplication, JobStatus, InterviewTopic } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 export default function CareerPage() {
   const [activeTab, setActiveTab] = useState<'jobs' | 'interview' | 'dsa'>('jobs');
@@ -75,58 +76,47 @@ export default function CareerPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-                Career Prep & DSA Tracker
-              </h1>
-              <p className="text-xs text-gray-500">
-                Manage job application pipeline, technical interview prep, and DSA practice
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl text-xs font-bold">
+      <PageHeader
+        icon={GraduationCap}
+        iconBgColor="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
+        title="Career Prep & DSA Tracker"
+        badgeText={`${jobs.length} Applications`}
+        badgeVariant="emerald"
+        subtitle="Manage job application pipeline, technical interview prep, and DSA practice"
+        actions={
+          <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl text-xs font-bold w-full sm:w-auto justify-between shrink-0 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('jobs')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all ${
-                activeTab === 'jobs'
+              className={`px-3 py-1.5 rounded-lg transition-all text-xs shrink-0 ${activeTab === 'jobs'
                   ? 'bg-white dark:bg-gray-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-              }`}
+                }`}
             >
-              Job Applications ({jobs.length})
+              Jobs ({jobs.length})
             </button>
             <button
               onClick={() => setActiveTab('interview')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all ${
-                activeTab === 'interview'
+              className={`px-3 py-1.5 rounded-lg transition-all text-xs shrink-0 ${activeTab === 'interview'
                   ? 'bg-white dark:bg-gray-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-              }`}
+                }`}
             >
-              Interview Topics
+              Interview Prep
             </button>
             <button
               onClick={() => setActiveTab('dsa')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all ${
-                activeTab === 'dsa'
+              className={`px-3 py-1.5 rounded-lg transition-all text-xs shrink-0 ${activeTab === 'dsa'
                   ? 'bg-white dark:bg-gray-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               DSA Tracker
             </button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Tab 1: Job Applications Pipeline */}
       {activeTab === 'jobs' && (
@@ -155,10 +145,12 @@ export default function CareerPage() {
 
               <button
                 onClick={() => setIsJobModalOpen(true)}
-                className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
+                className="btn-primary px-2 sm:px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
               >
                 <Plus className="w-4 h-4" />
-                Add Application
+                <span className='hidden sm:inline'>
+                  Add Application
+                </span>
               </button>
             </div>
           </div>
@@ -272,9 +264,8 @@ export default function CareerPage() {
                       className="flex items-center gap-2.5 text-xs text-gray-700 dark:text-gray-300 cursor-pointer hover:text-emerald-500"
                     >
                       <div
-                        className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] ${
-                          item.completed ? 'bg-emerald-500 text-white' : 'border border-gray-300 dark:border-gray-600'
-                        }`}
+                        className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] ${item.completed ? 'bg-emerald-500 text-white' : 'border border-gray-300 dark:border-gray-600'
+                          }`}
                       >
                         {item.completed && '✓'}
                       </div>

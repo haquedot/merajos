@@ -18,6 +18,7 @@ import { Habit } from '../../types';
 import { HabitHeatmap } from '../../components/ui/SVGCharts';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 export default function HabitsPage() {
   const { habits, toggleHabitForDate, addHabit, deleteHabit, loadFromDB } = useHabitStore();
@@ -51,36 +52,28 @@ export default function HabitsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-500">
-              <Activity className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-                Daily Habit Tracker & Heatmap
-              </h1>
-              <p className="text-xs text-gray-500">
-                Build consistent daily routines, track streaks, and visualize your progress history
-              </p>
-            </div>
-          </div>
-
+      <PageHeader
+        icon={Activity}
+        iconBgColor="bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400"
+        title="Daily Habit Tracker & Heatmap"
+        badgeText={`${habits.length} Active`}
+        badgeVariant="amber"
+        subtitle="Build consistent daily routines, track streaks, and visualize your progress history"
+        actions={
           <button
             onClick={() => setIsModalOpen(true)}
-            className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
+            className="btn-primary px-3.5 sm:px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 self-end sm:self-auto"
           >
             <Plus className="w-4 h-4" />
-            Create Habit
+            <span>Create Habit</span>
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Habit List Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {habits.map((habit) => {
           const isCompletedToday = !!habit.history[todayStr];
           const totalDaysCompleted = Object.values(habit.history).filter(Boolean).length;
@@ -89,57 +82,64 @@ export default function HabitsPage() {
             <motion.div
               key={habit.id}
               whileHover={{ y: -2 }}
-              className="p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4"
+              className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+              {/* Header: Title, Category & Delete */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-extrabold text-gray-900 dark:text-white truncate">
                       {habit.name}
                     </h3>
                     <Badge variant="outline" size="sm">
                       {habit.category}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs">
-                    <span className="font-bold text-amber-500 flex items-center gap-1">
+
+                  <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="font-bold text-amber-500 flex items-center gap-1 shrink-0">
                       <Flame className="w-3.5 h-3.5 fill-current" />
                       {habit.currentStreak} Day Streak
                     </span>
-                    <span className="text-gray-400">
+                    <span className="text-gray-400 truncate">
                       Best: {habit.longestStreak} days
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleHabitForDate(habit.id, todayStr)}
-                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 shadow-xs transition-all active:scale-95 ${
-                      isCompletedToday
-                        ? 'bg-amber-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
-                    }`}
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    {isCompletedToday ? 'Completed!' : 'Mark Today'}
-                  </button>
+                <button
+                  onClick={() => deleteHabit(habit.id)}
+                  title="Delete Habit"
+                  className="p-2 -mr-1 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
 
-                  <button
-                    onClick={() => deleteHabit(habit.id)}
-                    title="Delete Habit"
-                    className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+              {/* Action Button Row */}
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <span className="text-[11px] font-semibold text-gray-400 hidden xs:inline">
+                  {totalDaysCompleted} days completed
+                </span>
+                <button
+                  onClick={() => toggleHabitForDate(habit.id, todayStr)}
+                  className={`w-full xs:w-auto px-4 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 ${
+                    isCompletedToday
+                      ? 'bg-amber-500 text-white shadow-amber-500/20'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-white'
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{isCompletedToday ? 'Completed Today!' : 'Mark Today'}</span>
+                </button>
               </div>
 
               {/* GitHub style calendar heatmap */}
-              <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-                <span className="text-[10px] font-bold uppercase text-gray-400 block mb-2">
-                  Last 60 Days History
-                </span>
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  <span>Last 60 Days History</span>
+                  <span>{totalDaysCompleted} Total</span>
+                </div>
                 <HabitHeatmap history={habit.history} daysCount={60} />
               </div>
             </motion.div>

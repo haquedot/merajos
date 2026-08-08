@@ -20,9 +20,12 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Moon,
+  HelpCircle,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
+import { useTheme } from '../../providers/ThemeProvider';
 import { Logo } from '../common/Logo';
 import { BRAND } from '../../lib/branding';
 
@@ -49,6 +52,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) => {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
   const { settings, toggleSidebar } = useSettingsStore();
   const { session } = useGoogleAuth();
   const collapsed = settings.sidebarCollapsed;
@@ -81,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
     <div className="flex flex-col h-full bg-white dark:bg-[#101827] border-r border-[#E2E8F0] dark:border-[#243244] transition-all duration-300">
       {/* Brand Header */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-[#E2E8F0] dark:border-[#243244]">
-        <Link href="/" className="flex items-center gap-3 overflow-hidden">
+        <Link id="tour-sidebar-logo" href="/" className="flex items-center gap-3 overflow-hidden">
           {collapsed ? (
             <Logo variant="icon" size={28} />
           ) : (
@@ -100,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
       </div>
 
       {/* Navigation List */}
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+      <div id="tour-sidebar-navigation" className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {visibleItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -136,9 +140,46 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
         })}
       </div>
 
+      {/* Quick Action Controls in Sidebar (Mobile & Desktop) */}
+      <div className="p-3 border-t border-[#E2E8F0] dark:border-[#243244] space-y-1.5 bg-gray-50/50 dark:bg-gray-900/40">
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800 flex items-center justify-between transition-colors"
+          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400 shrink-0" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
+            )}
+            {!collapsed && <span className="truncate">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+          </div>
+          {!collapsed && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 capitalize">
+              {theme}
+            </span>
+          )}
+        </button>
+
+        {/* Platform Tour */}
+        <button
+          onClick={() => {
+            onMobileClose();
+            const tourBtn = document.getElementById('tour-help-icon');
+            if (tourBtn) tourBtn.click();
+          }}
+          className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2.5 transition-colors"
+        >
+          <HelpCircle className="w-4 h-4 shrink-0 text-blue-500" />
+          {!collapsed && <span className="truncate">Platform Tour</span>}
+        </button>
+      </div>
+
       {/* Footer Branding Info */}
       {!collapsed && (
-        <div className="p-4 border-t border-gray-100 dark:border-gray-800 text-[11px] text-gray-400 dark:text-gray-500">
+        <div className="p-3.5 border-t border-gray-100 dark:border-gray-800 text-[11px] text-gray-400 dark:text-gray-500">
           <p className="font-semibold text-gray-700 dark:text-gray-300">{BRAND.name} v{BRAND.version}</p>
           <p className="truncate">{BRAND.tagline}</p>
         </div>
