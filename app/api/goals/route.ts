@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     const newGoal = await Goal.findByIdAndUpdate(
       id,
       { ...body, _id: id },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     ).lean();
 
     return NextResponse.json({ goal: { ...newGoal, id: (newGoal as any)._id } }, { status: 201 });
@@ -41,7 +41,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Goal id is required' }, { status: 400 });
     }
 
-    const updatedGoal = await Goal.findByIdAndUpdate(id, updates, { new: true }).lean();
+    const updatedGoal = await Goal.findByIdAndUpdate(id, updates, { returnDocument: 'after' }).lean();
     return NextResponse.json({ goal: { ...updatedGoal, id: (updatedGoal as any)._id } });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

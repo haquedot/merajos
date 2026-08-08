@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const updatedSettings = await Settings.findByIdAndUpdate(
       id,
       { ...body, _id: id },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     ).lean();
 
     return NextResponse.json({ settings: { ...updatedSettings, id: (updatedSettings as any)._id } }, { status: 200 });

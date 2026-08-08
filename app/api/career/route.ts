@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const updated = await Career.findByIdAndUpdate(
       id,
       { ...body, _id: id },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     ).lean();
 
     return NextResponse.json({ career: updated }, { status: 200 });

@@ -98,14 +98,19 @@ class SyncService {
           } else if (existing.syncStatus !== 'pending') {
             await db.tasks.put({ ...rTask, syncStatus: 'synced' });
           }
+        }
 
-          // Persist to MongoDB so backend has all Google Tasks
-          fetch('/api/tasks', {
+        // Persist to MongoDB API in a single batch request
+        try {
+          await fetch('/api/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(rTask),
-          }).catch(() => {});
+            body: JSON.stringify({ tasks: allRemoteTasks }),
+          });
+        } catch (err) {
+          console.warn('Failed to post synced tasks batch to MongoDB API', err);
         }
+
         useTaskStore.getState().loadFromDB();
       }
 
@@ -119,14 +124,19 @@ class SyncService {
           } else if (existing.syncStatus !== 'pending') {
             await db.events.put({ ...rEvt, syncStatus: 'synced' });
           }
+        }
 
-          // Persist to MongoDB API
-          fetch('/api/events', {
+        // Persist to MongoDB API in a single batch request
+        try {
+          await fetch('/api/events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(rEvt),
-          }).catch((err) => console.warn('Failed to post synced event to MongoDB API', err));
+            body: JSON.stringify({ events: remoteEvents }),
+          });
+        } catch (err) {
+          console.warn('Failed to post synced events batch to MongoDB API', err);
         }
+
         await useCalendarStore.getState().loadFromDB();
       }
 

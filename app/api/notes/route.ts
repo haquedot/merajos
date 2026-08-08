@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     const newNote = await Note.findByIdAndUpdate(
       id,
       { ...body, _id: id },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     ).lean();
 
     return NextResponse.json({ note: { ...newNote, id: (newNote as any)._id } }, { status: 201 });
@@ -41,7 +41,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Note id is required' }, { status: 400 });
     }
 
-    const updatedNote = await Note.findByIdAndUpdate(id, updates, { new: true }).lean();
+    const updatedNote = await Note.findByIdAndUpdate(id, updates, { returnDocument: 'after' }).lean();
     return NextResponse.json({ note: { ...updatedNote, id: (updatedNote as any)._id } });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
