@@ -54,17 +54,31 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Onboarding gate: only show for signed-in users after settings are loaded
+  // Load settings from DB on layout mount
   useEffect(() => {
-    if (isLoadingSettings) return;                       // wait for DB load
-    if (!session) return;                               // skip for guests
-    const completed = settings.onboarding?.onboardingCompleted;
-    if (!completed) {
+    useSettingsStore.getState().loadFromDB();
+  }, []);
+
+  // Onboarding gate: only show for signed-in users after settings are loaded and if never completed
+  useEffect(() => {
+    if (isLoadingSettings) return; // wait for DB load
+    if (!session) return;          // skip for guests
+
+    const localCompleted = typeof window !== 'undefined' && localStorage.getItem('orbit_onboarding_completed') === 'true';
+    const dbCompleted = !!settings.onboarding?.onboardingCompleted;
+
+    if (!localCompleted && !dbCompleted) {
       setShowOnboarding(true);
+    } else {
+      setShowOnboarding(false);
     }
   }, [isLoadingSettings, session, settings.onboarding?.onboardingCompleted]);
 
   const handleOnboardingComplete = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('orbit_onboarding_completed', 'true');
+    }
+    useSettingsStore.getState().completeOnboarding();
     setShowOnboarding(false);
     setShowTour(true); // Launch platform tour immediately after onboarding completion
   };

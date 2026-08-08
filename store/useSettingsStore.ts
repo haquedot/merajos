@@ -23,8 +23,24 @@ interface SettingsState {
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => {
+  const localCompleted = typeof window !== 'undefined' && localStorage.getItem('orbit_onboarding_completed') === 'true';
+
+  const initialSettings: UserSettings = {
+    ...INITIAL_SETTINGS,
+    onboarding: localCompleted
+      ? {
+          displayName: 'User',
+          role: 'custom',
+          enabledModules: [],
+          workStartTime: '09:00',
+          workEndTime: '18:00',
+          primaryGoal: '',
+          onboardingCompleted: true,
+        }
+      : INITIAL_SETTINGS.onboarding,
+  };
+
   if (typeof window !== 'undefined') {
-    set({ isLoadingSettings: true });
     isUserAuthenticated().then((authenticated) => {
       if (!authenticated) {
         set({ isGuestMode: true, isLoadingSettings: false });
@@ -34,7 +50,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
         .then((res) => res.json())
         .then((data) => {
           if (data.settings) {
-            set({ settings: data.settings, isLoadingSettings: false, isGuestMode: false });
+            const isCompletedInDB = !!data.settings.onboarding?.onboardingCompleted;
+            if (isCompletedInDB) {
+              localStorage.setItem('orbit_onboarding_completed', 'true');
+            }
+            set((state) => ({
+              settings: {
+                ...data.settings,
+                onboarding: {
+                  ...data.settings.onboarding,
+                  onboardingCompleted: isCompletedInDB || localCompleted,
+                },
+              },
+              isLoadingSettings: false,
+              isGuestMode: false,
+            }));
           } else {
             set({ isLoadingSettings: false, isGuestMode: false });
           }
@@ -46,7 +76,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
   }
 
   return {
-    settings: INITIAL_SETTINGS,
+    settings: initialSettings,
     isLoadingSettings: false,
     isGuestMode: false,
 
@@ -58,10 +88,29 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       }
       set({ isLoadingSettings: true });
       try {
+        const isLocalDone = typeof window !== 'undefined' && localStorage.getItem('orbit_onboarding_completed') === 'true';
         const res = await fetch('/api/settings');
+        if (!res.ok) {
+          set({ isLoadingSettings: false, isGuestMode: false });
+          return;
+        }
         const data = await res.json();
         if (data.settings) {
-          set({ settings: data.settings, isLoadingSettings: false, isGuestMode: false });
+          const isCompletedInDB = !!data.settings.onboarding?.onboardingCompleted;
+          if (isCompletedInDB && typeof window !== 'undefined') {
+            localStorage.setItem('orbit_onboarding_completed', 'true');
+          }
+          set((state) => ({
+            settings: {
+              ...data.settings,
+              onboarding: {
+                ...data.settings.onboarding,
+                onboardingCompleted: isCompletedInDB || isLocalDone,
+              },
+            },
+            isLoadingSettings: false,
+            isGuestMode: false,
+          }));
         } else {
           set({ isLoadingSettings: false, isGuestMode: false });
         }
@@ -72,7 +121,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     },
 
     updateSettings: async (updates) => {
-      const newSettings = { ...get().settings, ...updates };
+      const current = get()?.settings || initialSettings;
+      const newSettings = { ...current, ...updates };
       set({ settings: newSettings });
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
@@ -84,9 +134,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     },
 
     toggleSidebar: async () => {
+      const current = get()?.settings || initialSettings;
       const newSettings = {
-        ...get().settings,
-        sidebarCollapsed: !get().settings.sidebarCollapsed,
+        ...current,
+        sidebarCollapsed: !current.sidebarCollapsed,
       };
       set({ settings: newSettings });
       const authenticated = await isUserAuthenticated();
@@ -106,7 +157,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
         onboardingCompleted: true,
         onboardingCompletedAt: new Date().toISOString(),
       };
-      const newSettings = { ...get().settings, onboarding: completed };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('orbit_onboarding_completed', 'true');
+      }
+      const current = get()?.settings || initialSettings;
+      const newSettings = { ...current, onboarding: completed };
       set({ settings: newSettings });
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
@@ -122,19 +177,40 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     },
 
     completeOnboarding: () => {
-      const existing = get().settings.onboarding;
-      if (existing) {
-        const updated = { ...existing, onboardingCompleted: true, onboardingCompletedAt: new Date().toISOString() };
-        set((state) => ({ settings: { ...state.settings, onboarding: updated } }));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('orbit_onboarding_completed', 'true');
       }
+      set((state) => {
+        const current = state?.settings || initialSettings;
+        const existing = current.onboarding;
+        return {
+          settings: {
+            ...current,
+            onboarding: {
+              displayName: existing?.displayName || 'User',
+              role: existing?.role || 'custom',
+              enabledModules: existing?.enabledModules || [],
+              workStartTime: existing?.workStartTime || '09:00',
+              workEndTime: existing?.workEndTime || '18:00',
+              primaryGoal: existing?.primaryGoal || '',
+              ...existing,
+              onboardingCompleted: true,
+              onboardingCompletedAt: new Date().toISOString(),
+            },
+          },
+        };
+      });
     },
 
     isOnboarded: () => {
-      return !!get().settings.onboarding?.onboardingCompleted;
+      if (typeof window !== 'undefined' && localStorage.getItem('orbit_onboarding_completed') === 'true') {
+        return true;
+      }
+      return !!get()?.settings?.onboarding?.onboardingCompleted;
     },
 
     enabledModules: () => {
-      return get().settings.onboarding?.enabledModules ?? [];
+      return get()?.settings?.onboarding?.enabledModules ?? [];
     },
   };
 });

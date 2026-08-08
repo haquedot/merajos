@@ -27,9 +27,9 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     isUserAuthenticated().then((authenticated) => {
       if (!authenticated) return;
       fetch('/api/projects')
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data.projects) {
+          if (data && data.projects) {
             set({ projects: data.projects });
           }
         })
@@ -46,6 +46,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       if (!authenticated) return;
       try {
         const res = await fetch('/api/projects');
+        if (!res.ok) return;
         const data = await res.json();
         if (data.projects) {
           set({ projects: data.projects });

@@ -21,9 +21,9 @@ export const useGoalStore = create<GoalState>((set, get) => {
     isUserAuthenticated().then((authenticated) => {
       if (!authenticated) return;
       fetch('/api/goals')
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data.goals) {
+          if (data && data.goals) {
             set({ goals: data.goals });
           }
         })
@@ -40,6 +40,7 @@ export const useGoalStore = create<GoalState>((set, get) => {
       if (!authenticated) return;
       try {
         const res = await fetch('/api/goals');
+        if (!res.ok) return;
         const data = await res.json();
         if (data.goals) {
           set({ goals: data.goals });

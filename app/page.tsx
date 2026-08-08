@@ -3,25 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { format } from 'date-fns';
 import {
-  Sun,
-  Moon,
-  Clock,
   CheckCircle2,
-  Calendar,
   Briefcase,
   BookOpen,
   GraduationCap,
   Activity,
   Target,
   ArrowUpRight,
-  Plus,
   Flame,
   CheckSquare,
   Sparkles,
   TrendingUp,
-  XCircle,
   Database,
 } from 'lucide-react';
 import { useTaskStore } from '../store/useTaskStore';
@@ -31,7 +24,6 @@ import { useResearchStore } from '../store/useResearchStore';
 import { useCareerStore } from '../store/useCareerStore';
 import { useHabitStore } from '../store/useHabitStore';
 import { useGoalStore } from '../store/useGoalStore';
-import { useCalendarStore } from '../store/useCalendarStore';
 import { CircularProgress } from '../components/ui/CircularProgress';
 import { StatisticCard } from '../components/ui/StatisticCard';
 import { Badge } from '../components/ui/Badge';
@@ -47,10 +39,8 @@ export default function DashboardHome() {
   const { tasks, toggleTaskStatus } = useTaskStore();
   const { projects } = useProjectStore();
   const { overview: researchOverview, papers: researchPapers } = useResearchStore();
-  const { jobs, dsaTopics } = useCareerStore();
+  const { dsaTopics } = useCareerStore();
   const { habits, toggleHabitForDate } = useHabitStore();
-  const { goals } = useGoalStore();
-  const { events } = useCalendarStore();
 
   useEffect(() => {
     setMounted(true);
@@ -132,45 +122,45 @@ export default function DashboardHome() {
     : `${dailyScore}% Score Today`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Banner Greeting */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-6 md:p-8 rounded-3xl bg-[#1F3B99] dark:bg-[#172033] text-white border border-[#E2E8F0] dark:border-[#243244] relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+        className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-[#1F3B99] dark:bg-[#172033] text-white border border-[#E2E8F0] dark:border-[#243244] relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 shadow-md"
       >
-        <div className="relative z-10 space-y-2">
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+        <div className="relative z-10 space-y-1.5 sm:space-y-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
             {greeting} 👋
           </h1>
-          <p className="text-blue-100/90 text-xs md:text-sm max-w-xl">
+          <p className="text-blue-100/90 text-xs sm:text-sm max-w-xl leading-relaxed">
             Plan. Focus. Execute. Grow. — You have <span className="font-bold text-white">{todayTasks.length - completedToday} tasks</span> remaining today.
           </p>
         </div>
 
         {/* Progress Ring Widget */}
-        <div className="relative z-10 flex items-center gap-6 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20">
+        <div className="relative z-10 flex items-center gap-3.5 sm:gap-6 bg-white/10 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white/20 w-full sm:w-auto justify-between sm:justify-start shrink-0">
           <CircularProgress
             percentage={taskCompletionRate}
-            size={90}
-            strokeWidth={8}
+            size={76}
+            strokeWidth={7}
             color="#ffffff"
             trailColor="rgba(255, 255, 255, 0.2)"
             showText={true}
           />
           <div className="flex flex-col">
-            <span className="text-xs font-medium text-blue-100">Daily Score</span>
-            <span className="text-2xl font-black text-white">{dailyScore} / 100</span>
-            <span className="text-[10px] text-emerald-300 font-bold flex items-center gap-1 mt-1">
-              <Flame className="w-3 h-3 fill-current text-amber-300" />
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-blue-100">Daily Score</span>
+            <span className="text-xl sm:text-2xl font-black text-white">{dailyScore} / 100</span>
+            <span className="text-[10px] sm:text-xs text-emerald-300 font-bold flex items-center gap-1 mt-0.5">
+              <Flame className="w-3.5 h-3.5 fill-current text-amber-300 shrink-0" />
               Pro Focus Streak
             </span>
           </div>
         </div>
       </motion.div>
 
-      {/* Overview Stat Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Overview Stat Cards Grid: 2 cols on mobile, 4 cols on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatisticCard
           title="Active Projects"
           value={activeProjectsCount}
@@ -178,7 +168,7 @@ export default function DashboardHome() {
           icon={Briefcase}
           iconBgColor="bg-purple-50 dark:bg-purple-950/40"
           iconColor="text-purple-500"
-          trend={{ value: `${avgProjectProgress}% Avg Prog`, positive: avgProjectProgress >= 50 }}
+          trend={{ value: `${avgProjectProgress}% Avg`, positive: avgProjectProgress >= 50 }}
         />
         <StatisticCard
           title="Research Progress"
@@ -209,33 +199,33 @@ export default function DashboardHome() {
         />
       </div>
 
-      {/* Main Grid: Today Focus + Quick Action & Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Grid: Focus + Quick Action & Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left 2 Cols: MITs & Upcoming Tasks */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Top 3 MIT Section */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-500">
-                  <Target className="w-5 h-5" />
+          <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-500 shrink-0">
+                  <Target className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
-                    Today's Top 3 Most Important Tasks (MITs)
+                <div className="min-w-0">
+                  <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white truncate">
+                    Today's Top 3 MITs
                   </h3>
-                  <p className="text-xs text-gray-500">Prioritize these items before anything else</p>
+                  <p className="text-[11px] sm:text-xs text-gray-500 truncate">Prioritize these items before anything else</p>
                 </div>
               </div>
               <Link
                 href="/today"
-                className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1 shrink-0"
               >
-                View Today <ArrowUpRight className="w-3.5 h-3.5" />
+                Today <ArrowUpRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5 sm:space-y-3">
               {mits.length === 0 ? (
                 <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 text-center text-xs text-gray-500">
                   No MITs designated for today yet. Select tasks in the Tasks tab and toggle MIT.
@@ -246,27 +236,29 @@ export default function DashboardHome() {
                   return (
                     <motion.div
                       key={task.id}
-                      whileHover={{ scale: 1.01 }}
+                      whileHover={{ scale: 1.005 }}
                       onClick={() => toggleTaskStatus(task.id)}
-                      className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-800 cursor-pointer flex items-center justify-between transition-all"
+                      className="p-3 sm:p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-800 cursor-pointer flex items-start sm:items-center justify-between gap-3 transition-all"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
                         <div
-                          className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-colors ${isDone
+                          className={`w-5 h-5 mt-0.5 sm:mt-0 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${
+                            isDone
                               ? 'bg-emerald-500 border-emerald-500 text-white'
                               : 'border-gray-300 dark:border-gray-600 hover:border-blue-500'
-                            }`}
+                          }`}
                         >
                           {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
                         </div>
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <span
-                            className={`text-sm font-semibold block ${isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
-                              }`}
+                            className={`text-xs sm:text-sm font-semibold block leading-tight ${
+                              isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
+                            }`}
                           >
                             {task.title}
                           </span>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-1.5 sm:gap-2 mt-1 flex-wrap">
                             <Badge variant={task.category === 'Client' ? 'purple' : task.category === 'Research' ? 'info' : 'primary'} size="sm">
                               {task.category}
                             </Badge>
@@ -288,6 +280,7 @@ export default function DashboardHome() {
                               : 'secondary'
                         }
                         size="sm"
+                        className="shrink-0 self-start sm:self-center"
                       >
                         {task.priority}
                       </Badge>
@@ -298,19 +291,19 @@ export default function DashboardHome() {
             </div>
           </div>
 
-          {/* 11:45 PM Node Cron History Widget */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-purple-600" />
-                <div>
-                  <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
-                    Daily task and habit history
+          {/* Node Cron History Widget */}
+          <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <Database className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white truncate">
+                    Daily Task & Habit History
                   </h3>
-                  <p className="text-xs text-gray-500">Automated daily snapshot of completed vs pending tasks</p>
+                  <p className="text-[11px] sm:text-xs text-gray-500 truncate">Automated snapshot of completed vs pending tasks</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 self-end sm:self-auto shrink-0">
                 {process.env.NEXT_PUBLIC_RUN_CRON_JOB === 'true' && (
                   <button
                     onClick={async () => {
@@ -337,47 +330,47 @@ export default function DashboardHome() {
                         alert(`Error running summary: ${err.message}`);
                       }
                     }}
-                    className="btn-secondary px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5"
+                    className="btn-secondary px-2.5 py-1 rounded-xl text-[11px] sm:text-xs flex items-center gap-1.5"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Run Daily Summary</span>
+                    <span>Run Summary</span>
                   </button>
                 )}
                 <Link
                   href="/analytics"
                   className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1"
                 >
-                  Full Analytics <ArrowUpRight className="w-3.5 h-3.5" />
+                  Analytics <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
 
             {latestSnapshots.length === 0 ? (
-              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 text-center text-xs text-gray-400">
-                Node Cron calculates daily snapshots at 11:45 PM. Visit Analytics to trigger an instant run.
+              <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 text-center text-xs text-gray-400">
+                Daily snapshots generated at 11:45 PM. Visit Analytics to run on-demand.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {latestSnapshots.map((snap) => (
                   <div
                     key={snap.date}
-                    className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+                    className="p-3 sm:p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="px-2.5 py-1 rounded-lg bg-[#1F3B99] text-white font-bold">
+                    <div className="flex items-center gap-2.5">
+                      <span className="px-2 py-0.5 rounded-lg bg-[#1F3B99] text-white font-bold text-[11px] shrink-0">
                         {snap.date}
                       </span>
-                      <div>
-                        <span className="font-bold text-gray-900 dark:text-white block">
+                      <div className="min-w-0">
+                        <span className="font-bold text-gray-900 dark:text-white block truncate">
                           Productivity Score: {snap.productivityScore || snap.taskCompletionRate}%
                         </span>
-                        <span className="text-gray-400 text-[11px]">
+                        <span className="text-gray-400 text-[10px] sm:text-[11px]">
                           {snap.completedTasks} completed • {snap.pendingTasks ?? (snap.totalTasks - snap.completedTasks)} pending
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 self-start sm:self-auto shrink-0">
                       <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold text-[10px]">
                         ✓ {snap.completedTasks} Done
                       </span>
@@ -391,18 +384,18 @@ export default function DashboardHome() {
             )}
           </div>
 
-          {/* Upcoming Tasks */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckSquare className="w-5 h-5 text-blue-500" />
-                <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+          {/* Upcoming Priority Tasks */}
+          <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 shrink-0" />
+                <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white truncate">
                   Upcoming Priority Tasks
                 </h3>
               </div>
               <Link
                 href="/tasks"
-                className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1 shrink-0"
               >
                 All Tasks <ArrowUpRight className="w-3.5 h-3.5" />
               </Link>
@@ -412,20 +405,20 @@ export default function DashboardHome() {
               {upcomingTasks.map((t) => (
                 <div
                   key={t.id}
-                  className="p-3 rounded-xl bg-gray-50/70 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex items-center justify-between"
+                  className="p-2.5 sm:p-3 rounded-xl bg-gray-50/70 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2 min-w-0"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <div>
-                      <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">
                         {t.title}
                       </span>
-                      <span className="text-[10px] text-gray-400">
+                      <span className="text-[10px] text-gray-400 truncate block">
                         {t.category} • {t.estimatedHours}h est
                       </span>
                     </div>
                   </div>
-                  <Badge variant="outline" size="sm">
+                  <Badge variant="outline" size="sm" className="shrink-0">
                     {t.dueDate}
                   </Badge>
                 </div>
@@ -435,17 +428,17 @@ export default function DashboardHome() {
         </div>
 
         {/* Right Col: Productivity Trend & Habit Checklist */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Weekly Trend Chart */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-500" />
-                <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
-                  Productivity Score Trend
+          <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0" />
+                <h3 className="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                  Productivity Trend
                 </h3>
               </div>
-              <span className="text-xs font-bold text-emerald-500">{trendLabel}</span>
+              <span className="text-[11px] sm:text-xs font-bold text-emerald-500 shrink-0">{trendLabel}</span>
             </div>
 
             <HighchartsLine
@@ -462,15 +455,15 @@ export default function DashboardHome() {
           </div>
 
           {/* Quick Habits */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-amber-500" />
-                <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
+          <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
+                <h3 className="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
                   Habit Streaks
                 </h3>
               </div>
-              <Link href="/habits" className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline">
+              <Link href="/habits" className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline shrink-0">
                 View All
               </Link>
             </div>
@@ -482,21 +475,22 @@ export default function DashboardHome() {
                   <div
                     key={h.id}
                     onClick={() => toggleHabitForDate(h.id, todayStr)}
-                    className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors"
+                    className="p-2.5 sm:p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between gap-2 transition-colors min-w-0"
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <div
-                        className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] ${isDone ? 'bg-amber-500 text-white' : 'border border-gray-300 dark:border-gray-600'
-                          }`}
+                        className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] shrink-0 ${
+                          isDone ? 'bg-amber-500 text-white' : 'border border-gray-300 dark:border-gray-600'
+                        }`}
                       >
                         {isDone && '✓'}
                       </div>
-                      <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">
+                      <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
                         {h.name}
                       </span>
                     </div>
-                    <span className="text-[10px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full">
-                      🔥 {h.currentStreak}d streak
+                    <span className="text-[10px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full shrink-0">
+                      🔥 {h.currentStreak}d
                     </span>
                   </div>
                 );

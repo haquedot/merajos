@@ -52,7 +52,7 @@ export const Step1Welcome: React.FC<Step1Props> = ({ displayName, onChange, onNe
             required
             value={displayName}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Your first name…"
+            placeholder="Your name…"
             className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
           />
         </div>

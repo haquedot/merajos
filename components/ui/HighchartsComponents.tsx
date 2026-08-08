@@ -22,10 +22,12 @@ export const HighchartsLine: React.FC<LineChartProps> = ({
       type: 'spline',
       backgroundColor: 'transparent',
       height,
+      spacing: [10, 5, 10, 5],
       style: {
         fontFamily: 'inherit',
       },
     },
+    accessibility: { enabled: false },
     title: {
       text: title || '',
       style: { color: '#9ca3af', fontSize: '12px', fontWeight: 'bold' },

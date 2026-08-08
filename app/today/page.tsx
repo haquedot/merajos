@@ -23,6 +23,7 @@ import { useTaskStore } from '../../store/useTaskStore';
 import { Task, TimeSlot, Priority, Category } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 export default function TodayPage() {
   const [viewMode, setViewMode] = useState<'timeline' | 'checklist'>('checklist');
@@ -74,66 +75,58 @@ export default function TodayPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Today Header Banner */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Sun className="w-5 h-5 text-amber-500" />
-              <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                Today's Focus & Timeline
-              </h1>
-            </div>
-            <p className="text-xs text-gray-500">
-              {format(new Date(), 'EEEE, MMMM d, yyyy')} • Plan your day in 4 distinct time slots
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
+      <PageHeader
+        icon={Sun}
+        iconBgColor="bg-amber-50 dark:bg-amber-950/40 text-amber-500"
+        title="Today's Focus & Timeline"
+        subtitle={`${format(new Date(), 'EEEE, MMMM d, yyyy')} • Plan your day in 4 distinct time slots`}
+        actions={
+          <>
             {/* View Mode Toggle */}
-            <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold">
+            <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold shrink-0">
               <button
                 onClick={() => setViewMode('checklist')}
-                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-xs ${
                   viewMode === 'checklist'
                     ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <LayoutList className="w-3.5 h-3.5" />
-                Checklist View
+                <span className="inline">Checklist</span>
               </button>
               <button
                 onClick={() => setViewMode('timeline')}
-                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-xs ${
                   viewMode === 'timeline'
                     ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <Clock className="w-3.5 h-3.5" />
-                Timeline View
+                <span className="inline">Timeline</span>
               </button>
             </div>
 
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
+              className="btn-primary px-3 sm:px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0"
             >
               <Plus className="w-4 h-4" />
-              Add Task
+              <span className="hidden sm:inline">Add Task</span>
             </button>
-          </div>
-        </div>
-
+          </>
+        }
+      >
         {/* Progress Bar Header */}
-        <div className="space-y-1.5 pt-2">
-          <div className="flex items-center justify-between text-xs font-semibold">
-            <span className="text-gray-600 dark:text-gray-400">
+        <div className="space-y-1.5 pt-2 border-t border-gray-100 dark:border-gray-800/80">
+          <div className="flex items-center justify-between text-[11px] sm:text-xs font-semibold">
+            <span className="text-gray-600 dark:text-gray-400 truncate">
               Today's Completion ({completedCount}/{todayTasks.length} Completed)
             </span>
-            <span className="text-[#1F3B99] dark:text-[#6D5BFF] font-bold">{progressPercent}%</span>
+            <span className="text-[#1F3B99] dark:text-[#6D5BFF] font-bold shrink-0">{progressPercent}%</span>
           </div>
           <div className="w-full h-2.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
             <motion.div
@@ -144,18 +137,18 @@ export default function TodayPage() {
             />
           </div>
         </div>
-      </div>
+      </PageHeader>
 
       {/* Top 3 MIT Section */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4">
         <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-rose-500" />
-          <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
+          <Target className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 shrink-0" />
+          <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">
             Top 3 Most Important Tasks (MITs)
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           {mits.map((task) => {
             const isDone = task.status === 'completed';
             return (
@@ -163,7 +156,7 @@ export default function TodayPage() {
                 key={task.id}
                 whileHover={{ y: -2 }}
                 onClick={() => toggleTaskStatus(task.id)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                className={`p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all ${
                   isDone
                     ? 'bg-gray-50/60 dark:bg-gray-800/30 border-gray-200 dark:border-gray-800'
                     : 'bg-blue-50/30 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50'
@@ -171,7 +164,7 @@ export default function TodayPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span
-                    className={`text-xs font-bold leading-snug ${
+                    className={`text-xs font-bold leading-snug break-words min-w-0 flex-1 ${
                       isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
                     }`}
                   >
@@ -199,7 +192,7 @@ export default function TodayPage() {
           })}
 
           {mits.length < 3 && (
-            <div className="p-4 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center text-center text-xs text-gray-400 italic">
+            <div className="p-3.5 sm:p-4 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center text-center text-xs text-gray-400 italic">
               + Toggle MIT on any task to add to your top 3 daily focus.
             </div>
           )}
@@ -207,7 +200,7 @@ export default function TodayPage() {
       </div>
 
       {/* 4 Time Slots Sections */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {slotSections.map((sec) => {
           const Icon = sec.icon;
           const slotTasks = todayTasks.filter((t) => t.timeSlot === sec.key || (!t.timeSlot && sec.key === 'morning'));
@@ -215,16 +208,16 @@ export default function TodayPage() {
           return (
             <div
               key={sec.key}
-              className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4"
+              className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4"
             >
               <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-2">
-                  <Icon className={`w-5 h-5 ${sec.color}`} />
-                  <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${sec.color} shrink-0`} />
+                  <h3 className="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
                     {sec.title}
                   </h3>
                 </div>
-                <span className="text-xs font-semibold text-gray-400">
+                <span className="text-[11px] sm:text-xs font-semibold text-gray-400 shrink-0">
                   {slotTasks.filter((t) => t.status === 'completed').length}/{slotTasks.length} Tasks
                 </span>
               </div>
@@ -232,53 +225,58 @@ export default function TodayPage() {
               {slotTasks.length === 0 ? (
                 <p className="text-xs text-gray-400 italic py-2">No tasks scheduled for this slot.</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {slotTasks.map((task) => {
                     const isDone = task.status === 'completed';
                     return (
                       <div
                         key={task.id}
-                        className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/80 flex items-center justify-between hover:bg-gray-100/80 dark:hover:bg-gray-800 transition-colors"
+                        className="p-3 sm:p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 hover:bg-gray-100/80 dark:hover:bg-gray-800 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-start sm:items-center gap-3 min-w-0 w-full sm:w-auto">
                           <button
                             onClick={() => toggleTaskStatus(task.id)}
-                            className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                            className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors shrink-0 mt-0.5 sm:mt-0 ${
                               isDone ? 'bg-emerald-500 text-white' : 'border border-gray-300 dark:border-gray-600'
                             }`}
                           >
                             {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
                           </button>
-                          <div>
+                          <div className="min-w-0 flex-1">
                             <span
-                              className={`text-xs font-bold ${
+                              className={`text-xs sm:text-sm font-bold block leading-snug break-words ${
                                 isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
                               }`}
                             >
                               {task.title}
                             </span>
                             {task.description && (
-                              <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">
+                              <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">
                                 {task.description}
                               </p>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800/80 shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant={task.category === 'Client' ? 'purple' : task.category === 'Research' ? 'info' : 'secondary'} size="sm">
+                              {task.category}
+                            </Badge>
+                            <Badge variant={task.priority === 'urgent' ? 'danger' : 'secondary'} size="sm">
+                              {task.priority}
+                            </Badge>
+                          </div>
                           <button
                             onClick={() => toggleMIT(task.id)}
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors ${
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors shrink-0 ${
                               task.mit
                                 ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
-                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
+                                : 'bg-gray-200/70 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
                             }`}
                           >
                             {task.mit ? '★ MIT' : 'Set MIT'}
                           </button>
-                          <Badge variant={task.priority === 'urgent' ? 'danger' : 'secondary'} size="sm">
-                            {task.priority}
-                          </Badge>
                         </div>
                       </div>
                     );

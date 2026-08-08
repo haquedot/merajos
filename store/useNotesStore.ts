@@ -24,9 +24,9 @@ export const useNotesStore = create<NotesState>((set, get) => {
     isUserAuthenticated().then((authenticated) => {
       if (!authenticated) return;
       fetch('/api/notes')
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data.notes) {
+          if (data && data.notes) {
             set({ notes: data.notes });
           }
         })
@@ -45,6 +45,7 @@ export const useNotesStore = create<NotesState>((set, get) => {
       if (!authenticated) return;
       try {
         const res = await fetch('/api/notes');
+        if (!res.ok) return;
         const data = await res.json();
         if (data.notes) {
           set({ notes: data.notes });

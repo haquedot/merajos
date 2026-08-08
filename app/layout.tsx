@@ -55,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/logos/orbit-light-icon.png" type="image/png" sizes="any" />
         <link rel="apple-touch-icon" href="/logos/orbit-light-icon.png" />
         <script
+          id="theme-initializer"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

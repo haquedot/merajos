@@ -53,6 +53,7 @@ import { CalendarEvent, Category } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 export default function ClientsPage() {
   const {
@@ -245,76 +246,63 @@ export default function ClientsPage() {
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   return (
-    <div className="space-y-6">
-      {/* Client Header & Action Controls */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600">
-              <Briefcase className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-                Client Projects & Work Center
-              </h1>
-              <p className="text-xs text-gray-500">
-                Track client projects, sync Google Calendar work schedule, and manage deliverables
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
+    <div className="space-y-4 sm:space-y-6">
+      <PageHeader
+        icon={Briefcase}
+        iconBgColor="bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400"
+        title="Client Projects & Work Center"
+        badgeText={`${projects.length} Projects`}
+        badgeVariant="purple"
+        subtitle="Track client projects, sync Google Calendar work schedule, and manage deliverables"
+        actions={
+          <>
             <button
               onClick={isGoogleLinked ? syncNow : signIn}
               disabled={isSyncing}
-              className="btn-secondary px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5"
+              className="btn-secondary px-3 sm:px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Syncing...' : 'Sync Google Calendar Client Work'}</span>
+              <span>{isSyncing ? 'Syncing...' : 'Sync Calendar'}</span>
             </button>
             <button
               onClick={() => setIsProjModalOpen(true)}
-              className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
+              className="btn-primary px-3.5 sm:px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>New Client Project</span>
+              <span>New Project</span>
             </button>
-          </div>
-        </div>
-
+          </>
+        }
+      >
         {/* Project Selector Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar touch-scroll max-w-full pb-1 pt-2 border-t border-gray-100 dark:border-gray-800">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 sm:gap-2 ${
               activeTab === 'all'
                 ? 'bg-[#1F3B99] dark:bg-[#6D5BFF] text-white shadow-md'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
           >
-            <Briefcase className="w-3.5 h-3.5" />
-            <span>All Client Work Calendar</span>
-            <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-white/20">
-              {clientEvents.length + clientTasks.length}
-            </span>
+            <Briefcase className="w-3.5 h-3.5 shrink-0" />
+            <span>All Client Work</span>
           </button>
 
-          {projects.map((p) => {
-            const isSelected = activeTab === p.id;
+          {projects.map((proj) => {
+            const isSel = activeTab === proj.id;
             return (
               <button
-                key={p.id}
-                onClick={() => setActiveTab(p.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
-                  isSelected
+                key={proj.id}
+                onClick={() => setActiveTab(proj.id)}
+                className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 sm:gap-2 ${
+                  isSel
                     ? 'bg-[#1F3B99] dark:bg-[#6D5BFF] text-white shadow-md'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
-                <span>{p.name}</span>
-                <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-white/20">
-                  {p.progress}%
-                </span>
+                <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                <span className="truncate max-w-[120px] sm:max-w-[160px]">{proj.name}</span>
+                <span className="text-[10px] opacity-80 shrink-0">({proj.clientName || `${proj.progress}%`})</span>
               </button>
             );
           })}
@@ -323,91 +311,91 @@ export default function ClientsPage() {
             onClick={() => setIsProjModalOpen(true)}
             className="px-3 py-2 rounded-xl text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors shrink-0 flex items-center gap-1"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 shrink-0" />
             <span>Add Project</span>
           </button>
         </div>
-      </div>
+      </PageHeader>
 
       {/* ALL CLIENT WORK VIEW (CALENDAR SCHEDULE) */}
       {activeTab === 'all' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Overview Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-2">
-              <span className="text-[11px] text-gray-400 font-bold uppercase block">Active Projects</span>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-1.5 sm:space-y-2 flex flex-col justify-between min-h-[96px] sm:min-h-0">
+              <span className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase truncate block">Active Projects</span>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-black text-gray-900 dark:text-white">{projects.length}</span>
-                <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600">
-                  <Briefcase className="w-5 h-5" />
+                <span className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{projects.length}</span>
+                <div className="p-1.5 sm:p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 shrink-0">
+                  <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
               </div>
-              <p className="text-[11px] text-gray-500">
-                {projects.length > 0 ? `${projects.filter((p) => p.status === 'active').length} Active` : 'No projects created'}
+              <p className="text-[10px] sm:text-[11px] text-gray-500 truncate">
+                {projects.length > 0 ? `${projects.filter((p) => p.status === 'active').length} Active` : 'No projects'}
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-2">
-              <span className="text-[11px] text-gray-400 font-bold uppercase block">Synced Client Events</span>
+            <div className="p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-1.5 sm:space-y-2 flex flex-col justify-between min-h-[96px] sm:min-h-0">
+              <span className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase truncate block">Synced Events</span>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-black text-gray-900 dark:text-white">{clientEvents.length}</span>
-                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600">
-                  <CalendarIcon className="w-5 h-5" />
+                <span className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{clientEvents.length}</span>
+                <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 shrink-0">
+                  <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
               </div>
-              <p className="text-[11px] text-gray-500">Google Calendar Events</p>
+              <p className="text-[10px] sm:text-[11px] text-gray-500 truncate">Google Calendar</p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-2">
-              <span className="text-[11px] text-gray-400 font-bold uppercase block">Client Tasks Logged</span>
+            <div className="p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-1.5 sm:space-y-2 flex flex-col justify-between min-h-[96px] sm:min-h-0">
+              <span className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase truncate block">Tasks Logged</span>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-black text-gray-900 dark:text-white">{clientTasks.length}</span>
-                <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600">
-                  <CheckSquare className="w-5 h-5" />
+                <span className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{clientTasks.length}</span>
+                <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 shrink-0">
+                  <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
               </div>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[10px] sm:text-[11px] text-gray-500 truncate">
                 {clientTasks.filter((t) => t.status === 'completed').length} Completed
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-2">
-              <span className="text-[11px] text-gray-400 font-bold uppercase block">Logged Work Hours</span>
+            <div className="p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-1.5 sm:space-y-2 flex flex-col justify-between min-h-[96px] sm:min-h-0">
+              <span className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase truncate block">Work Hours</span>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-black text-gray-900 dark:text-white">
+                <span className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
                   {projects.reduce((a, b) => a + (b.actualHours || 0), 0)}h
                 </span>
-                <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600">
-                  <Clock className="w-5 h-5" />
+                <div className="p-1.5 sm:p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 shrink-0">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
               </div>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[10px] sm:text-[11px] text-gray-500 truncate">
                 Est: {projects.reduce((a, b) => a + (b.estimatedHours || 0), 0)}h Total
               </p>
             </div>
           </div>
 
           {/* Interactive Client Work Calendar View */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <CalendarIcon className="w-5 h-5 text-[#1F3B99] dark:text-[#6D5BFF]" />
-                <div>
-                  <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <CalendarIcon className="w-5 h-5 text-[#1F3B99] dark:text-[#6D5BFF] shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white truncate">
                     Client Work Calendar Schedule
                   </h3>
-                  <p className="text-xs text-gray-500">
-                    Live schedule of Google Calendar client events & client tasks (Click event for details)
+                  <p className="text-[11px] sm:text-xs text-gray-500 truncate">
+                    Live schedule of Google Calendar client events & client tasks
                   </p>
                 </div>
               </div>
 
               {/* View Mode & Date Controls */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+              <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-1 sm:pt-0">
+                <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shrink-0">
                   <button
                     onClick={() => setCalViewMode('week')}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                       calViewMode === 'week'
                         ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-xs'
                         : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
@@ -417,7 +405,7 @@ export default function ClientsPage() {
                   </button>
                   <button
                     onClick={() => setCalViewMode('agenda')}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                       calViewMode === 'agenda'
                         ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-xs'
                         : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
@@ -427,14 +415,14 @@ export default function ClientsPage() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-xl p-1">
+                <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-xl p-1 shrink-0">
                   <button
                     onClick={handlePrevDate}
                     className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-xs font-bold text-gray-800 dark:text-gray-200 px-2">
+                  <span className="text-xs font-bold text-gray-800 dark:text-gray-200 px-1.5 sm:px-2">
                     {format(currDate, 'MMM yyyy')}
                   </span>
                   <button

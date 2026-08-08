@@ -20,6 +20,7 @@
     "date-fns": "^4.4.0",
     "dexie": "^4.4.4",
     "dexie-react-hooks": "^4.4.0",
+    "driver.js": "^1.8.0",
     "framer-motion": "^13.0.0",
     "highcharts": "^13.0.0",
     "highcharts-react-official": "^3.2.3",

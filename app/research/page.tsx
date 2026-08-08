@@ -19,6 +19,7 @@ import { Paper, PaperStatus, Priority } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 export default function ResearchPage() {
   const {
@@ -80,71 +81,63 @@ export default function ResearchPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600">
-              <BookOpen className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-                Research & Thesis Dashboard
-              </h1>
-              <p className="text-xs text-gray-500">
-                Track literature review, paper drafting progress, and reference citation database
-              </p>
-            </div>
-          </div>
-
+      <PageHeader
+        icon={BookOpen}
+        iconBgColor="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400"
+        title="Research & Thesis Dashboard"
+        badgeText={`${papers.length} Papers`}
+        badgeVariant="blue"
+        subtitle="Track literature review, paper drafting progress, and reference citation database"
+        actions={
           <button
             onClick={() => setIsPaperModalOpen(true)}
-            className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
+            className="btn-primary px-3.5 sm:px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 self-stretch sm:self-auto justify-center"
           >
             <Plus className="w-4 h-4" />
-            Add Research Paper
+            <span>Add Paper</span>
           </button>
-        </div>
-
+        }
+      >
         {/* Current Active Topic Banner */}
-        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 pt-3 border-t border-gray-100 dark:border-gray-800/80">
+          <div className="min-w-0 w-full md:w-auto">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-500">
               Thesis Topic
             </span>
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-white mt-0.5">
+            <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white mt-0.5 leading-snug">
               {overview.thesisTitle}
             </h3>
-            <p className="text-xs text-gray-400 mt-0.5">{overview.topic}</p>
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5 truncate">{overview.topic}</p>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="text-center">
+          <div className="grid grid-cols-2 gap-4 w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-gray-200 dark:border-gray-700/60">
+            <div className="text-left md:text-center p-2 rounded-xl bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-gray-800 md:border-none md:bg-transparent">
               <span className="text-[10px] text-gray-400 font-bold uppercase block">Papers Read</span>
-              <span className="text-base font-black text-gray-900 dark:text-white">
+              <span className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
                 {overview.papersRead} Papers
               </span>
             </div>
-            <div className="text-center">
+            <div className="text-left md:text-center p-2 rounded-xl bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-gray-800 md:border-none md:bg-transparent">
               <span className="text-[10px] text-gray-400 font-bold uppercase block">Hours Spent</span>
-              <span className="text-base font-black text-gray-900 dark:text-white">
+              <span className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
                 {overview.hoursSpent} Hours
               </span>
             </div>
           </div>
         </div>
-      </div>
+      </PageHeader>
 
       {/* Progress Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Thesis Writing Breakdown */}
-        <div className="lg:col-span-2 p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+        <div className="lg:col-span-2 p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-2">
+            <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white">
               Paper Writing Progress by Section
             </h3>
-            <span className="text-xs font-bold text-blue-500">
+            <span className="text-xs font-bold text-blue-500 shrink-0">
               {overview.writingProgress}% Overall Written
             </span>
           </div>
@@ -155,9 +148,9 @@ export default function ResearchPage() {
               return (
                 <div
                   key={sec.id}
-                  className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-2"
+                  className="p-3 sm:p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-2"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
                       {sec.section}
                     </span>
@@ -181,34 +174,34 @@ export default function ResearchPage() {
         </div>
 
         {/* Progress Ring Card */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col items-center justify-center text-center space-y-4">
+        <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col items-center justify-center text-center space-y-3 sm:space-y-4">
           <CircularProgress
             percentage={overview.progress}
-            size={140}
+            size={130}
             strokeWidth={12}
             color="#3b82f6"
             label="Thesis Readiness"
           />
           <div>
-            <h4 className="text-sm font-extrabold text-gray-900 dark:text-white">
+            <h4 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white">
               Target Submission Date
             </h4>
-            <p className="text-xs text-gray-400 mt-1">December 2026 Camera Ready</p>
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">December 2026 Camera Ready</p>
           </div>
         </div>
       </div>
 
       {/* Reference Database Section */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-500" />
-            <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+            <FileText className="w-5 h-5 text-blue-500 shrink-0" />
+            <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white">
               Literature Review & Reference Database
             </h3>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
             <div className="relative flex-1 sm:w-64">
               <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
               <input
@@ -216,14 +209,14 @@ export default function ResearchPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search paper titles, authors..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
 
             <select
               value={selectedStatusFilter}
               onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
+              className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 shrink-0"
             >
               <option value="all">All Statuses</option>
               <option value="cited">Cited</option>
@@ -235,19 +228,19 @@ export default function ResearchPage() {
         </div>
 
         {/* Papers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {filteredPapers.map((paper) => (
             <motion.div
               key={paper.id}
               whileHover={{ y: -2 }}
-              className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-3 shadow-2xs"
+              className="p-3.5 sm:p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-2.5 sm:space-y-3 shadow-2xs"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <span className="text-xs font-extrabold text-gray-900 dark:text-white block">
+              <div className="flex items-start justify-between gap-2 min-w-0">
+                <div className="min-w-0">
+                  <span className="text-xs font-extrabold text-gray-900 dark:text-white block truncate">
                     {paper.title}
                   </span>
-                  <span className="text-[11px] text-gray-400 mt-0.5 block">
+                  <span className="text-[11px] text-gray-400 mt-0.5 block truncate">
                     {paper.authors} ({paper.year}) • {paper.source}
                   </span>
                 </div>
@@ -263,13 +256,13 @@ export default function ResearchPage() {
               )}
 
               <div className="flex items-center justify-between pt-2 text-[10px] text-gray-400 border-t border-gray-200/60 dark:border-gray-800">
-                <span className="font-mono">Citation: {paper.citation || 'Ref'}</span>
+                <span className="font-mono truncate">Citation: {paper.citation || 'Ref'}</span>
                 {paper.pdfUrl && (
                   <a
                     href={paper.pdfUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1 font-bold"
+                    className="text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1 font-bold shrink-0"
                   >
                     View PDF <ExternalLink className="w-3 h-3" />
                   </a>

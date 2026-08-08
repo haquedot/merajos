@@ -39,9 +39,9 @@ export const useHabitStore = create<HabitState>((set, get) => {
     isUserAuthenticated().then((authenticated) => {
       if (!authenticated) return;
       fetch('/api/habits')
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data.habits && Array.isArray(data.habits)) {
+          if (data && data.habits && Array.isArray(data.habits)) {
             set((state) => {
               const merged = mergeHabits(state.habits, data.habits);
               db.habits.bulkPut(merged);
@@ -68,6 +68,7 @@ export const useHabitStore = create<HabitState>((set, get) => {
       if (!authenticated) return;
       try {
         const res = await fetch('/api/habits');
+        if (!res.ok) return;
         const data = await res.json();
         if (data.habits && Array.isArray(data.habits)) {
           set((state) => {

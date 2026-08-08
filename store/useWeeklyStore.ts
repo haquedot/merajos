@@ -33,9 +33,9 @@ export const useWeeklyStore = create<WeeklyState>((set, get) => {
     isUserAuthenticated().then((authenticated) => {
       if (!authenticated) return;
       fetch('/api/weekly')
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data.plan) {
+          if (data && data.plan) {
             set({ plan: data.plan });
           }
         })
@@ -51,6 +51,7 @@ export const useWeeklyStore = create<WeeklyState>((set, get) => {
       if (!authenticated) return;
       try {
         const res = await fetch('/api/weekly');
+        if (!res.ok) return;
         const data = await res.json();
         if (data.plan) {
           set({ plan: data.plan });
