@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const updatedPlan = await Weekly.findByIdAndUpdate(
       weekId,
       { ...body, _id: weekId },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     ).lean();
 
     return NextResponse.json({ plan: { ...updatedPlan, weekId: (updatedPlan as any)._id } }, { status: 201 });

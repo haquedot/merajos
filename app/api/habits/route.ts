@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const newHabit = await Habit.findOneAndUpdate(
       { _id: id },
       { $set: habitData },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     ).lean();
 
     return NextResponse.json({ habit: { ...(newHabit as any), id: (newHabit as any)._id } }, { status: 201 });
@@ -55,7 +55,7 @@ export async function PUT(req: Request) {
     const updatedHabit = await Habit.findOneAndUpdate(
       { _id: id },
       { $set: updates },
-      { new: true, upsert: true }
+      { upsert: true, returnDocument: 'after' }
     ).lean();
 
     return NextResponse.json({ habit: { ...(updatedHabit as any), id: (updatedHabit as any)._id } });

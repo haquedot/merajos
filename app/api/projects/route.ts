@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const newProj = await Project.findByIdAndUpdate(
       id,
       { ...body, _id: id },
-      { upsert: true, new: true, runValidators: false }
+      { upsert: true, returnDocument: 'after', runValidators: false }
     ).lean();
 
     return NextResponse.json({ project: { ...newProj, id: (newProj as any)._id } }, { status: 201 });
@@ -42,7 +42,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Project id is required' }, { status: 400 });
     }
 
-    const updatedProj = await Project.findByIdAndUpdate(id, updates, { new: true }).lean();
+    const updatedProj = await Project.findByIdAndUpdate(id, updates, { returnDocument: 'after' }).lean();
     if (!updatedProj) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }

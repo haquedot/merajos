@@ -17,12 +17,33 @@ export async function POST(req: Request) {
   try {
     await connectToDatabase();
     const body = await req.json();
+
+    // Check for batch operation
+    const items = Array.isArray(body) ? body : body.events ? body.events : null;
+
+    if (items && Array.isArray(items)) {
+      const ops = items.map((evt: any) => {
+        const id = evt.id || `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        return {
+          updateOne: {
+            filter: { _id: id },
+            update: { $set: { ...evt, _id: id } },
+            upsert: true,
+          },
+        };
+      });
+
+      if (ops.length > 0) {
+        await CalendarEvent.bulkWrite(ops);
+      }
+      return NextResponse.json({ success: true, count: items.length }, { status: 201 });
+    }
+
     const id = body.id || `evt-${Date.now()}`;
-    
     const newEvt = await CalendarEvent.findByIdAndUpdate(
       id,
       { ...body, _id: id },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     ).lean();
 
     return NextResponse.json({ event: { ...newEvt, id: (newEvt as any)._id } }, { status: 201 });
@@ -41,7 +62,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Event id is required' }, { status: 400 });
     }
 
-    const updatedEvt = await CalendarEvent.findByIdAndUpdate(id, updates, { new: true }).lean();
+    const updatedEvt = await CalendarEvent.findByIdAndUpdate(id, updates, { returnDocument: 'after' }).lean();
     if (!updatedEvt) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }

@@ -45,7 +45,7 @@ export async function calculateDailyTasksAndLogAnalytics(
               googleTaskId: task.googleTaskId || taskId,
             },
           },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
       }
     }
@@ -174,7 +174,7 @@ export async function calculateDailyTasksAndLogAnalytics(
         calculatedAt,
       },
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   console.log(`[NodeCron 11:45 PM] Snapshot saved for ${todayStr}. Triggering email dispatch...`);
