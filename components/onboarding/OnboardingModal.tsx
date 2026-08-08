@@ -64,22 +64,16 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
   const back = () => setStep((s) => Math.max(s - 1, 1));
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm overflow-y-auto">
       {/* Modal Card */}
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="w-full max-w-lg bg-white dark:bg-[#101827] rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden"
+        className="w-full max-w-lg bg-white dark:bg-[#101827] rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden max-h-[85vh] sm:max-h-[90vh] flex flex-col my-auto"
       >
         {/* Top bar */}
-        <div className="px-6 pt-6 pb-5 border-b border-gray-100 dark:border-gray-800">
-          {/* Brand */}
-          {/* <div className="flex items-center gap-2 mb-5">
-            <Logo variant="icon" size={28} />
-            <span className="text-sm font-bold text-gray-400 dark:text-gray-500 tracking-wide uppercase">Setup</span>
-          </div> */}
-
+        <div className="px-5 sm:px-6 pt-5 sm:pt-6 pb-4 sm:pb-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
           {/* Progress steps */}
           <div className="flex items-center gap-2">
             {Array.from({ length: TOTAL_STEPS }).map((_, i) => {
@@ -114,7 +108,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
         </div>
 
         {/* Step Content */}
-        <div className="p-6 min-h-[380px] flex flex-col justify-center">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto min-h-0 touch-scroll">
           <AnimatePresence mode="wait">
             {step === 1 && (
               <Step1Welcome

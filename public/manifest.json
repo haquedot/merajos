@@ -1,21 +1,24 @@
 {
-  "name": "Orbit — Personal Productivity Command Center",
+  "name": "Orbit — Personal Productivity Platform",
   "short_name": "Orbit",
   "description": "Plan. Focus. Execute. Grow. Orbit is your personal productivity command center.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0f17",
-  "theme_color": "#4F46E5",
+  "background_color": "#0B0F19",
+  "theme_color": "#1F3B99",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/logos/orbit-light-icon.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/logos/orbit-dark.png",
+      "src": "/logos/orbit-light-icon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

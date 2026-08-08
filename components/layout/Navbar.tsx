@@ -161,18 +161,29 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="hidden sm:inline">Quick Add</span>
         </button>
 
-        {/* Theme Toggle Button (Desktop navbar, accessible via Sidebar on mobile) */}
+        {/* Modern Theme Switch Toggle (Desktop navbar) */}
         <button
           onClick={toggleTheme}
-          className="hidden sm:flex p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
+          className="hidden sm:flex items-center relative w-12 h-6.5 rounded-full p-0.5 bg-gray-200 dark:bg-gray-800 border border-gray-300/80 dark:border-gray-700 transition-colors focus:outline-hidden cursor-pointer shrink-0"
           aria-label="Toggle Theme"
           title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
         >
-          {mounted && theme === 'dark' ? (
-            <Sun className="w-4 h-4 text-amber-400" />
-          ) : (
-            <Moon className="w-4 h-4 text-slate-700" />
-          )}
+          <div className="absolute inset-0 flex items-center justify-between px-1.5 pointer-events-none">
+            <Sun className="w-3.5 h-3.5 text-amber-500/70" />
+            <Moon className="w-3.5 h-3.5 text-indigo-400/70" />
+          </div>
+
+          <div
+            className={`w-5 h-5 rounded-full bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-transform duration-200 ease-in-out z-10 ${
+              mounted && theme === 'dark' ? 'translate-x-5.5' : 'translate-x-0'
+            }`}
+          >
+            {mounted && theme === 'dark' ? (
+              <Moon className="w-3 h-3 text-indigo-400" />
+            ) : (
+              <Sun className="w-3 h-3 text-amber-500" />
+            )}
+          </div>
         </button>
 
         {/* Platform Tour Button */}

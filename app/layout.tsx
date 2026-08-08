@@ -1,10 +1,12 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Manrope } from 'next/font/google';
 import './globals.css';
 import { MainLayout } from '../components/layout/MainLayout';
 import { QueryProvider } from '../providers/QueryProvider';
 import { GoogleAuthProvider } from '../providers/GoogleAuthProvider';
 import { ThemeProvider } from '../providers/ThemeProvider';
+import { PWARegister } from '../components/pwa/PWARegister';
+import { PWAInstallPrompt } from '../components/pwa/PWAInstallPrompt';
 import { BRAND } from '../lib/branding';
 
 const manrope = Manrope({
@@ -13,9 +15,24 @@ const manrope = Manrope({
   weight: ['400', '500', '600', '700', '800'],
 });
 
+export const viewport: Viewport = {
+  themeColor: '#1F3B99',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
   title: `${BRAND.name} — ${BRAND.tagline}`,
   description: BRAND.description,
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: BRAND.name,
+  },
   icons: {
     icon: '/logos/orbit-light-icon.png',
     shortcut: '/logos/orbit-light-icon.png',
@@ -76,10 +93,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full flex flex-col font-sans transition-colors duration-150" suppressHydrationWarning>
+        <PWARegister />
         <QueryProvider>
           <ThemeProvider>
             <GoogleAuthProvider>
               <MainLayout>{children}</MainLayout>
+              <PWAInstallPrompt />
             </GoogleAuthProvider>
           </ThemeProvider>
         </QueryProvider>
