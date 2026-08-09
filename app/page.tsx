@@ -18,6 +18,7 @@ import {
   Database,
 } from 'lucide-react';
 import { useTaskStore } from '../store/useTaskStore';
+import { Task } from '../types';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useProjectStore } from '../store/useProjectStore';
 import { useResearchStore } from '../store/useResearchStore';
@@ -27,20 +28,26 @@ import { useGoalStore } from '../store/useGoalStore';
 import { CircularProgress } from '../components/ui/CircularProgress';
 import { StatisticCard } from '../components/ui/StatisticCard';
 import { Badge } from '../components/ui/Badge';
+import { calculateDailyScore } from '../lib/productivityCalculator';
 import { HighchartsLine } from '../components/ui/HighchartsComponents';
 
 import { isUserAuthenticated } from '../lib/authCheck';
+import { NowFocusCard } from '../components/dashboard/NowFocusCard';
+import { FocusOverlayModal } from '../components/modals/FocusOverlayModal';
 
 export default function DashboardHome() {
   const [greeting, setGreeting] = useState('Good day');
   const [mounted, setMounted] = useState(false);
   const [latestSnapshots, setLatestSnapshots] = useState<any[]>([]);
+  const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
+  const [activeFocusTask, setActiveFocusTask] = useState<any>(null);
 
   const { tasks, toggleTaskStatus } = useTaskStore();
   const { projects } = useProjectStore();
   const { overview: researchOverview, papers: researchPapers } = useResearchStore();
   const { dsaTopics } = useCareerStore();
   const { habits, toggleHabitForDate } = useHabitStore();
+  const { goals } = useGoalStore();
 
   useEffect(() => {
     setMounted(true);
@@ -100,8 +107,19 @@ export default function DashboardHome() {
   const habitSubtitle = habits.length > 0
     ? habits.slice(0, 3).map((h) => h.name).join(', ')
     : 'No habits defined';
-  const habitCompletionRate = habits.length > 0 ? Math.round((habitCompletedToday / habits.length) * 100) : 100;
-  const dailyScore = Math.round(taskCompletionRate * 0.6 + habitCompletionRate * 0.4);
+  const habitCompletionRate = habits.length > 0 ? Math.round((habitCompletedToday / habits.length) * 100) : 0;
+  
+  // Dynamic Modular Daily Score Calculation with Empty State Guard
+  const { dailyScore, hasRecordedItems } = calculateDailyScore({
+    todayTasks,
+    habitsCount: habits.length,
+    completedHabitsCount: habitCompletedToday,
+    projectsCount: projects.length,
+    goalsCount: goals.length,
+    completedGoalsCount: goals.filter((g) => g.progress >= 100).length,
+    researchCount: researchPapers.length,
+    dsaCount: dsaTopics.length,
+  });
 
   // Real Highcharts data from latest snapshots
   const sortedSnapshots = [...latestSnapshots].sort((a, b) => a.date.localeCompare(b.date));
@@ -120,6 +138,36 @@ export default function DashboardHome() {
   const trendLabel = sortedSnapshots.length > 1
     ? `${scoreDiff >= 0 ? '+' : ''}${scoreDiff}% vs prev snapshot`
     : `${dailyScore}% Score Today`;
+
+  // Time-aware focus task selection algorithm
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const getTaskMinutes = (t: Task) => {
+    if (t.time) {
+      const [h, m] = t.time.split(':').map(Number);
+      if (!isNaN(h) && !isNaN(m)) return h * 60 + m;
+    }
+    if (t.timeSlot === 'morning') return 9 * 60;
+    if (t.timeSlot === 'afternoon') return 14 * 60;
+    if (t.timeSlot === 'evening') return 18 * 60;
+    if (t.timeSlot === 'night') return 22 * 60;
+    return 12 * 60;
+  };
+
+  const uncompletedToday = todayTasks.filter((t) => t.status !== 'completed');
+  
+  // Sort today's uncompleted tasks by: 1) MIT, 2) proximity to current time, 3) priority
+  const sortedFocusCandidates = [...uncompletedToday].sort((a, b) => {
+    if (a.mit !== b.mit) return a.mit ? -1 : 1;
+    const diffA = Math.abs(getTaskMinutes(a) - currentMinutes);
+    const diffB = Math.abs(getTaskMinutes(b) - currentMinutes);
+    if (diffA !== diffB) return diffA - diffB;
+    const priorityWeight = { urgent: 4, high: 3, medium: 2, low: 1 };
+    return priorityWeight[b.priority] - priorityWeight[a.priority];
+  });
+
+  const currentFocusTask = sortedFocusCandidates[0] || mits.find((t) => t.status !== 'completed') || upcomingTasks[0];
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -141,7 +189,7 @@ export default function DashboardHome() {
         {/* Progress Ring Widget */}
         <div className="relative z-10 flex items-center gap-3.5 sm:gap-6 bg-white/10 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white/20 w-full sm:w-auto justify-between sm:justify-start shrink-0">
           <CircularProgress
-            percentage={taskCompletionRate}
+            percentage={hasRecordedItems ? taskCompletionRate : 0}
             size={76}
             strokeWidth={7}
             color="#ffffff"
@@ -150,14 +198,38 @@ export default function DashboardHome() {
           />
           <div className="flex flex-col">
             <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-blue-100">Daily Score</span>
-            <span className="text-xl sm:text-2xl font-black text-white">{dailyScore} / 100</span>
-            <span className="text-[10px] sm:text-xs text-emerald-300 font-bold flex items-center gap-1 mt-0.5">
+            <span className="text-xl sm:text-2xl font-black text-white">
+              {hasRecordedItems ? `${dailyScore} / 100` : 'Not Started'}
+            </span>
+            <span className="text-[10px] sm:text-xs text-emerald-300 font-bold flex items-center gap-1 mt-0.5" title="Calculated dynamically from active user modules & MIT tasks">
               <Flame className="w-3.5 h-3.5 fill-current text-amber-300 shrink-0" />
-              Pro Focus Streak
+              {hasRecordedItems ? `${dailyScore}% Score Today` : 'Add tasks to start'}
             </span>
           </div>
         </div>
       </motion.div>
+
+      {/* NOW / Current Focus Card */}
+      <NowFocusCard
+        currentTask={currentFocusTask}
+        onStartFocus={(task) => {
+          setActiveFocusTask(task || currentFocusTask);
+          setIsFocusModalOpen(true);
+        }}
+      />
+
+      {/* Fullscreen Distraction-Free Focus Mode Modal Overlay */}
+      <FocusOverlayModal
+        isOpen={isFocusModalOpen}
+        onClose={() => setIsFocusModalOpen(false)}
+        taskTitle={activeFocusTask?.title || 'Deep Focus Session'}
+        category={activeFocusTask?.category || 'General'}
+        onCompleteTask={
+          activeFocusTask?.id
+            ? () => toggleTaskStatus(activeFocusTask.id)
+            : undefined
+        }
+      />
 
       {/* Overview Stat Cards Grid: 2 cols on mobile, 4 cols on desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -324,10 +396,9 @@ export default function DashboardHome() {
                         const data = await res.json();
                         if (data.snapshot) {
                           setLatestSnapshots((prev) => [data.snapshot, ...prev.filter((s) => s.date !== data.snapshot.date)]);
-                          alert(`✅ Daily Summary Executed!\n\nAll ${currentTasks.length} tasks persisted & Daily Snapshot saved for ${data.snapshot.date}!`);
                         }
                       } catch (err: any) {
-                        alert(`Error running summary: ${err.message}`);
+                        console.error('Error running summary:', err);
                       }
                     }}
                     className="btn-secondary px-2.5 py-1 rounded-xl text-[11px] sm:text-xs flex items-center gap-1.5"

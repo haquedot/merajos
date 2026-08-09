@@ -4,7 +4,15 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { authService } from '../services/google/auth.service';
 import { syncService, SyncState } from '../services/google/sync.service';
-import { GoogleAccountSession } from '../database/dexie';
+import { GoogleAccountSession, clearAllUserData } from '../database/dexie';
+import { useTaskStore } from '../store/useTaskStore';
+import { useProjectStore } from '../store/useProjectStore';
+import { useCareerStore } from '../store/useCareerStore';
+import { useResearchStore } from '../store/useResearchStore';
+import { useHabitStore } from '../store/useHabitStore';
+import { useGoalStore } from '../store/useGoalStore';
+import { useNotesStore } from '../store/useNotesStore';
+import { useCalendarStore } from '../store/useCalendarStore';
 
 interface AuthContextType {
   session: GoogleAccountSession | null;
@@ -34,10 +42,21 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     '847306520518-3raubtg9ajcg8ebsjr91mkgjm9j2vqqt.apps.googleusercontent.com';
 
   useEffect(() => {
-    // Restore session on mount
+    // Restore session on mount & sync user profile to MongoDB
     authService.getSession().then((sess) => {
       if (sess) {
         setSession(sess);
+        if (sess.email) {
+          fetch('/api/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: sess.email,
+              name: sess.name,
+              picture: sess.picture,
+            }),
+          }).catch((err) => console.warn('Failed to sync user session to MongoDB', err));
+        }
       }
     });
 
@@ -62,7 +81,22 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
 
   const handleSignOut = async () => {
     await authService.signOut();
+    await clearAllUserData();
+    
+    // Reset all Zustand memory states to empty
+    useTaskStore.setState({ tasks: [] });
+    useProjectStore.setState({ projects: [] });
+    useCareerStore.setState({ jobs: [], interviewTopics: [], dsaTopics: [] });
+    useResearchStore.setState({ papers: [], writingSections: [] });
+    useHabitStore.setState({ habits: [] });
+    useGoalStore.setState({ goals: [] });
+    useNotesStore.setState({ notes: [] });
+    useCalendarStore.setState({ events: [] });
+
     setSession(null);
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   const handleSyncNow = async () => {

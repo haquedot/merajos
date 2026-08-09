@@ -24,26 +24,38 @@ import { Task, TimeSlot, Priority, Category } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { NowFocusCard } from '../../components/dashboard/NowFocusCard';
+import { FocusOverlayModal } from '../../components/modals/FocusOverlayModal';
+import { PersonalRoutineOverlay } from '../../components/today/PersonalRoutineOverlay';
+import { getSmartFocusTask, sortTasksChronologically, parseTimeAndSlotFromText } from '../../lib/taskUtils';
 
 export default function TodayPage() {
   const [viewMode, setViewMode] = useState<'timeline' | 'checklist'>('checklist');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
+  const [activeFocusTask, setActiveFocusTask] = useState<any>(null);
 
   // New task form
   const [title, setTitle] = useState('');
   const [slot, setSlot] = useState<TimeSlot>('morning');
   const [priority, setPriority] = useState<Priority>('medium');
   const [category, setCategory] = useState<Category>('Personal');
+  const [customFocusTaskId, setCustomFocusTaskId] = useState<string | null>(null);
 
   const { tasks, toggleTaskStatus, toggleMIT, addTask } = useTaskStore();
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const todayTasks = tasks.filter((t) => t.dueDate === todayStr);
+  const rawTodayTasks = tasks.filter((t) => t.dueDate === todayStr);
+  const todayTasks = sortTasksChronologically(rawTodayTasks);
 
   const completedCount = todayTasks.filter((t) => t.status === 'completed').length;
   const progressPercent = todayTasks.length > 0 ? Math.round((completedCount / todayTasks.length) * 100) : 100;
 
   const mits = todayTasks.filter((t) => t.mit);
+  const smartFocusTask = getSmartFocusTask(todayTasks);
+  const customFocusTask = todayTasks.find((t) => t.id === customFocusTaskId && t.status !== 'completed');
+  const effectiveFocusTask = customFocusTask || smartFocusTask;
+  const isCustomFocus = !!customFocusTask;
 
   const slotSections: { key: TimeSlot; title: string; icon: any; color: string }[] = [
     { key: 'morning', title: 'Morning (6:00 AM - 12:00 PM)', icon: Sunrise, color: 'text-amber-500' },
@@ -139,6 +151,31 @@ export default function TodayPage() {
         </div>
       </PageHeader>
 
+      {/* NOW / Current Focus Section */}
+      <NowFocusCard
+        currentTask={effectiveFocusTask}
+        allTodayTasks={todayTasks}
+        onSelectFocusTask={(t) => setCustomFocusTaskId(t.id || null)}
+        isCustomFocus={isCustomFocus}
+        onStartFocus={(task) => {
+          setActiveFocusTask(task || effectiveFocusTask || todayTasks[0]);
+          setIsFocusModalOpen(true);
+        }}
+      />
+
+      {/* Focus Mode Fullscreen Modal */}
+      <FocusOverlayModal
+        isOpen={isFocusModalOpen}
+        onClose={() => setIsFocusModalOpen(false)}
+        taskTitle={activeFocusTask?.title || 'Today Focus Session'}
+        category={activeFocusTask?.category || 'General'}
+        onCompleteTask={
+          activeFocusTask?.id
+            ? () => toggleTaskStatus(activeFocusTask.id)
+            : undefined
+        }
+      />
+
       {/* Top 3 MIT Section */}
       <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4">
         <div className="flex items-center gap-2">
@@ -183,9 +220,21 @@ export default function TodayPage() {
                   <Badge variant={task.category === 'Client' ? 'purple' : 'info'} size="sm">
                     {task.category}
                   </Badge>
-                  <span className="text-[10px] text-gray-400 font-medium">
-                    {task.estimatedHours}h est
-                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCustomFocusTaskId(task.id);
+                    }}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors ${
+                      effectiveFocusTask?.id === task.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300'
+                    }`}
+                  >
+                    <Target className="w-3 h-3" />
+                    <span>{effectiveFocusTask?.id === task.id ? 'Focused' : 'Set Focus'}</span>
+                  </button>
                 </div>
               </motion.div>
             );
@@ -199,11 +248,18 @@ export default function TodayPage() {
         </div>
       </div>
 
+      {/* Personal Routine Timeline Anchors */}
+      <PersonalRoutineOverlay />
+
       {/* 4 Time Slots Sections */}
       <div className="space-y-4 sm:space-y-6">
         {slotSections.map((sec) => {
           const Icon = sec.icon;
-          const slotTasks = todayTasks.filter((t) => t.timeSlot === sec.key || (!t.timeSlot && sec.key === 'morning'));
+          const slotTasks = todayTasks.filter((t) => {
+            const parsed = parseTimeAndSlotFromText(`${t.title} ${t.description || ''}`, t.dueDate);
+            const effectiveSlot = (t.timeSlot && t.timeSlot !== 'afternoon') ? t.timeSlot : parsed.timeSlot;
+            return effectiveSlot === sec.key;
+          });
 
           return (
             <div
@@ -267,16 +323,30 @@ export default function TodayPage() {
                               {task.priority}
                             </Badge>
                           </div>
-                          <button
-                            onClick={() => toggleMIT(task.id)}
-                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors shrink-0 ${
-                              task.mit
-                                ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
-                                : 'bg-gray-200/70 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-                            }`}
-                          >
-                            {task.mit ? '★ MIT' : 'Set MIT'}
-                          </button>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              onClick={() => setCustomFocusTaskId(task.id)}
+                              className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors flex items-center gap-1 ${
+                                effectiveFocusTask?.id === task.id
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-400'
+                              }`}
+                              title="Set as Current Focus Task"
+                            >
+                              <Target className="w-3 h-3" />
+                              <span>{effectiveFocusTask?.id === task.id ? 'Focused' : 'Set Focus'}</span>
+                            </button>
+                            <button
+                              onClick={() => toggleMIT(task.id)}
+                              className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors ${
+                                task.mit
+                                  ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
+                                  : 'bg-gray-200/70 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
+                              }`}
+                            >
+                              {task.mit ? '★ MIT' : 'Set MIT'}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );

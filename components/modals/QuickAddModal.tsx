@@ -24,7 +24,9 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
   const [taskCategory, setTaskCategory] = useState<Category>('Personal');
   const [taskProjectId, setTaskProjectId] = useState<string>('');
   const [taskDueDate, setTaskDueDate] = useState(new Date().toISOString().split('T')[0]);
+  const [taskTime, setTaskTime] = useState('');
   const [taskEstHours, setTaskEstHours] = useState<number>(1);
+  const [taskEventId, setTaskEventId] = useState<string>('');
   const [taskMit, setTaskMit] = useState(false);
 
   // Event form state
@@ -39,13 +41,22 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
   const [noteContent, setNoteContent] = useState('');
 
   const { addTask } = useTaskStore();
-  const { addEvent } = useCalendarStore();
+  const { events, addEvent } = useCalendarStore();
   const { addNote } = useNotesStore();
   const { projects } = useProjectStore();
 
   const handleTaskSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!taskTitle.trim()) return;
+
+    let timeSlot: 'morning' | 'afternoon' | 'evening' | 'night' = 'afternoon';
+    if (taskTime) {
+      const h = parseInt(taskTime.split(':')[0], 10);
+      if (h >= 6 && h < 12) timeSlot = 'morning';
+      else if (h >= 12 && h < 17) timeSlot = 'afternoon';
+      else if (h >= 17 && h < 21) timeSlot = 'evening';
+      else timeSlot = 'night';
+    }
 
     addTask({
       title: taskTitle.trim(),
@@ -54,7 +65,10 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
       status: 'todo',
       category: taskCategory,
       projectId: taskProjectId || undefined,
+      eventId: taskEventId || undefined,
       dueDate: taskDueDate,
+      time: taskTime || undefined,
+      timeSlot,
       estimatedHours: Number(taskEstHours) || 1,
       actualHours: 0,
       recurring: 'none',
@@ -203,7 +217,43 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-blue-500" />
+              Link to Calendar Event (Optional - Next 7 Days)
+            </label>
+            <select
+              value={taskEventId}
+              onChange={(e) => setTaskEventId(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white"
+            >
+              <option value="">-- No Calendar Event (Standalone Task) --</option>
+              {(() => {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                const limitDate = new Date(now);
+                limitDate.setDate(now.getDate() + 7);
+                const limitStr = limitDate.toISOString().split('T')[0];
+                const todayIso = new Date().toISOString().split('T')[0];
+
+                const upcoming = events
+                  .filter((e) => e.startDate >= todayIso && e.startDate <= limitStr)
+                  .sort((a, b) => {
+                    const dComp = a.startDate.localeCompare(b.startDate);
+                    if (dComp !== 0) return dComp;
+                    return (a.startTime || '').localeCompare(b.startTime || '');
+                  });
+
+                return upcoming.map((evt) => (
+                  <option key={evt.id} value={evt.id}>
+                    📅 {evt.startDate} {evt.startTime ? `@ ${evt.startTime}` : ''} — {evt.title}
+                  </option>
+                ));
+              })()}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Due Date
@@ -212,6 +262,18 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
                 type="date"
                 value={taskDueDate}
                 onChange={(e) => setTaskDueDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Scheduled Time
+              </label>
+              <input
+                type="time"
+                value={taskTime}
+                onChange={(e) => setTaskTime(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>

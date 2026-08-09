@@ -4,10 +4,26 @@ import Task from '../../../models/Task';
 import Project from '../../../models/Project';
 import Habit from '../../../models/Habit';
 import DailyAnalyticsSnapshot from '../../../models/DailyAnalyticsSnapshot';
+import { calculateDailyTasksAndLogAnalytics } from '../../../lib/cronCalculation';
 
 export async function GET() {
   try {
     await connectToDatabase();
+
+    // Check if yesterday's snapshot is missing and auto-backfill it
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    const yesterdaySnapshot = await DailyAnalyticsSnapshot.findOne({ date: yesterdayStr });
+    if (!yesterdaySnapshot) {
+      console.log(`[Analytics API] Auto-generating missing snapshot for yesterday (${yesterdayStr})...`);
+      try {
+        await calculateDailyTasksAndLogAnalytics(undefined, undefined, yesterdayStr);
+      } catch (err) {
+        console.error(`[Analytics API] Failed to auto-backfill yesterday snapshot (${yesterdayStr}):`, err);
+      }
+    }
 
     const tasks = await Task.find({}).lean();
     const projects = await Project.find({}).lean();

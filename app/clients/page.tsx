@@ -53,6 +53,7 @@ import { CalendarEvent, Category } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 import { PageHeader } from '../../components/ui/PageHeader';
 
 export default function ClientsPage() {
@@ -183,13 +184,11 @@ export default function ClientsPage() {
     setSelectedEvent(null);
   };
 
+  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
+
   const handleDeleteEvent = async () => {
     if (!selectedEvent) return;
-    if (confirm(`Are you sure you want to delete "${selectedEvent.title}"?`)) {
-      await deleteEvent(selectedEvent.id);
-      setIsEventDetailModalOpen(false);
-      setSelectedEvent(null);
-    }
+    setEventToDelete(selectedEvent);
   };
 
   const handleAddFeature = (e: React.FormEvent) => {
@@ -1111,6 +1110,23 @@ export default function ClientsPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Confirmation Delete Modal */}
+      <ConfirmDeleteModal
+        isOpen={!!eventToDelete}
+        onClose={() => setEventToDelete(null)}
+        onConfirm={async () => {
+          if (eventToDelete) {
+            await deleteEvent(eventToDelete.id);
+            setIsEventDetailModalOpen(false);
+            setSelectedEvent(null);
+            setEventToDelete(null);
+          }
+        }}
+        title="Delete Event"
+        itemName={eventToDelete?.title}
+        message="Are you sure you want to delete this event? It will be removed permanently."
+      />
     </div>
   );
 }

@@ -39,7 +39,6 @@ export default function WeeklyPlannerPage() {
       improvements,
       score: Number(score) || 85,
     });
-    alert('Weekly Review Saved!');
   };
 
   const priorities = [

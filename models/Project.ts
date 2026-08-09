@@ -32,6 +32,8 @@ const ProjectSchema: Schema = new Schema(
     features: [ProjectFeatureSchema],
     bugs: [ProjectBugSchema],
     techStack: [{ type: String }],
+    userId: { type: String, index: true },
+    userEmail: { type: String, index: true },
   },
   { timestamps: true, _id: false }
 );

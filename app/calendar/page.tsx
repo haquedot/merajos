@@ -39,9 +39,11 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useCalendarStore } from '../../store/useCalendarStore';
+import { useTaskStore } from '../../store/useTaskStore';
 import { CalendarEvent, Category } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -150,6 +152,7 @@ function getPositionedDayEvents(dayEvents: CalendarEvent[]): PositionedEvent[] {
 
 export default function CalendarPage() {
   const { events, selectedDate, viewMode, addEvent, updateEvent, deleteEvent, setSelectedDate, setViewMode } = useCalendarStore();
+  const { tasks } = useTaskStore();
   const { session, syncState, syncNow } = useGoogleAuth();
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -292,13 +295,11 @@ export default function CalendarPage() {
     setIsFormModalOpen(false);
   };
 
+  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
+
   const handleDeleteFromDetail = async () => {
     if (!selectedEvent) return;
-    if (confirm(`Are you sure you want to delete "${selectedEvent.title}"?`)) {
-      await deleteEvent(selectedEvent.id);
-      setIsDetailModalOpen(false);
-      setSelectedEvent(null);
-    }
+    setEventToDelete(selectedEvent);
   };
 
   const timelineScrollRef = React.useRef<HTMLDivElement>(null);
@@ -880,6 +881,35 @@ export default function CalendarPage() {
               </div>
             )}
 
+            {/* Interlinked Tasks */}
+            {(() => {
+              const linkedTasks = tasks.filter((t) => t.eventId === selectedEvent.id || t.id === selectedEvent.taskId);
+              if (linkedTasks.length === 0) return null;
+              return (
+                <div className="p-3.5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 text-xs space-y-2">
+                  <span className="font-extrabold text-blue-600 dark:text-blue-400 uppercase text-[10px] block flex items-center gap-1.5">
+                    <CheckSquare className="w-3.5 h-3.5 text-blue-500" />
+                    Interlinked Tasks ({linkedTasks.length})
+                  </span>
+                  <div className="space-y-1.5">
+                    {linkedTasks.map((t) => (
+                      <div
+                        key={t.id}
+                        className="p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 flex items-center justify-between text-xs"
+                      >
+                        <span className={`font-medium ${t.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>
+                          {t.title}
+                        </span>
+                        <Badge variant={t.status === 'completed' ? 'success' : 'info'} size="sm">
+                          {t.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setIsDetailModalOpen(false)}
@@ -1039,6 +1069,23 @@ export default function CalendarPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Confirmation Delete Modal */}
+      <ConfirmDeleteModal
+        isOpen={!!eventToDelete}
+        onClose={() => setEventToDelete(null)}
+        onConfirm={async () => {
+          if (eventToDelete) {
+            await deleteEvent(eventToDelete.id);
+            setIsDetailModalOpen(false);
+            setSelectedEvent(null);
+            setEventToDelete(null);
+          }
+        }}
+        title="Delete Calendar Event"
+        itemName={eventToDelete?.title}
+        message="Are you sure you want to delete this calendar event? It will be permanently removed."
+      />
     </div>
   );
 }

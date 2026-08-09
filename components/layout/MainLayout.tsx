@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 import { RightProductivityPanel } from './RightProductivityPanel';
 import { QuickAddModal } from '../modals/QuickAddModal';
+import { QuickCaptureModal } from '../modals/QuickCaptureModal';
 import { GlobalSearchModal } from '../modals/GlobalSearchModal';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { PlatformTourModal } from '../tour/PlatformTourModal';
@@ -12,15 +13,25 @@ import { GuestModeBanner } from './GuestModeBanner';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 
+import { KeyboardShortcutsModal } from '../modals/KeyboardShortcutsModal';
+import { FocusOverlayModal } from '../modals/FocusOverlayModal';
+import { DailyReflectionModal } from '../modals/DailyReflectionModal';
+import { useRouter } from 'next/navigation';
+
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+  const router = useRouter();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [focusModalOpen, setFocusModalOpen] = useState(false);
+  const [reflectionOpen, setReflectionOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTour, setShowTour] = useState(false);
 
@@ -42,17 +53,39 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     }
   }, [settings.theme]);
 
-  // Global Ctrl + K / Cmd + K keyboard shortcut listener to open search modal
+  // Universal keyboard shortcuts listener (Ctrl+K, N, F, D, ?)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore key shortcuts if user is typing in an input, textarea, or contentEditable element
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        setSearchOpen((prev) => !prev);
+        setQuickCaptureOpen((prev) => !prev);
+      } else if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setShortcutsOpen((prev) => !prev);
+      } else if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        setQuickAddOpen(true);
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        setFocusModalOpen((prev) => !prev);
+      } else if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        router.push('/today');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [router]);
 
   // Load settings from DB on layout mount
   useEffect(() => {
@@ -117,9 +150,25 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         isOpen={quickAddOpen}
         onClose={() => setQuickAddOpen(false)}
       />
+      <QuickCaptureModal
+        isOpen={quickCaptureOpen}
+        onClose={() => setQuickCaptureOpen(false)}
+      />
       <GlobalSearchModal
         isOpen={searchOpen}
         onClose={() => setSearchOpen(false)}
+      />
+      <KeyboardShortcutsModal
+        isOpen={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
+      />
+      <FocusOverlayModal
+        isOpen={focusModalOpen}
+        onClose={() => setFocusModalOpen(false)}
+      />
+      <DailyReflectionModal
+        isOpen={reflectionOpen}
+        onClose={() => setReflectionOpen(false)}
       />
 
       {/* Onboarding — shown for signed-in users who haven't completed setup */}

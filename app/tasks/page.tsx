@@ -22,15 +22,20 @@ import {
 } from 'lucide-react';
 import { useTaskStore } from '../../store/useTaskStore';
 import { useProjectStore } from '../../store/useProjectStore';
+import { useCalendarStore } from '../../store/useCalendarStore';
 import { Task, Priority, TaskStatus, Category } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { db } from '../../database/dexie';
 
 export default function TasksPage() {
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+  const [scheduledToast, setScheduledToast] = useState<string | null>(null);
 
   // Drag and Drop State
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -54,6 +59,14 @@ export default function TasksPage() {
   } = useTaskStore();
 
   const { projects } = useProjectStore();
+  const { events } = useCalendarStore();
+
+  // Date filter state (default: 'today')
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [dateFilter, setDateFilter] = useState<'today' | 'custom'>('today');
+  const [customSelectedDate, setCustomSelectedDate] = useState<string>(todayStr);
+
+  const activeDateStr = dateFilter === 'today' ? todayStr : dateFilter === 'custom' ? customSelectedDate : null;
 
   // Form states
   const [formTitle, setFormTitle] = useState('');
@@ -62,8 +75,9 @@ export default function TasksPage() {
   const [formStatus, setFormStatus] = useState<TaskStatus>('todo');
   const [formCategory, setFormCategory] = useState<Category>('Personal');
   const [formProjectId, setFormProjectId] = useState<string>('');
+  const [formEventId, setFormEventId] = useState<string>('');
   const [formEstHours, setFormEstHours] = useState<number>(1);
-  const [formDueDate, setFormDueDate] = useState(new Date().toISOString().split('T')[0]);
+  const [formDueDate, setFormDueDate] = useState(todayStr);
 
   // Filter tasks logic
   const filteredTasks = tasks.filter((t) => {
@@ -73,7 +87,8 @@ export default function TasksPage() {
     const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
     const matchesPriority = selectedPriority === 'all' || t.priority === selectedPriority;
     const matchesStatus = selectedStatus === 'all' || t.status === selectedStatus;
-    return matchesSearch && matchesCategory && matchesPriority && matchesStatus;
+    const matchesDate = !activeDateStr || t.dueDate === activeDateStr;
+    return matchesSearch && matchesCategory && matchesPriority && matchesStatus && matchesDate;
   });
 
   const openCreateModal = () => {
@@ -84,8 +99,9 @@ export default function TasksPage() {
     setFormStatus('todo');
     setFormCategory('Personal');
     setFormProjectId('');
+    setFormEventId('');
     setFormEstHours(1);
-    setFormDueDate(new Date().toISOString().split('T')[0]);
+    setFormDueDate(activeDateStr || todayStr);
     setIsModalOpen(true);
   };
 
@@ -97,6 +113,7 @@ export default function TasksPage() {
     setFormStatus(t.status);
     setFormCategory(t.category);
     setFormProjectId(t.projectId || '');
+    setFormEventId(t.eventId || '');
     setFormEstHours(t.estimatedHours);
     setFormDueDate(t.dueDate);
     setIsModalOpen(true);
@@ -114,6 +131,7 @@ export default function TasksPage() {
         status: formStatus,
         category: formCategory,
         projectId: formProjectId || undefined,
+        eventId: formEventId || undefined,
         estimatedHours: Number(formEstHours) || 1,
         dueDate: formDueDate,
       });
@@ -125,6 +143,7 @@ export default function TasksPage() {
         status: formStatus,
         category: formCategory,
         projectId: formProjectId || undefined,
+        eventId: formEventId || undefined,
         estimatedHours: Number(formEstHours) || 1,
         actualHours: 0,
         dueDate: formDueDate,
@@ -227,57 +246,151 @@ export default function TasksPage() {
             </button>
           </>
         }
-      >
-        {/* Filters and Search Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 pt-2 border-t border-gray-100 dark:border-gray-800/80">
-          <div className="relative w-full">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+      />
+
+      {scheduledToast && (
+        <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-extrabold flex items-center justify-between animate-fade-in">
+          <span>{scheduledToast}</span>
+          <button onClick={() => setScheduledToast(null)} className="text-emerald-500 hover:text-emerald-700">
+            ✕
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-gray-800/80">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-extrabold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 mr-1">
+                <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                Selected Date:
+              </span>
+
+              {/* Prev Day Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  const current = new Date(activeDateStr || todayStr);
+                  current.setDate(current.getDate() - 1);
+                  const prevStr = current.toISOString().split('T')[0];
+                  setCustomSelectedDate(prevStr);
+                  setDateFilter(prevStr === todayStr ? 'today' : 'custom');
+                }}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                title="Previous Day"
+              >
+                ← Prev
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFilter('today');
+                  setCustomSelectedDate(todayStr);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  dateFilter === 'today'
+                    ? 'bg-[#1F3B99] dark:bg-[#6D5BFF] text-white shadow-xs'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                Today ({tasks.filter((t) => t.dueDate === todayStr).length})
+              </button>
+
+              {/* Next Day Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  const current = new Date(activeDateStr || todayStr);
+                  current.setDate(current.getDate() + 1);
+                  const nextStr = current.toISOString().split('T')[0];
+                  setCustomSelectedDate(nextStr);
+                  setDateFilter(nextStr === todayStr ? 'today' : 'custom');
+                }}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                title="Next Day"
+              >
+                Next →
+              </button>
+
+              {/* Custom Date Picker */}
+              <div className="flex items-center gap-1.5 ml-1">
+                <input
+                  type="date"
+                  value={activeDateStr || todayStr}
+                  onChange={(e) => {
+                    const selected = e.target.value;
+                    setCustomSelectedDate(selected);
+                    setDateFilter(selected === todayStr ? 'today' : 'custom');
+                  }}
+                  className="px-2.5 py-1 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Quick Status Count Summary */}
+            <div className="flex items-center gap-2 text-[11px] font-bold">
+              <span className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50">
+                To Do: {filteredTasks.filter((t) => t.status === 'todo').length}
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50">
+                In Progress: {filteredTasks.filter((t) => t.status === 'in_progress').length}
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
+                Completed: {filteredTasks.filter((t) => t.status === 'completed').length}
+              </span>
+            </div>
           </div>
 
-          <select
-            value={selectedCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
-          >
-            <option value="all">All Categories</option>
-            <option value="Client Work">Client Work</option>
-            <option value="Research">Research</option>
-            <option value="Career">Career</option>
-            <option value="Personal">Personal</option>
-            <option value="Habit">Habit</option>
-          </select>
+          {/* Filters and Search Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+            <div className="relative w-full">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
 
-          <select
-            value={selectedPriority}
-            onChange={(e) => setFilterPriority(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
-          >
-            <option value="all">All Priorities</option>
-            <option value="urgent">Urgent</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
+            >
+              <option value="all">All Categories</option>
+              <option value="Client Work">Client Work</option>
+              <option value="Research">Research</option>
+              <option value="Career">Career</option>
+              <option value="Personal">Personal</option>
+              <option value="Habit">Habit</option>
+            </select>
 
-          <select
-            value={selectedStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
-          >
-            <option value="all">All Statuses</option>
-            <option value="todo">To Do</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-          </select>
+            <select
+              value={selectedPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
+            >
+              <option value="all">All Priorities</option>
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+
+            <select
+              value={selectedStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
+            >
+              <option value="all">All Statuses</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
         </div>
-      </PageHeader>
 
       {/* Kanban Board View with Drag & Drop */}
       {viewMode === 'board' && (
@@ -371,7 +484,7 @@ export default function TasksPage() {
                               )}
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
                               <button
                                 onClick={() => openEditModal(t)}
                                 className="p-1 hover:text-[#1F3B99] dark:hover:text-[#6D5BFF] text-gray-400 transition-colors"
@@ -379,7 +492,7 @@ export default function TasksPage() {
                                 <Edit className="w-3 h-3" />
                               </button>
                               <button
-                                onClick={() => deleteTask(t.id)}
+                                onClick={() => setDeletingTask(t)}
                                 className="p-1 hover:text-rose-500 text-gray-400 transition-colors"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -443,6 +556,14 @@ export default function TasksPage() {
                               ★ MIT
                             </span>
                           )}
+                          {t.eventId && (() => {
+                            const linkedEvt = events.find((e) => e.id === t.eventId);
+                            return linkedEvt ? (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800 shrink-0 flex items-center gap-1">
+                                📅 {linkedEvt.title}
+                              </span>
+                            ) : null;
+                          })()}
                         </div>
 
                         {t.description && (
@@ -475,14 +596,43 @@ export default function TasksPage() {
 
                       <div className="flex items-center gap-1 pl-2 border-l border-gray-200 dark:border-gray-700 shrink-0">
                         <button
+                          onClick={async () => {
+                            try {
+                              const eventId = `event_task_${t.id}_${Date.now()}`;
+                              await db.events.add({
+                                id: eventId,
+                                title: `🎯 ${t.title}`,
+                                description: `Task time block: ${t.description || 'No description provided'}`,
+                                startDate: t.dueDate,
+                                endDate: t.dueDate,
+                                startTime: t.time || '10:00',
+                                endTime: t.time ? `${parseInt(t.time.split(':')[0]) + 1}:00` : '11:00',
+                                color: '#1F3B99',
+                                category: t.category,
+                                taskId: t.id,
+                              });
+                              setScheduledToast(`✓ Task "${t.title.slice(0, 20)}" scheduled on Calendar!`);
+                              setTimeout(() => setScheduledToast(null), 2500);
+                            } catch (err) {
+                              console.error('Error scheduling event:', err);
+                            }
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-emerald-500 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                          title="Schedule Task on Google Calendar"
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                        </button>
+                        <button
                           onClick={() => openEditModal(t)}
                           className="p-1.5 text-gray-400 hover:text-[#1F3B99] dark:hover:text-[#6D5BFF] rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                          title="Edit Task"
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => deleteTask(t.id)}
+                          onClick={() => setDeletingTask(t)}
                           className="p-1.5 text-gray-400 hover:text-rose-500 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                          title="Delete Task"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -559,6 +709,42 @@ export default function TasksPage() {
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-blue-500" />
+              Link to Calendar Event (Optional - Next 7 Days)
+            </label>
+            <select
+              value={formEventId}
+              onChange={(e) => setFormEventId(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white"
+            >
+              <option value="">-- No Calendar Event (Standalone Task) --</option>
+              {(() => {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                const limitDate = new Date(now);
+                limitDate.setDate(now.getDate() + 7);
+                const limitStr = limitDate.toISOString().split('T')[0];
+                const todayIso = new Date().toISOString().split('T')[0];
+
+                const upcoming = events
+                  .filter((e) => e.startDate >= todayIso && e.startDate <= limitStr)
+                  .sort((a, b) => {
+                    const dComp = a.startDate.localeCompare(b.startDate);
+                    if (dComp !== 0) return dComp;
+                    return (a.startTime || '').localeCompare(b.startTime || '');
+                  });
+
+                return upcoming.map((evt) => (
+                  <option key={evt.id} value={evt.id}>
+                    📅 {evt.startDate} {evt.startTime ? `@ ${evt.startTime}` : ''} — {evt.title}
+                  </option>
+                ));
+              })()}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
@@ -604,6 +790,21 @@ export default function TasksPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Confirmation Delete Modal */}
+      <ConfirmDeleteModal
+        isOpen={!!deletingTask}
+        onClose={() => setDeletingTask(null)}
+        onConfirm={() => {
+          if (deletingTask) {
+            deleteTask(deletingTask.id);
+            setDeletingTask(null);
+          }
+        }}
+        title="Delete Task"
+        itemName={deletingTask?.title}
+        message="Are you sure you want to delete this task? It will be removed permanently."
+      />
     </div>
   );
 }

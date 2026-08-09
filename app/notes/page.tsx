@@ -14,11 +14,14 @@ import {
   Edit,
   Check,
   ChevronLeft,
+  CheckSquare,
 } from 'lucide-react';
 import { useNotesStore } from '../../store/useNotesStore';
+import { useTaskStore } from '../../store/useTaskStore';
 import { Note } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 
 export default function NotesPage() {
   const {
@@ -36,6 +39,8 @@ export default function NotesPage() {
   } = useNotesStore();
 
   const [mobileTab, setMobileTab] = useState<'list' | 'editor'>('list');
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
+  const [conversionToast, setConversionToast] = useState<string | null>(null);
 
   const filteredNotes = notes.filter((n) => {
     const matchesSearch =
@@ -75,6 +80,15 @@ export default function NotesPage() {
           </button>
         }
       />
+
+      {conversionToast && (
+        <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-extrabold flex items-center justify-between animate-fade-in">
+          <span>{conversionToast}</span>
+          <button onClick={() => setConversionToast(null)} className="text-emerald-500 hover:text-emerald-700">
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Mobile Tab Switcher */}
       <div className="flex md:hidden items-center bg-gray-100 dark:bg-gray-800/80 p-1 rounded-2xl border border-gray-200 dark:border-gray-700">
@@ -218,6 +232,37 @@ export default function NotesPage() {
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
+                    onClick={() => {
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      useTaskStore.getState().addTask({
+                        title: activeNote.title,
+                        description: activeNote.content.slice(0, 200),
+                        priority: 'medium',
+                        status: 'todo',
+                        category: (activeNote.category as any) || 'Personal',
+                        dueDate: todayStr,
+                        timeSlot: 'morning',
+                        estimatedHours: 1,
+                        actualHours: 0,
+                        recurring: 'none',
+                        tags: ['ConvertedNote'],
+                        mit: false,
+                      });
+                      const conversionNotice = `\n\n> 🟢 **Converted to Task on ${new Date().toLocaleDateString()}**`;
+                      if (!activeNote.content.includes('Converted to Task')) {
+                        updateNote(activeNote.id, { content: activeNote.content + conversionNotice });
+                      }
+                      setConversionToast(`✓ "${activeNote.title.slice(0, 20)}" converted to Task!`);
+                      setTimeout(() => setConversionToast(null), 2500);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl border border-[#1F3B99]/30 dark:border-[#6D5BFF]/30 text-[#1F3B99] dark:text-[#6D5BFF] hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                    title="Convert Note title & content to actionable Task"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Convert to Task</span>
+                  </button>
+
+                  <button
                     onClick={() => togglePin(activeNote.id)}
                     className={`p-1.5 sm:p-2 rounded-xl border transition-colors ${
                       activeNote.pinned
@@ -229,7 +274,7 @@ export default function NotesPage() {
                     <Pin className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => deleteNote(activeNote.id)}
+                    onClick={() => setNoteToDelete(activeNote.id)}
                     className="p-1.5 sm:p-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-rose-500 hover:border-rose-300 transition-colors"
                     title="Delete Note"
                   >
@@ -255,6 +300,20 @@ export default function NotesPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={!!noteToDelete}
+        onClose={() => setNoteToDelete(null)}
+        onConfirm={() => {
+          if (noteToDelete) {
+            deleteNote(noteToDelete);
+            setNoteToDelete(null);
+          }
+        }}
+        title="Delete Note"
+        itemName={notes.find((n) => n.id === noteToDelete)?.title}
+        message="Are you sure you want to delete this note? It will be removed permanently."
+      />
     </div>
   );
 }

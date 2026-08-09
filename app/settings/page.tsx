@@ -40,6 +40,7 @@ import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Logo } from '../../components/common/Logo';
 import { OnboardingModal } from '../../components/onboarding/OnboardingModal';
+import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 import { BRAND } from '../../lib/branding';
 import { ModuleKey } from '../../types';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -63,6 +64,43 @@ export default function SettingsPage() {
   const { session, syncState, syncMessage, signIn, signOut, syncNow } = useGoogleAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  const [backfillDate, setBackfillDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  });
+  const [isBackfilling, setIsBackfilling] = useState(false);
+  const [backfillMsg, setBackfillMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleRunBackfill = async (targetDate: string) => {
+    setIsBackfilling(true);
+    setBackfillMsg(null);
+    try {
+      const res = await fetch(`/api/cron/calculate-daily-tasks?date=${targetDate}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emailNotificationsEnabled: settings.emailNotificationsEnabled,
+          notificationEmail: session?.email || settings.notificationEmail,
+          targetDate,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to calculate snapshot');
+      setBackfillMsg({
+        type: 'success',
+        text: `Successfully generated and saved snapshot log for ${targetDate}!`,
+      });
+    } catch (err: any) {
+      setBackfillMsg({
+        type: 'error',
+        text: err.message || 'Failed to run cron/backfill',
+      });
+    } finally {
+      setIsBackfilling(false);
+    }
+  };
 
   React.useEffect(() => {
     setMounted(true);
@@ -105,6 +143,9 @@ export default function SettingsPage() {
     a.click();
   };
 
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+
   const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -115,29 +156,27 @@ export default function SettingsPage() {
         const data = JSON.parse(evt.target?.result as string);
         if (data.tasks) localStorage.setItem('meraj_os_tasks', data.tasks);
         if (data.projects) localStorage.setItem('meraj_os_projects', data.projects);
-        alert('🎉 Data Backup Successfully Restored! Refreshing page...');
-        window.location.reload();
+        setImportStatus('Backup restored successfully! Reloading...');
+        setTimeout(() => window.location.reload(), 1000);
       } catch (err) {
-        alert('Failed to parse JSON backup file.');
+        setImportStatus('Failed to parse JSON backup file.');
       }
     };
     reader.readAsText(file);
   };
 
-  const handleResetAll = () => {
-    if (confirm('Are you sure you want to reset Meraj OS to initial seed state?')) {
-      resetTasks();
-      resetProjects();
-      resetResearch();
-      resetCareer();
-      resetHabits();
-      resetGoals();
-      resetNotes();
-      resetCalendar();
-      resetWeekly();
-      resetSettings();
-      alert(`${BRAND.name} reset to initial state!`);
-    }
+  const executeResetAll = () => {
+    resetTasks();
+    resetProjects();
+    resetResearch();
+    resetCareer();
+    resetHabits();
+    resetGoals();
+    resetNotes();
+    resetCalendar();
+    resetWeekly();
+    resetSettings();
+    setIsResetModalOpen(false);
   };
 
   return (
@@ -393,6 +432,47 @@ export default function SettingsPage() {
             </strong>
           </p>
         </div>
+
+        {/* Backfill / Manual Trigger Controls */}
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 space-y-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h4 className="text-xs font-extrabold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                Manual Analytics Snapshot & Email Dispatch
+              </h4>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                Missed a cron execution or need to backfill data for yesterday (e.g. 08/08/2026)? Pick a date to calculate and save.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+              <input
+                type="date"
+                value={backfillDate}
+                onChange={(e) => setBackfillDate(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white"
+              />
+              <button
+                onClick={() => handleRunBackfill(backfillDate)}
+                disabled={isBackfilling}
+                className="btn-primary px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isBackfilling ? 'animate-spin' : ''}`} />
+                <span>{isBackfilling ? 'Processing...' : 'Run / Backfill'}</span>
+              </button>
+            </div>
+          </div>
+
+          {backfillMsg && (
+            <div className={`p-2.5 rounded-xl text-xs font-medium ${
+              backfillMsg.type === 'success'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+            }`}>
+              {backfillMsg.text}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Theme Settings */}
@@ -476,6 +556,16 @@ export default function SettingsPage() {
       {showOnboarding && (
         <OnboardingModal onComplete={() => setShowOnboarding(false)} />
       )}
+
+      {/* Confirmation Reset Modal */}
+      <ConfirmDeleteModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        onConfirm={executeResetAll}
+        title="Reset All Local System Data"
+        itemName="Meraj OS Default Reset"
+        message="Are you sure you want to reset all tasks, projects, calendar events, habits, research notes, and settings to defaults? This action cannot be undone."
+      />
     </div>
   );
 }

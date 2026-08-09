@@ -5,6 +5,7 @@ import Habit from '../models/Habit';
 import Goal from '../models/Goal';
 import DailyAnalyticsSnapshot from '../models/DailyAnalyticsSnapshot';
 import { sendDailyTaskLogEmail } from './emailService';
+import { calculateDailyScore } from './productivityCalculator';
 
 const matchesCategory = (taskCat: string | undefined, targetCat: string) => {
   if (!taskCat) return targetCat === 'Personal';
@@ -16,11 +17,12 @@ const matchesCategory = (taskCat: string | undefined, targetCat: string) => {
 
 export async function calculateDailyTasksAndLogAnalytics(
   clientTasks?: any[],
-  emailOptions?: { enabled?: boolean; recipientEmail?: string }
+  emailOptions?: { enabled?: boolean; recipientEmail?: string },
+  targetDateStr?: string
 ) {
   await connectToDatabase();
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = targetDateStr || new Date().toISOString().split('T')[0];
   const calculatedAt = new Date().toISOString();
 
   // If client tasks are passed, bulk upsert them into MongoDB first by String _id query
@@ -131,7 +133,7 @@ export async function calculateDailyTasksAndLogAnalytics(
   const allHabits = await Habit.find({}).lean();
   const totalHabitsCount = allHabits.length;
   const completedHabitsCount = allHabits.filter((h: any) => h.history && !!h.history[todayStr]).length;
-  const habitCompletionRate = totalHabitsCount > 0 ? Math.round((completedHabitsCount / totalHabitsCount) * 100) : 100;
+  const habitCompletionRate = totalHabitsCount > 0 ? Math.round((completedHabitsCount / totalHabitsCount) * 100) : 0;
 
   // Goals & Projects
   const activeProjectsCount = await Project.countDocuments({ status: 'active' });
@@ -139,8 +141,17 @@ export async function calculateDailyTasksAndLogAnalytics(
   const totalGoalsCount = allGoals.length;
   const completedGoalsCount = allGoals.filter((g: any) => g.progress >= 100).length;
 
-  // Overall Productivity Score Calculation (0 - 100)
-  const productivityScore = Math.round(taskCompletionRate * 0.5 + habitCompletionRate * 0.3 + (completedGoalsCount / (totalGoalsCount || 1)) * 20);
+  // --- Dynamic Modular Daily Score Engine ---
+  const { dailyScore: productivityScore } = calculateDailyScore({
+    todayTasks: allTasks,
+    habitsCount: totalHabitsCount,
+    completedHabitsCount: completedHabitsCount,
+    projectsCount: activeProjectsCount,
+    goalsCount: totalGoalsCount,
+    completedGoalsCount: completedGoalsCount,
+    researchCount: allTasks.filter((t: any) => matchesCategory(t.category, 'Research')).length,
+    dsaCount: allTasks.filter((t: any) => matchesCategory(t.category, 'Career')).length,
+  });
 
   // Upsert snapshot into MongoDB
   const snapshot = await DailyAnalyticsSnapshot.findOneAndUpdate(
