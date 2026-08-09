@@ -51,7 +51,7 @@ export const INITIAL_WEEKLY_PLAN: WeeklyPlan = {
 };
 export const INITIAL_NOTES: Note[] = [];
 export const INITIAL_SETTINGS: UserSettings = {
-  theme: 'dark',
+  theme: 'light',
   accentColor: '#3b82f6',
   sidebarCollapsed: false,
   pomodoroTime: 25,

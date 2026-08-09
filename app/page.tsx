@@ -108,7 +108,7 @@ export default function DashboardHome() {
     ? habits.slice(0, 3).map((h) => h.name).join(', ')
     : 'No habits defined';
   const habitCompletionRate = habits.length > 0 ? Math.round((habitCompletedToday / habits.length) * 100) : 0;
-  
+
   // Dynamic Modular Daily Score Calculation with Empty State Guard
   const { dailyScore, hasRecordedItems } = calculateDailyScore({
     todayTasks,
@@ -156,7 +156,7 @@ export default function DashboardHome() {
   };
 
   const uncompletedToday = todayTasks.filter((t) => t.status !== 'completed');
-  
+
   // Sort today's uncompleted tasks by: 1) MIT, 2) proximity to current time, 3) priority
   const sortedFocusCandidates = [...uncompletedToday].sort((a, b) => {
     if (a.mit !== b.mit) return a.mit ? -1 : 1;
@@ -182,7 +182,9 @@ export default function DashboardHome() {
             {greeting} 👋
           </h1>
           <p className="text-blue-100/90 text-xs sm:text-sm max-w-xl leading-relaxed">
-            Plan. Focus. Execute. Grow. — You have <span className="font-bold text-white">{todayTasks.length - completedToday} tasks</span> remaining today.
+            Plan. Focus. Execute. Grow. — You have
+            <Link href="/today" className="mx-1 font-bold text-white hover:underline hover:cursor-pointer">{todayTasks.length - completedToday} tasks</Link>
+            remaining today.
           </p>
         </div>
 
@@ -314,19 +316,17 @@ export default function DashboardHome() {
                     >
                       <div className="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
                         <div
-                          className={`w-5 h-5 mt-0.5 sm:mt-0 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${
-                            isDone
+                          className={`w-5 h-5 mt-0.5 sm:mt-0 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${isDone
                               ? 'bg-emerald-500 border-emerald-500 text-white'
                               : 'border-gray-300 dark:border-gray-600 hover:border-blue-500'
-                          }`}
+                            }`}
                         >
                           {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <span
-                            className={`text-xs sm:text-sm font-semibold block leading-tight ${
-                              isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
-                            }`}
+                            className={`text-xs sm:text-sm font-semibold block leading-tight ${isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
+                              }`}
                           >
                             {task.title}
                           </span>
@@ -550,9 +550,8 @@ export default function DashboardHome() {
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <div
-                        className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] shrink-0 ${
-                          isDone ? 'bg-amber-500 text-white' : 'border border-gray-300 dark:border-gray-600'
-                        }`}
+                        className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] shrink-0 ${isDone ? 'bg-amber-500 text-white' : 'border border-gray-300 dark:border-gray-600'
+                          }`}
                       >
                         {isDone && '✓'}
                       </div>

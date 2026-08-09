@@ -9,6 +9,8 @@ import { PWARegister } from '../components/pwa/PWARegister';
 import { PWAInstallPrompt } from '../components/pwa/PWAInstallPrompt';
 import { BRAND } from '../lib/branding';
 
+const ogImage = `/og-image.webp`;
+
 const manrope = Manrope({
   variable: '--font-manrope',
   subsets: ['latin'],
@@ -53,11 +55,20 @@ export const metadata: Metadata = {
     title: `${BRAND.name} — ${BRAND.tagline}`,
     description: BRAND.description,
     type: 'website',
+    images: [
+      {
+        url: ogImage,
+        width: 1200,
+        height: 630,
+        alt: BRAND.name,
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: `${BRAND.name} — ${BRAND.tagline}`,
     description: BRAND.description,
+    images: [ogImage],
   },
 };
 
@@ -65,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${manrope.variable} h-full antialiased dark`}
+      className={`${manrope.variable} h-full antialiased light`}
       suppressHydrationWarning
     >
       <head suppressHydrationWarning>
@@ -78,7 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               (function() {
                 try {
                   var saved = localStorage.getItem('meraj_os_theme');
-                  var theme = saved || 'dark';
+                  var theme = saved || 'light';
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                     document.documentElement.setAttribute('data-theme', 'dark');
