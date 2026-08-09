@@ -13,6 +13,7 @@ export interface Task {
   status: TaskStatus;
   category: Category;
   projectId?: string;
+  eventId?: string;
   estimatedHours: number;
   actualHours: number;
   dueDate: string; // YYYY-MM-DD

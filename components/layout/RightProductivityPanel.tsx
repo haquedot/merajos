@@ -48,11 +48,9 @@ export const RightProductivityPanel: React.FC<RightPanelProps> = ({ isOpen, onCl
     } else if (timeLeft === 0) {
       setIsRunning(false);
       if (mode === 'focus') {
-        alert('🎉 Focus Session Completed! Time for a 5-minute break.');
         setMode('break');
         setTimeLeft(5 * 60);
       } else {
-        alert('⚡ Break Time Ended! Ready to get back into focus mode?');
         setMode('focus');
         setTimeLeft(25 * 60);
       }

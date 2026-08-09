@@ -13,6 +13,8 @@ const NoteSchema: Schema = new Schema(
     category: { type: String, default: 'Personal' },
     pinned: { type: Boolean, default: false },
     folder: { type: String, default: 'General' },
+    userId: { type: String, index: true },
+    userEmail: { type: String, index: true },
     updatedAt: { type: String, default: () => new Date().toISOString() },
   },
   { timestamps: true, _id: false }

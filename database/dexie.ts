@@ -52,7 +52,7 @@ export class MerajOSDatabase extends Dexie {
     super('MerajOS_IndexedDB');
 
     this.version(1).stores({
-      tasks: 'id, googleTaskId, status, category, dueDate, mit, projectId',
+      tasks: 'id, googleTaskId, status, category, dueDate, mit, projectId, eventId',
       events: 'id, googleEventId, startDate, category',
       projects: 'id, status, clientName',
       papers: 'id, status, priority',
@@ -107,18 +107,45 @@ export async function seedDexieDatabaseIfEmpty() {
       }
     }
   }
+}
 
-  const settingsCount = await db.settings.count();
-  if (settingsCount === 0) {
-    await db.settings.add({
-      id: 'default',
-      theme: 'dark',
-      accentColor: '#3b82f6',
-      sidebarCollapsed: false,
-      pomodoroTime: 25,
-      soundEnabled: true,
-      emailNotificationsEnabled: true,
-      notificationEmail: 'merajulhaque.official@gmail.com',
-    });
+// Wipe all user data locally on logout
+export async function clearAllUserData() {
+  if (typeof window === 'undefined') return;
+
+  try {
+    await Promise.all([
+      db.tasks.clear(),
+      db.events.clear(),
+      db.projects.clear(),
+      db.papers.clear(),
+      db.jobs.clear(),
+      db.habits.clear(),
+      db.goals.clear(),
+      db.notes.clear(),
+      db.weeklyPlans.clear(),
+      db.syncQueue.clear(),
+      db.googleSession.clear(),
+    ]);
+
+    const keysToRemove = [
+      'meraj_os_projects',
+      'meraj_os_career',
+      'meraj_os_research',
+      'meraj_os_habits',
+      'meraj_os_goals',
+      'meraj_os_notes',
+      'meraj_os_weekly',
+      'google_access_token',
+      'google_refresh_token',
+      'google_token_expiry',
+      'google_user_email',
+      'google_user_name',
+      'google_user_picture',
+      'orbit_onboarding_completed',
+    ];
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch (err) {
+    console.warn('Error clearing user data on logout:', err);
   }
 }

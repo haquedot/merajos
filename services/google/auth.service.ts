@@ -109,6 +109,20 @@ class AuthService {
             };
 
             await db.googleSession.put(session);
+
+            // Sync user profile directly to MongoDB database
+            if (profile.email) {
+              fetch('/api/user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: profile.email,
+                  name: profile.name,
+                  picture: profile.picture,
+                }),
+              }).catch((err) => console.warn('Failed to sync user to MongoDB', err));
+            }
+
             resolve(session);
           },
         });

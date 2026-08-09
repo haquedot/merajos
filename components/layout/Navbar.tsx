@@ -22,6 +22,7 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import { Tagline } from '../common/Tagline';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { useTheme } from '../../providers/ThemeProvider';
+import { SyncStatusBadge } from '../common/SyncStatusBadge';
 
 interface NavbarProps {
   onOpenMobileSidebar: () => void;
@@ -67,9 +68,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         }),
       });
       const data = await res.json();
-      alert(`✅ Cron Job Executed Successfully!\n\nAll ${currentTasks.length} tasks persisted into MongoDB!\n\n${data.message}`);
+      console.log('Cron execution result:', data);
     } catch (err: any) {
-      alert(`❌ Cron execution error: ${err.message}`);
+      console.error('Cron execution error:', err);
     } finally {
       setIsCronRunning(false);
     }
@@ -113,6 +114,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right section: Sync Status, Run Cron, Theme Toggle, Profile Menu */}
       <div className="flex items-center gap-1.5 sm:gap-2.5">
+        {/* Offline / Online Sync Badge */}
+        <div className="hidden sm:block">
+          <SyncStatusBadge />
+        </div>
         {/* Run Daily Summary Button (Shown when RUN_CRON_JOB is true) */}
         {process.env.NEXT_PUBLIC_RUN_CRON_JOB === 'true' && (
           <button

@@ -1,5 +1,6 @@
 import { authService } from './auth.service';
 import { Task, Category, Priority, TaskStatus } from '../../types';
+import { parseTimeAndSlotFromText } from '../../lib/taskUtils';
 
 const BASE_URL = 'https://www.googleapis.com/tasks/v1';
 
@@ -133,6 +134,12 @@ export class GoogleTasksService {
       priority = 'high';
     }
 
+    // Parse time and timeSlot using parseTimeAndSlotFromText
+    const { time: taskTime, timeSlot } = parseTimeAndSlotFromText(
+      `${item.title || ''} ${item.notes || ''}`,
+      item.due
+    );
+
     return {
       id: item.id,
       googleTaskId: item.id,
@@ -142,6 +149,8 @@ export class GoogleTasksService {
       status: isDone ? 'completed' : 'todo',
       category,
       dueDate,
+      time: taskTime,
+      timeSlot,
       estimatedHours: 1,
       actualHours: isDone ? 1 : 0,
       recurring: 'none',

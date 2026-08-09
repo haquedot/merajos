@@ -51,11 +51,11 @@ export const Logo: React.FC<LogoProps> = ({
     <div className={`inline-flex items-center gap-3 ${className}`}>
       {IconSvg}
       <div className="flex flex-col">
-        <span className={`font-extrabold tracking-tight text-slate-900 dark:text-white leading-none ${BRAND.tagline.length > 0 ? 'text-2xl' : 'text-lg'}`}>
+        <span className={`font-extrabold tracking-tight text-slate-900 dark:text-white leading-none ${BRAND.tagline.length > 0 ? 'text-xl' : 'text-lg'}`}>
           {BRAND.name}
         </span>
         {showTagline && (
-          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
             {BRAND.tagline}
           </span>
         )}

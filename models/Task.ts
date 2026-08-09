@@ -24,6 +24,8 @@ const TaskSchema: Schema = new Schema(
     notes: { type: String, default: '' },
     mit: { type: Boolean, default: false },
     timeSlot: { type: String, enum: ['morning', 'afternoon', 'evening', 'night'] },
+    userId: { type: String, index: true },
+    userEmail: { type: String, index: true },
     createdAt: { type: String, default: () => new Date().toISOString() },
     completedAt: { type: String },
     lastSyncedAt: { type: String },

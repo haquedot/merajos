@@ -255,18 +255,29 @@ export default function ResearchPage() {
                 </p>
               )}
 
-              <div className="flex items-center justify-between pt-2 text-[10px] text-gray-400 border-t border-gray-200/60 dark:border-gray-800">
-                <span className="font-mono truncate">Citation: {paper.citation || 'Ref'}</span>
-                {paper.pdfUrl && (
-                  <a
-                    href={paper.pdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1 font-bold shrink-0"
-                  >
-                    View PDF <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
+              <div className="flex items-center justify-between pt-2 text-[10px] text-gray-400 border-t border-gray-200/60 dark:border-gray-800 gap-2">
+                <span className="font-mono truncate">Ref: {paper.citation || paper.authors.split(' ')[0] + ' et al.'}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {paper.citation && (
+                    <button
+                      onClick={() => navigator.clipboard.writeText(paper.citation)}
+                      className="px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                      title="Copy citation string"
+                    >
+                      Copy Citation
+                    </button>
+                  )}
+                  {paper.pdfUrl && (
+                    <a
+                      href={paper.pdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1 font-bold"
+                    >
+                      View PDF <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
               </div>
             </motion.div>
           ))}

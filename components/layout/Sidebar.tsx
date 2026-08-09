@@ -28,21 +28,22 @@ import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Logo } from '../common/Logo';
 import { BRAND } from '../../lib/branding';
+import { SyncStatusBadge } from '../common/SyncStatusBadge';
 
 export const sidebarItems = [
-  { name: 'Dashboard',        href: '/',               icon: LayoutDashboard, moduleKey: null,            alwaysShow: true },
-  { name: 'Today',            href: '/today',          icon: Sun,             moduleKey: null,            alwaysShow: true },
-  { name: 'Calendar',        href: '/calendar',       icon: CalendarIcon,    moduleKey: 'calendar',      alwaysShow: true },
-  { name: 'Tasks',            href: '/tasks',          icon: CheckSquare,     moduleKey: 'tasks',         alwaysShow: true },
-  { name: 'Clients',          href: '/clients',        icon: Briefcase,       moduleKey: 'clients',       alwaysShow: false },
-  { name: 'Research',         href: '/research',       icon: BookOpen,        moduleKey: 'research',      alwaysShow: false },
-  { name: 'Career & DSA',     href: '/career',         icon: GraduationCap,   moduleKey: 'career',        alwaysShow: false },
-  { name: 'Habits',           href: '/habits',         icon: Activity,        moduleKey: 'habits',        alwaysShow: false },
-  { name: 'Weekly Planner',   href: '/weekly-planner', icon: CalendarDays,    moduleKey: 'weekly_planner',alwaysShow: false },
-  { name: 'Goals',            href: '/goals',          icon: Target,          moduleKey: 'goals',         alwaysShow: false },
-  { name: 'Analytics',        href: '/analytics',      icon: BarChart3,       moduleKey: 'analytics',     alwaysShow: false },
-  { name: 'Notes & Brain Dump', href: '/notes',        icon: FileText,        moduleKey: 'notes',         alwaysShow: false },
-  { name: 'Settings',         href: '/settings',       icon: Settings,        moduleKey: null,            alwaysShow: true },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard, moduleKey: null, alwaysShow: true },
+  { name: 'Today', href: '/today', icon: Sun, moduleKey: null, alwaysShow: true },
+  { name: 'Calendar', href: '/calendar', icon: CalendarIcon, moduleKey: 'calendar', alwaysShow: true },
+  { name: 'Tasks', href: '/tasks', icon: CheckSquare, moduleKey: 'tasks', alwaysShow: true },
+  { name: 'Clients', href: '/clients', icon: Briefcase, moduleKey: 'clients', alwaysShow: false },
+  { name: 'Research', href: '/research', icon: BookOpen, moduleKey: 'research', alwaysShow: false },
+  { name: 'Career & DSA', href: '/career', icon: GraduationCap, moduleKey: 'career', alwaysShow: false },
+  { name: 'Habits', href: '/habits', icon: Activity, moduleKey: 'habits', alwaysShow: false },
+  { name: 'Weekly Planner', href: '/weekly-planner', icon: CalendarDays, moduleKey: 'weekly_planner', alwaysShow: false },
+  { name: 'Goals', href: '/goals', icon: Target, moduleKey: 'goals', alwaysShow: false },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3, moduleKey: 'analytics', alwaysShow: false },
+  { name: 'Notes & Brain Dump', href: '/notes', icon: FileText, moduleKey: 'notes', alwaysShow: false },
+  { name: 'Settings', href: '/settings', icon: Settings, moduleKey: null, alwaysShow: true },
 ];
 
 interface SidebarProps {
@@ -82,25 +83,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
   });
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-white dark:bg-[#101827] border-r border-[#E2E8F0] dark:border-[#243244] transition-all duration-300">
+    <div className="relative flex flex-col h-full bg-white dark:bg-[#101827] border-r border-[#E2E8F0] dark:border-[#243244] transition-all duration-300">
       {/* Brand Header */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-[#E2E8F0] dark:border-[#243244]">
-        <Link id="tour-sidebar-logo" href="/" className="flex items-center gap-3 overflow-hidden">
-          {collapsed ? (
-            <Logo variant="icon" size={28} />
-          ) : (
-            <Logo variant="horizontal" size={28} showTagline={false} />
-          )}
-        </Link>
+        {collapsed ? (
+          <button
+            onClick={toggleSidebar}
+            id="tour-sidebar-logo"
+            className="group relative flex items-center justify-center w-10 h-10 mx-auto rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-transparent hover:border-blue-200/60 dark:hover:border-blue-800/60 transition-all duration-300 ease-out active:scale-95 cursor-pointer"
+            title="Expand sidebar"
+          >
+            {/* Logo shown by default (fades out & shrinks on hover) */}
+            <span className="absolute flex items-center justify-center transition-all duration-250 ease-out opacity-100 scale-100 group-hover:opacity-0 group-hover:scale-75 pointer-events-none">
+              <Logo variant="icon" size={28} />
+            </span>
+            {/* Expand toggle icon (fades in & scales up on hover with subtle shift right) */}
+            <span className="absolute flex items-center justify-center transition-all duration-250 ease-out opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 text-blue-600 dark:text-blue-400">
+              <ChevronRight className="w-5 h-5 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </span>
+          </button>
+        ) : (
+          <>
+            <Link id="tour-sidebar-logo" href="/" className="flex items-center gap-3 overflow-hidden transition-transform duration-200 active:scale-98">
+              <Logo variant="horizontal" size={32} showTagline={true} />
+            </Link>
 
-        {/* Desktop Collapse button */}
-        <button
-          onClick={toggleSidebar}
-          className="hidden md:flex items-center justify-center p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
+            {/* Desktop Collapse button */}
+            <button
+              onClick={toggleSidebar}
+              className="hidden md:flex items-center justify-center p-1.5 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all duration-200 active:scale-90"
+              title="Collapse sidebar"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Navigation List */}
@@ -114,27 +131,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
               key={item.href}
               href={item.href}
               onClick={onMobileClose}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all relative group ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-colors duration-200 ease-out relative group active:scale-[0.98] ${
                 isActive
-                  ? 'bg-[#1F3B99] text-white font-semibold shadow-xs'
+                  ? 'text-white font-semibold'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-[#1E293B] hover:text-gray-900 dark:hover:text-white'
-              }`}
+              } ${collapsed ? 'justify-center' : ''}`}
               title={collapsed ? item.name : undefined}
             >
+              {/* Sliding Active Pill Background */}
+              {isActive && (
+                <motion.div
+                  layoutId="activeSidebarPill"
+                  className="absolute inset-0 bg-[#1F3B99] rounded-xl shadow-xs shadow-indigo-900/20 z-0"
+                  transition={{
+                    type: 'spring',
+                    stiffness: 380,
+                    damping: 32,
+                  }}
+                />
+              )}
+
               <Icon
-                className={`w-5 h-5 shrink-0 transition-colors ${
+                className={`w-5 h-5 shrink-0 z-10 transition-transform duration-200 ease-out group-hover:scale-110 ${
                   isActive
                     ? 'text-white'
                     : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200'
                 }`}
               />
-              {!collapsed && <span className="truncate">{item.name}</span>}
-              {isActive && (
-                <motion.div
-                  layoutId="activeSidebarIndicator"
-                  className="absolute right-0 top-2 bottom-2 w-1 bg-[#6D5BFF] rounded-l-full"
-                />
-              )}
+              {!collapsed && <span className="truncate z-10 transition-colors duration-200">{item.name}</span>}
             </Link>
           );
         })}
@@ -145,14 +169,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
         {/* Modern Theme Switch Toggle */}
         <button
           onClick={toggleTheme}
-          className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800/80 flex items-center justify-between transition-colors group cursor-pointer"
+          className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800/80 flex items-center justify-between transition-all duration-200 ease-out group cursor-pointer active:scale-98"
           title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
             {theme === 'dark' ? (
-              <Moon className="w-4 h-4 text-indigo-400 shrink-0" />
+              <Moon className="w-4 h-4 text-indigo-400 shrink-0 transition-transform duration-200 group-hover:rotate-12" />
             ) : (
-              <Sun className="w-4 h-4 text-amber-500 shrink-0" />
+              <Sun className="w-4 h-4 text-amber-500 shrink-0 transition-transform duration-200 group-hover:rotate-45" />
             )}
             {!collapsed && (
               <span className="truncate">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
@@ -161,16 +185,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
 
           {!collapsed ? (
             <div
-              className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0 relative flex items-center ${
-                theme === 'dark'
+              className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0 relative flex items-center ${theme === 'dark'
                   ? 'bg-indigo-600 dark:bg-indigo-600'
                   : 'bg-gray-300 dark:bg-gray-700'
-              }`}
+                }`}
             >
               <div
-                className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out flex items-center justify-center ${
-                  theme === 'dark' ? 'translate-x-4' : 'translate-x-0'
-                }`}
+                className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out flex items-center justify-center ${theme === 'dark' ? 'translate-x-4' : 'translate-x-0'
+                  }`}
               >
                 {theme === 'dark' ? (
                   <Moon className="w-2.5 h-2.5 text-indigo-600" />
@@ -181,9 +203,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
             </div>
           ) : (
             <div
-              className={`w-2 h-2 rounded-full transition-all shrink-0 ${
-                theme === 'dark' ? 'bg-indigo-400' : 'bg-amber-400'
-              }`}
+              className={`w-2 h-2 rounded-full transition-all shrink-0 ${theme === 'dark' ? 'bg-indigo-400' : 'bg-amber-400'
+                }`}
             />
           )}
         </button>
@@ -204,9 +225,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
 
       {/* Footer Branding Info */}
       {!collapsed && (
-        <div className="p-3.5 border-t border-gray-100 dark:border-gray-800 text-[11px] text-gray-400 dark:text-gray-500">
-          <p className="font-semibold text-gray-700 dark:text-gray-300">{BRAND.name} v{BRAND.version}</p>
-          <p className="truncate">{BRAND.tagline}</p>
+        <div className="p-3.5 border-t border-gray-100 dark:border-gray-800 text-[11px] text-gray-400 dark:text-gray-500 flex items-center justify-between gap-2">
+          <div>
+            <p className="font-semibold text-gray-700 dark:text-gray-300">{BRAND.name} v{BRAND.version}</p>
+            <p className="truncate">{BRAND.tagline}</p>
+          </div>
+          <SyncStatusBadge />
         </div>
       )}
     </div>
@@ -216,9 +240,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:block h-screen sticky top-0 z-30 transition-all duration-300 ${
-          collapsed ? 'w-16' : 'w-64'
-        }`}
+        className={`hidden md:block h-screen sticky top-0 z-30 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'
+          }`}
       >
         {sidebarContent}
       </aside>
