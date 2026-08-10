@@ -56,7 +56,7 @@ export const Logo: React.FC<LogoProps> = ({
         </span>
         {showTagline && (
           <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            {BRAND.tagline}
+            Plan. <span className='text-[#1F3B99] dark:text-white font-bold'>Focus.</span> Execute. Grow.
           </span>
         )}
       </div>
