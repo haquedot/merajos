@@ -165,9 +165,10 @@ class AuthService {
         const client = window.google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
-          prompt: '',
+          prompt: 'none',
           callback: async (tokenResponse: any) => {
             if (tokenResponse.error || !tokenResponse.access_token) {
+              console.warn('[AuthService] Silent token refresh suppressed interactive popup:', tokenResponse.error);
               return resolve(null);
             }
             const session = await db.googleSession.get('me');
@@ -183,7 +184,7 @@ class AuthService {
             resolve(null);
           },
         });
-        client.requestAccessToken({ prompt: '' });
+        client.requestAccessToken({ prompt: 'none' });
       } catch (err) {
         console.warn('[AuthService] Silent token refresh failed', err);
         resolve(null);
