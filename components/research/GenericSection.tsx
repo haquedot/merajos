@@ -37,8 +37,8 @@ export const GenericSection: React.FC<GenericSectionProps> = ({
   return (
     <div className="space-y-4">
       <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-start gap-2.5">
             <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
               <FileText className="w-5 h-5" />
             </div>
@@ -57,7 +57,7 @@ export const GenericSection: React.FC<GenericSectionProps> = ({
             className="btn-primary px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 font-bold"
           >
             {saved ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Save className="w-4 h-4" />}
-            {saved ? 'Saved!' : 'Save Notes'}
+            {saved ? 'Saved!' : 'Save'}
           </button>
         </div>
 

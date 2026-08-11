@@ -20,6 +20,7 @@ import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Badge } from '../../components/ui/Badge';
 import { GridCardsSkeleton } from '../../components/ui/Skeleton';
+import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
 
 // ─── New Project Modal ────────────────────────────────────────────────────────
 
@@ -181,97 +182,109 @@ function ProjectCard({
   const allPapers = project.sections.flatMap((s) => s.papers ?? []);
   const importantPapers = allPapers.filter((p) => p.isImportant).length;
   const statusInfo = STATUS_BADGE[project.status];
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   return (
-    <motion.div
-      whileHover={{ y: -3 }}
-      className="relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-xs overflow-hidden flex flex-col"
-    >
-      {/* Color accent strip */}
-      <div className="h-1.5 w-full" style={{ backgroundColor: project.color ?? '#3b82f6' }} />
+    <>
+      <motion.div
+        whileHover={{ y: -3 }}
+        className="relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-xs overflow-hidden flex flex-col"
+      >
+        {/* Color accent strip */}
+        <div className="h-1.5 w-full" style={{ backgroundColor: project.color ?? '#3b82f6' }} />
 
-      <div className="p-4 flex flex-col gap-3 flex-1">
-        {/* Header row */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-white leading-snug truncate">
-              {project.title}
-            </h3>
-            {project.field && (
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                {project.field}
-              </span>
-            )}
+        <div className="p-4 flex flex-col gap-3 flex-1">
+          {/* Header row */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white leading-snug truncate">
+                {project.title}
+              </h3>
+              {project.field && (
+                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                  {project.field}
+                </span>
+              )}
+            </div>
+            <Badge variant={statusInfo.variant} size="sm">{statusInfo.label}</Badge>
           </div>
-          <Badge variant={statusInfo.variant} size="sm">{statusInfo.label}</Badge>
-        </div>
 
-        {project.description && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-            {project.description}
-          </p>
-        )}
+          {project.description && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+              {project.description}
+            </p>
+          )}
 
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="text-center p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
-            <FileText className="w-3.5 h-3.5 text-blue-500 mx-auto mb-0.5" />
-            <span className="text-xs font-black text-gray-900 dark:text-white block">{allPapers.length}</span>
-            <span className="text-[9px] text-gray-400 font-semibold uppercase">Papers</span>
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="text-center p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+              <FileText className="w-3.5 h-3.5 text-blue-500 mx-auto mb-0.5" />
+              <span className="text-xs font-black text-gray-900 dark:text-white block">{allPapers.length}</span>
+              <span className="text-[9px] text-gray-400 font-semibold uppercase">Papers</span>
+            </div>
+            <div className="text-center p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+              <Star className="w-3.5 h-3.5 text-amber-400 mx-auto mb-0.5" />
+              <span className="text-xs font-black text-gray-900 dark:text-white block">{importantPapers}</span>
+              <span className="text-[9px] text-gray-400 font-semibold uppercase">Key</span>
+            </div>
+            <div className="text-center p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+              <FolderOpen className="w-3.5 h-3.5 text-purple-500 mx-auto mb-0.5" />
+              <span className="text-xs font-black text-gray-900 dark:text-white block">{project.sections.length}</span>
+              <span className="text-[9px] text-gray-400 font-semibold uppercase">Sections</span>
+            </div>
           </div>
-          <div className="text-center p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
-            <Star className="w-3.5 h-3.5 text-amber-400 mx-auto mb-0.5" />
-            <span className="text-xs font-black text-gray-900 dark:text-white block">{importantPapers}</span>
-            <span className="text-[9px] text-gray-400 font-semibold uppercase">Key</span>
-          </div>
-          <div className="text-center p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
-            <FolderOpen className="w-3.5 h-3.5 text-purple-500 mx-auto mb-0.5" />
-            <span className="text-xs font-black text-gray-900 dark:text-white block">{project.sections.length}</span>
-            <span className="text-[9px] text-gray-400 font-semibold uppercase">Sections</span>
-          </div>
-        </div>
 
-        {/* Progress bar */}
-        <div>
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-[10px] font-bold text-gray-400 uppercase">Progress</span>
-            <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">{project.progress}%</span>
+          {/* Progress bar */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[10px] font-bold text-gray-400 uppercase">Progress</span>
+              <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">{project.progress}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${project.progress}%` }}
+                transition={{ duration: 0.8 }}
+                className="h-full rounded-full"
+                style={{ backgroundColor: project.color ?? '#3b82f6' }}
+              />
+            </div>
           </div>
-          <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${project.progress}%` }}
-              transition={{ duration: 0.8 }}
-              className="h-full rounded-full"
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => router.push(`/research/${project.id}`)}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all"
               style={{ backgroundColor: project.color ?? '#3b82f6' }}
-            />
+            >
+              Open <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => onEdit(project)}
+              className="p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="p-2 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
+      </motion.div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 pt-1">
-          <button
-            onClick={() => router.push(`/research/${project.id}`)}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all"
-            style={{ backgroundColor: project.color ?? '#3b82f6' }}
-          >
-            Open <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => onEdit(project)}
-            className="p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => onDelete(project.id)}
-            className="p-2 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    </motion.div>
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => onDelete(project.id)}
+        title="Confirm Deletion"
+        itemName={project.title}
+        message="Are you sure you want to delete this project? This action cannot be undone."
+      />
+    </>
   );
 }
 

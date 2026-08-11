@@ -25,6 +25,7 @@ import { WritingProgressSection } from '../../../components/research/WritingProg
 import { GenericSection } from '../../../components/research/GenericSection';
 import { Badge } from '../../../components/ui/Badge';
 import { GridCardsSkeleton } from '../../../components/ui/Skeleton';
+import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
 
 const SECTION_ICON_MAP: Record<ResearchSectionType, any> = {
   literature_review: BookOpen,
@@ -47,6 +48,7 @@ export default function ProjectDetailPage() {
 
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     if (projectId) {
@@ -85,19 +87,42 @@ export default function ProjectDetailPage() {
   const allPapers = project.sections.flatMap((s: ResearchSection) => s.papers ?? []);
   const keyPapers = allPapers.filter((p) => p.isImportant).length;
 
-  const handleDeleteSection = async (secId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  // const handleDeleteSection = async (secId: string, e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   if (project.sections.length <= 1) {
+  //     alert('You cannot delete the last remaining section in a project.');
+  //     return;
+  //   }
+  //     await deleteSection(project.id, secId);
+  //     if (activeSectionId === secId) {
+  //       const remaining = project.sections.filter((s: ResearchSection) => s.id !== secId);
+  //       setActiveSectionId(remaining[0]?.id ?? null);
+  //     }
+  //   }
+  // };
+
+  const handleConfirmDelete = async () => {
+    if (!activeSectionId) return;
+
+    // Prevent deleting the last section
     if (project.sections.length <= 1) {
       alert('You cannot delete the last remaining section in a project.');
+      setIsDeleteModalOpen(false);
       return;
     }
-    if (confirm('Are you sure you want to delete this section and its data?')) {
-      await deleteSection(project.id, secId);
-      if (activeSectionId === secId) {
-        const remaining = project.sections.filter((s: ResearchSection) => s.id !== secId);
-        setActiveSectionId(remaining[0]?.id ?? null);
-      }
+
+    // Delete the section
+    await deleteSection(project.id, activeSectionId);
+
+    // If the deleted section was active, set a new active section
+    if (activeSectionId === activeSection?.id) {
+      const remainingSections = project.sections.filter(
+        (s: ResearchSection) => s.id !== activeSectionId
+      );
+      setActiveSectionId(remainingSections[0]?.id ?? null);
     }
+
+    setIsDeleteModalOpen(false);
   };
 
   return (
@@ -170,21 +195,19 @@ export default function ProjectDetailPage() {
             <div
               key={section.id}
               onClick={() => setActiveSectionId(section.id)}
-              className={`group flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all shrink-0 ${
-                isActive
+              className={`group flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all shrink-0 ${isActive
                   ? 'bg-blue-500 text-white shadow-xs'
                   : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-100 dark:border-gray-800'
-              }`}
+                }`}
             >
               <Icon className="w-4 h-4" />
               <span>{section.title}</span>
               {section.type === 'literature_review' && paperCount > 0 && (
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                    isActive
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] ${isActive
                       ? 'bg-white/20 text-white'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
-                  }`}
+                    }`}
                 >
                   {paperCount}
                 </span>
@@ -192,10 +215,9 @@ export default function ProjectDetailPage() {
 
               {project.sections.length > 1 && (
                 <button
-                  onClick={(e) => handleDeleteSection(section.id, e)}
-                  className={`opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-rose-300 transition-opacity ml-1 ${
-                    isActive ? 'text-white/70' : 'text-gray-400'
-                  }`}
+                  onClick={(e) => setIsDeleteModalOpen(true)}
+                  className={`opacity-100 md:opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-rose-300 transition-opacity ml-1 ${isActive ? 'text-white/70' : 'text-gray-400'
+                    }`}
                   title="Delete Section"
                 >
                   <Trash2 className="w-3 h-3" />
@@ -231,8 +253,8 @@ export default function ProjectDetailPage() {
             'notes',
             'custom',
           ].includes(activeSection.type) && (
-            <GenericSection section={activeSection} projectId={project.id} />
-          )}
+              <GenericSection section={activeSection} projectId={project.id} />
+            )}
         </div>
       )}
 
@@ -241,6 +263,15 @@ export default function ProjectDetailPage() {
         isOpen={isAddSectionModalOpen}
         onClose={() => setIsAddSectionModalOpen(false)}
         projectId={project.id}
+      />
+
+      {/* Delete Modal */}
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Section"
+        message={`Are you sure you want to delete this ${activeSection?.title} section?`}
       />
     </div>
   );

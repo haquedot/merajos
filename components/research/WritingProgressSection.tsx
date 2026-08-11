@@ -48,7 +48,7 @@ export const WritingProgressSection: React.FC<WritingProgressSectionProps> = ({
       {/* Top Header Card */}
       <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-start gap-2.5 flex-wrap">
             <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
               <PenTool className="w-5 h-5" />
             </div>
@@ -77,7 +77,7 @@ export const WritingProgressSection: React.FC<WritingProgressSectionProps> = ({
               className="btn-primary px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 font-bold"
             >
               {saved ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Save className="w-4 h-4" />}
-              {saved ? 'Saved!' : 'Save Progress'}
+              {saved ? 'Saved!' : 'Save'}
             </button>
           </div>
         </div>
