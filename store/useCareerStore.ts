@@ -6,6 +6,7 @@ interface CareerState {
   jobs: JobApplication[];
   interviewTopics: InterviewTopic[];
   dsaTopics: DSATopic[];
+  isLoading: boolean;
   jobStatusFilter: string;
   dsaSearchQuery: string;
 
@@ -28,7 +29,10 @@ interface CareerState {
 export const useCareerStore = create<CareerState>((set, get) => {
   if (typeof window !== 'undefined') {
     isUserAuthenticated().then((authenticated) => {
-      if (!authenticated) return;
+      if (!authenticated) {
+        set({ isLoading: false });
+        return;
+      }
       fetch('/api/career')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
@@ -37,10 +41,16 @@ export const useCareerStore = create<CareerState>((set, get) => {
               jobs: data.career.jobs || [],
               interviewTopics: data.career.interviewTopics || [],
               dsaTopics: data.career.dsaTopics || [],
+              isLoading: false,
             });
+          } else {
+            set({ isLoading: false });
           }
         })
-        .catch((err) => console.warn('[MongoDB CareerSync] Offline or API unreachable', err));
+        .catch((err) => {
+          console.warn('[MongoDB CareerSync] Offline or API unreachable', err);
+          set({ isLoading: false });
+        });
     });
   }
 
@@ -65,6 +75,7 @@ export const useCareerStore = create<CareerState>((set, get) => {
     jobs: [],
     interviewTopics: [],
     dsaTopics: [],
+    isLoading: true,
     jobStatusFilter: 'all',
     dsaSearchQuery: '',
 

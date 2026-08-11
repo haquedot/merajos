@@ -18,8 +18,10 @@ import { useWeeklyStore } from '../../store/useWeeklyStore';
 import { Badge } from '../../components/ui/Badge';
 import { PageHeader } from '../../components/ui/PageHeader';
 
+import { DashboardSkeleton } from '../../components/ui/Skeleton';
+
 export default function WeeklyPlannerPage() {
-  const { plan, updatePlan, updateReview } = useWeeklyStore();
+  const { plan, isLoading: isLoadingWeekly, updatePlan, updateReview } = useWeeklyStore();
 
   const [wins, setWins] = useState(plan.review.wins);
   const [losses, setLosses] = useState(plan.review.losses);
@@ -31,6 +33,10 @@ export default function WeeklyPlannerPage() {
   const [newCareerGoal, setNewCareerGoal] = useState('');
   const [newClientGoal, setNewClientGoal] = useState('');
   const [newPersonalGoal, setNewPersonalGoal] = useState('');
+
+  if (isLoadingWeekly) {
+    return <DashboardSkeleton />;
+  }
 
   const handleReviewSave = () => {
     updateReview({

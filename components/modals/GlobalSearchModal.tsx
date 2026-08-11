@@ -22,7 +22,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
   const { tasks } = useTaskStore();
   const { projects } = useProjectStore();
   const { notes } = useNotesStore();
-  const { papers } = useResearchStore();
+  const { projects: researchProjects } = useResearchStore();
   const { jobs } = useCareerStore();
 
   useEffect(() => {
@@ -43,9 +43,13 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
     ? notes.filter((n) => n.title.toLowerCase().includes(query.toLowerCase()))
     : notes.slice(0, 2);
 
+  const allPapers = (researchProjects ?? []).flatMap((proj) =>
+    (proj.sections ?? []).flatMap((s) => s.papers ?? [])
+  );
+
   const filteredPapers = query
-    ? papers.filter((p) => p.title.toLowerCase().includes(query.toLowerCase()))
-    : papers.slice(0, 2);
+    ? allPapers.filter((p) => p.title.toLowerCase().includes(query.toLowerCase()))
+    : allPapers.slice(0, 2);
 
   const filteredJobs = query
     ? jobs.filter((j) => j.company.toLowerCase().includes(query.toLowerCase()) || j.role.toLowerCase().includes(query.toLowerCase()))

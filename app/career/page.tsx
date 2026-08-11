@@ -22,6 +22,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
 
+import { GridCardsSkeleton } from '../../components/ui/Skeleton';
+
 export default function CareerPage() {
   const [activeTab, setActiveTab] = useState<'jobs' | 'interview' | 'dsa'>('jobs');
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
@@ -30,6 +32,7 @@ export default function CareerPage() {
     jobs,
     interviewTopics,
     dsaTopics,
+    isLoading: isLoadingCareer,
     jobStatusFilter,
     dsaSearchQuery,
     addJob,
@@ -48,6 +51,10 @@ export default function CareerPage() {
   const [salary, setSalary] = useState('');
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
+
+  if (isLoadingCareer) {
+    return <GridCardsSkeleton count={6} />;
+  }
 
   const filteredJobs = jobs.filter((j) => jobStatusFilter === 'all' || j.status === jobStatusFilter);
 

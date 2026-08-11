@@ -23,9 +23,12 @@ import { Badge } from '../../components/ui/Badge';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 
+import { NotesSkeleton } from '../../components/ui/Skeleton';
+
 export default function NotesPage() {
   const {
     notes,
+    isLoading: isLoadingNotes,
     activeNoteId,
     searchQuery,
     selectedCategory,
@@ -41,6 +44,10 @@ export default function NotesPage() {
   const [mobileTab, setMobileTab] = useState<'list' | 'editor'>('list');
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
   const [conversionToast, setConversionToast] = useState<string | null>(null);
+
+  if (isLoadingNotes) {
+    return <NotesSkeleton />;
+  }
 
   const filteredNotes = notes.filter((n) => {
     const matchesSearch =

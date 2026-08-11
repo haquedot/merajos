@@ -20,8 +20,10 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
 
+import { HabitsSkeleton } from '../../components/ui/Skeleton';
+
 export default function HabitsPage() {
-  const { habits, toggleHabitForDate, addHabit, deleteHabit, loadFromDB } = useHabitStore();
+  const { habits, isLoading: isLoadingHabits, toggleHabitForDate, addHabit, deleteHabit, loadFromDB } = useHabitStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Load habits from Dexie IndexedDB & MongoDB on page mount
@@ -33,6 +35,10 @@ export default function HabitsPage() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Personal');
   const [targetDays, setTargetDays] = useState(7);
+
+  if (isLoadingHabits) {
+    return <HabitsSkeleton />;
+  }
 
   const todayStr = new Date().toISOString().split('T')[0];
 

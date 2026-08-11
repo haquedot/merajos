@@ -4,6 +4,7 @@ import { isUserAuthenticated } from '../lib/authCheck';
 
 interface GoalState {
   goals: Goal[];
+  isLoading: boolean;
   selectedTierFilter: string;
 
   loadFromDB: () => Promise<void>;
@@ -19,20 +20,29 @@ interface GoalState {
 export const useGoalStore = create<GoalState>((set, get) => {
   if (typeof window !== 'undefined') {
     isUserAuthenticated().then((authenticated) => {
-      if (!authenticated) return;
+      if (!authenticated) {
+        set({ isLoading: false });
+        return;
+      }
       fetch('/api/goals')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.goals) {
-            set({ goals: data.goals });
+            set({ goals: data.goals, isLoading: false });
+          } else {
+            set({ isLoading: false });
           }
         })
-        .catch((err) => console.warn('[MongoDB GoalSync] Offline or API unreachable', err));
+        .catch((err) => {
+          console.warn('[MongoDB GoalSync] Offline or API unreachable', err);
+          set({ isLoading: false });
+        });
     });
   }
 
   return {
     goals: [],
+    isLoading: true,
     selectedTierFilter: 'all',
 
     loadFromDB: async () => {

@@ -6,6 +6,7 @@ import { isUserAuthenticated } from '../lib/authCheck';
 
 interface TaskState {
   tasks: Task[];
+  isLoading: boolean;
   searchQuery: string;
   selectedCategory: string;
   selectedPriority: string;
@@ -30,33 +31,43 @@ export const useTaskStore = create<TaskState>((set, get) => {
   // Load real data from Dexie DB & MongoDB API (if authenticated)
   if (typeof window !== 'undefined') {
     db.tasks.toArray().then((items) => {
-      set({ tasks: items || [] });
+      set({ tasks: items || [], isLoading: false });
     });
 
     isUserAuthenticated().then((authenticated) => {
-      if (!authenticated) return; // Guest mode: Dexie only
+      if (!authenticated) {
+        set({ isLoading: false });
+        return;
+      }
       fetch('/api/tasks')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.tasks && data.tasks.length > 0) {
-            set({ tasks: data.tasks });
+            set({ tasks: data.tasks, isLoading: false });
             db.tasks.bulkPut(data.tasks);
+          } else {
+            set({ isLoading: false });
           }
         })
-        .catch((err) => console.warn('[MongoDB TaskSync] Offline or API unreachable', err));
+        .catch((err) => {
+          console.warn('[MongoDB TaskSync] Offline or API unreachable', err);
+          set({ isLoading: false });
+        });
     });
   }
 
   return {
     tasks: [],
+    isLoading: true,
     searchQuery: '',
     selectedCategory: 'all',
     selectedPriority: 'all',
     selectedStatus: 'all',
 
     loadFromDB: async () => {
+      set({ isLoading: true });
       const items = await db.tasks.toArray();
-      set({ tasks: items || [] });
+      set({ tasks: items || [], isLoading: false });
     },
 
     setSearchQuery: (query) => set({ searchQuery: query }),

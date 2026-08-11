@@ -21,6 +21,7 @@ const DEFAULT_WEEKLY_PLAN: WeeklyPlan = {
 
 interface WeeklyState {
   plan: WeeklyPlan;
+  isLoading: boolean;
 
   loadFromDB: () => Promise<void>;
   updatePlan: (updates: Partial<WeeklyPlan>) => Promise<void>;
@@ -31,20 +32,29 @@ interface WeeklyState {
 export const useWeeklyStore = create<WeeklyState>((set, get) => {
   if (typeof window !== 'undefined') {
     isUserAuthenticated().then((authenticated) => {
-      if (!authenticated) return;
+      if (!authenticated) {
+        set({ isLoading: false });
+        return;
+      }
       fetch('/api/weekly')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.plan) {
-            set({ plan: data.plan });
+            set({ plan: data.plan, isLoading: false });
+          } else {
+            set({ isLoading: false });
           }
         })
-        .catch((err) => console.warn('[MongoDB WeeklySync] Offline or API unreachable', err));
+        .catch((err) => {
+          console.warn('[MongoDB WeeklySync] Offline or API unreachable', err);
+          set({ isLoading: false });
+        });
     });
   }
 
   return {
     plan: DEFAULT_WEEKLY_PLAN,
+    isLoading: true,
 
     loadFromDB: async () => {
       const authenticated = await isUserAuthenticated();

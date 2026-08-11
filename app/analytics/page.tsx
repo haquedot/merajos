@@ -38,6 +38,7 @@ import {
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { PageHeader } from '../../components/ui/PageHeader';
 
+import { DashboardSkeleton } from '../../components/ui/Skeleton';
 import { isUserAuthenticated } from '../../lib/authCheck';
 
 export default function AnalyticsPage() {
@@ -50,12 +51,16 @@ export default function AnalyticsPage() {
   const [mongoStats, setMongoStats] = useState<any>(null);
   const [snapshots, setSnapshots] = useState<any[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [expandedSnapshotDate, setExpandedSnapshotDate] = useState<string | null>(null);
 
   // Fetch live MongoDB analytics and snapshots (if authenticated)
   useEffect(() => {
     isUserAuthenticated().then((authenticated) => {
-      if (!authenticated) return;
+      if (!authenticated) {
+        setIsLoading(false);
+        return;
+      }
       fetch('/api/analytics')
         .then((res) => res.json())
         .then((data) => {
@@ -69,9 +74,14 @@ export default function AnalyticsPage() {
             }
           }
         })
-        .catch((err) => console.warn('Could not fetch MongoDB analytics:', err));
+        .catch((err) => console.warn('Could not fetch MongoDB analytics:', err))
+        .finally(() => setIsLoading(false));
     });
   }, [tasks]);
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   const triggerDaily1145PMCalculation = async () => {
     setIsCalculating(true);

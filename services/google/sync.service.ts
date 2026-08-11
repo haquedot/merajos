@@ -92,11 +92,22 @@ class SyncService {
 
       if (allRemoteTasks.length > 0) {
         for (const rTask of allRemoteTasks) {
-          const existing = await db.tasks.get(rTask.id);
+          const existingById = await db.tasks.get(rTask.id);
+          const existingByGoogleId = rTask.googleTaskId
+            ? await db.tasks.where('googleTaskId').equals(rTask.googleTaskId).first()
+            : null;
+          const existing = existingById || existingByGoogleId;
+
           if (!existing) {
-            await db.tasks.put(rTask);
-          } else if (existing.syncStatus !== 'pending') {
             await db.tasks.put({ ...rTask, syncStatus: 'synced' });
+          } else if (existing.syncStatus !== 'pending') {
+            await db.tasks.put({
+              ...existing,
+              ...rTask,
+              id: existing.id,
+              googleTaskId: rTask.googleTaskId || existing.googleTaskId,
+              syncStatus: 'synced',
+            });
           }
         }
 
@@ -110,9 +121,9 @@ class SyncService {
         } catch (err) {
           console.warn('Failed to post synced tasks batch to MongoDB API', err);
         }
-
-        useTaskStore.getState().loadFromDB();
       }
+
+      await useTaskStore.getState().loadFromDB();
 
       // 3. Sync ALL Google Calendar Events (Primary + All Secondary Calendars)
       const remoteEvents = await googleCalendarService.fetchAllCalendarsEvents();
@@ -177,11 +188,26 @@ class SyncService {
       try {
         if (item.entityType === 'task') {
           if (item.action === 'create') {
-            await googleTasksService.createTask(item.payload);
+            const created = await googleTasksService.createTask(item.payload);
+            if (created && created.googleTaskId) {
+              await db.tasks.update(item.entityId, {
+                googleTaskId: created.googleTaskId,
+                syncStatus: 'synced',
+              });
+              useTaskStore.getState().loadFromDB();
+            }
           } else if (item.action === 'update') {
-            await googleTasksService.updateTask(item.payload);
+            const localTask = await db.tasks.get(item.entityId);
+            const taskToSync = localTask
+              ? { ...item.payload, googleTaskId: localTask.googleTaskId || item.payload.googleTaskId }
+              : item.payload;
+            const ok = await googleTasksService.updateTask(taskToSync);
+            if (ok) {
+              await db.tasks.update(item.entityId, { syncStatus: 'synced' });
+            }
           } else if (item.action === 'delete') {
-            await googleTasksService.deleteTask(item.entityId);
+            const googleId = item.payload?.googleTaskId || item.entityId;
+            await googleTasksService.deleteTask(googleId);
           }
         } else if (item.entityType === 'event') {
           if (item.action === 'create') {

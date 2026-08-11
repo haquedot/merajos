@@ -176,30 +176,42 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       }
     },
 
-    completeOnboarding: () => {
+    completeOnboarding: async () => {
+      const current = get()?.settings || initialSettings;
+      const existing = current.onboarding;
+      const updatedSettings: UserSettings = {
+        ...current,
+        onboarding: {
+          displayName: existing?.displayName || 'User',
+          role: existing?.role || 'custom',
+          enabledModules: existing?.enabledModules || [],
+          workStartTime: existing?.workStartTime || '09:00',
+          workEndTime: existing?.workEndTime || '18:00',
+          primaryGoal: existing?.primaryGoal || '',
+          ...existing,
+          onboardingCompleted: true,
+          onboardingCompletedAt: new Date().toISOString(),
+        },
+      };
+
+      set({ settings: updatedSettings });
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('orbit_onboarding_completed', 'true');
       }
-      set((state) => {
-        const current = state?.settings || initialSettings;
-        const existing = current.onboarding;
-        return {
-          settings: {
-            ...current,
-            onboarding: {
-              displayName: existing?.displayName || 'User',
-              role: existing?.role || 'custom',
-              enabledModules: existing?.enabledModules || [],
-              workStartTime: existing?.workStartTime || '09:00',
-              workEndTime: existing?.workEndTime || '18:00',
-              primaryGoal: existing?.primaryGoal || '',
-              ...existing,
-              onboardingCompleted: true,
-              onboardingCompletedAt: new Date().toISOString(),
-            },
-          },
-        };
-      });
+
+      const authenticated = await isUserAuthenticated();
+      if (authenticated) {
+        try {
+          await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedSettings),
+          });
+        } catch (err) {
+          console.warn('Failed to save completed onboarding to MongoDB API', err);
+        }
+      }
     },
 
     isOnboarded: () => {

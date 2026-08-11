@@ -3,7 +3,6 @@ import {
   Task,
   CalendarEvent,
   Project,
-  Paper,
   JobApplication,
   Habit,
   Goal,
@@ -38,7 +37,6 @@ export class MerajOSDatabase extends Dexie {
   tasks!: Table<Task, string>;
   events!: Table<CalendarEvent, string>;
   projects!: Table<Project, string>;
-  papers!: Table<Paper, string>;
   jobs!: Table<JobApplication, string>;
   habits!: Table<Habit, string>;
   goals!: Table<Goal, string>;
@@ -55,7 +53,6 @@ export class MerajOSDatabase extends Dexie {
       tasks: 'id, googleTaskId, status, category, dueDate, mit, projectId, eventId',
       events: 'id, googleEventId, startDate, category',
       projects: 'id, status, clientName',
-      papers: 'id, status, priority',
       jobs: 'id, status, company',
       habits: 'id, category',
       goals: 'id, tier, priority',
@@ -81,7 +78,6 @@ export async function seedDexieDatabaseIfEmpty() {
           db.tasks.clear(),
           db.events.clear(),
           db.projects.clear(),
-          db.papers.clear(),
           db.jobs.clear(),
           db.habits.clear(),
           db.goals.clear(),
@@ -118,7 +114,6 @@ export async function clearAllUserData() {
       db.tasks.clear(),
       db.events.clear(),
       db.projects.clear(),
-      db.papers.clear(),
       db.jobs.clear(),
       db.habits.clear(),
       db.goals.clear(),

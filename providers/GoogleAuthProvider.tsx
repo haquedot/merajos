@@ -14,28 +14,40 @@ import { useGoalStore } from '../store/useGoalStore';
 import { useNotesStore } from '../store/useNotesStore';
 import { useCalendarStore } from '../store/useCalendarStore';
 
+import { RequestAccessModal } from '../components/modals/RequestAccessModal';
+import { SignInEmailModal } from '../components/modals/SignInEmailModal';
+
 interface AuthContextType {
   session: GoogleAccountSession | null;
   syncState: SyncState;
   syncMessage: string;
+  accessModalOpen: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   syncNow: () => Promise<void>;
+  openAccessModal: (email?: string) => void;
+  closeAccessModal: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   session: null,
   syncState: 'idle',
   syncMessage: '',
+  accessModalOpen: false,
   signIn: async () => {},
   signOut: async () => {},
   syncNow: async () => {},
+  openAccessModal: () => {},
+  closeAccessModal: () => {},
 });
 
 export function GoogleAuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<GoogleAccountSession | null>(null);
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [syncMessage, setSyncMessage] = useState<string>('');
+  const [accessModalOpen, setAccessModalOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [blockedEmail, setBlockedEmail] = useState('');
 
   const clientId =
     process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
@@ -57,6 +69,8 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
             }),
           }).catch((err) => console.warn('Failed to sync user session to MongoDB', err));
         }
+        // Trigger full sync with Google Calendar & Google Tasks on initial load
+        syncService.syncAll();
       }
     });
 
@@ -70,12 +84,32 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const handleSignIn = async () => {
+    // Open email pre-check modal first to avoid unverified Google 403 popups
+    setEmailModalOpen(true);
+  };
+
+  const directOAuthSignIn = async () => {
+    // Detect when user returns to main window after Google OAuth window interaction
+    const handleFocus = () => {
+      setTimeout(async () => {
+        const sess = await authService.getSession();
+        if (!sess) {
+          // If no session created, Google popup was closed or blocked with 403
+          setAccessModalOpen(true);
+        }
+        window.removeEventListener('focus', handleFocus);
+      }, 1000);
+    };
+
+    window.addEventListener('focus', handleFocus);
+
     try {
       const sess = await authService.signIn();
       setSession(sess);
       await syncService.syncAll();
-    } catch (err) {
-      console.error('Google Sign In failed', err);
+    } catch (err: any) {
+      console.error('Google Sign In failed or blocked:', err);
+      setAccessModalOpen(true);
     }
   };
 
@@ -87,7 +121,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     useTaskStore.setState({ tasks: [] });
     useProjectStore.setState({ projects: [] });
     useCareerStore.setState({ jobs: [], interviewTopics: [], dsaTopics: [] });
-    useResearchStore.setState({ papers: [], writingSections: [] });
+    useResearchStore.setState({ projects: [] });
     useHabitStore.setState({ habits: [] });
     useGoalStore.setState({ goals: [] });
     useNotesStore.setState({ notes: [] });
@@ -103,6 +137,15 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     await syncService.syncAll();
   };
 
+  const handleOpenAccessModal = (email?: string) => {
+    if (email) setBlockedEmail(email);
+    setAccessModalOpen(true);
+  };
+
+  const handleCloseAccessModal = () => {
+    setAccessModalOpen(false);
+  };
+
   return (
     <GoogleOAuthProvider clientId={clientId}>
       <AuthContext.Provider
@@ -110,12 +153,26 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
           session,
           syncState,
           syncMessage,
+          accessModalOpen,
           signIn: handleSignIn,
           signOut: handleSignOut,
           syncNow: handleSyncNow,
+          openAccessModal: handleOpenAccessModal,
+          closeAccessModal: handleCloseAccessModal,
         }}
       >
         {children}
+        <SignInEmailModal
+          isOpen={emailModalOpen}
+          onClose={() => setEmailModalOpen(false)}
+          onProceedToOAuth={directOAuthSignIn}
+          onRequestAccess={(email) => handleOpenAccessModal(email)}
+        />
+        <RequestAccessModal
+          isOpen={accessModalOpen}
+          onClose={handleCloseAccessModal}
+          initialEmail={blockedEmail}
+        />
       </AuthContext.Provider>
     </GoogleOAuthProvider>
   );

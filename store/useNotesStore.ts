@@ -4,6 +4,7 @@ import { isUserAuthenticated } from '../lib/authCheck';
 
 interface NotesState {
   notes: Note[];
+  isLoading: boolean;
   activeNoteId: string | null;
   searchQuery: string;
   selectedCategory: string;
@@ -22,20 +23,29 @@ interface NotesState {
 export const useNotesStore = create<NotesState>((set, get) => {
   if (typeof window !== 'undefined') {
     isUserAuthenticated().then((authenticated) => {
-      if (!authenticated) return;
+      if (!authenticated) {
+        set({ isLoading: false });
+        return;
+      }
       fetch('/api/notes')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.notes) {
-            set({ notes: data.notes });
+            set({ notes: data.notes, isLoading: false });
+          } else {
+            set({ isLoading: false });
           }
         })
-        .catch((err) => console.warn('[MongoDB NoteSync] Offline or API unreachable', err));
+        .catch((err) => {
+          console.warn('[MongoDB NoteSync] Offline or API unreachable', err);
+          set({ isLoading: false });
+        });
     });
   }
 
   return {
     notes: [],
+    isLoading: true,
     activeNoteId: null,
     searchQuery: '',
     selectedCategory: 'all',

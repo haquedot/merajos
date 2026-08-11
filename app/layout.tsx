@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Manrope } from 'next/font/google';
+import { Manrope, Geist } from 'next/font/google';
 import './globals.css';
 import { MainLayout } from '../components/layout/MainLayout';
 import { QueryProvider } from '../providers/QueryProvider';
@@ -8,6 +8,10 @@ import { ThemeProvider } from '../providers/ThemeProvider';
 import { PWARegister } from '../components/pwa/PWARegister';
 import { PWAInstallPrompt } from '../components/pwa/PWAInstallPrompt';
 import { BRAND } from '../lib/branding';
+import { cn } from "@/lib/utils";
+import { TooltipProvider } from '@/components/ui/tooltip';
+
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
 const ogImage = `/og-image.webp`;
 
@@ -76,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${manrope.variable} h-full antialiased light`}
+      className={cn("h-full", "antialiased", "light", manrope.variable, "font-sans", geist.variable)}
       suppressHydrationWarning
     >
       <head suppressHydrationWarning>
@@ -108,8 +112,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <ThemeProvider>
             <GoogleAuthProvider>
-              <MainLayout>{children}</MainLayout>
-              <PWAInstallPrompt />
+              <TooltipProvider>
+                <MainLayout>{children}</MainLayout>
+                <PWAInstallPrompt />
+              </TooltipProvider>
             </GoogleAuthProvider>
           </ThemeProvider>
         </QueryProvider>

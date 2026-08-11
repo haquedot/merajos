@@ -19,9 +19,12 @@ import { CircularProgress } from '../../components/ui/CircularProgress';
 import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
 
+import { GridCardsSkeleton } from '../../components/ui/Skeleton';
+
 export default function GoalsPage() {
   const {
     goals,
+    isLoading: isLoadingGoals,
     selectedTierFilter,
     addGoal,
     updateGoal,
@@ -41,6 +44,10 @@ export default function GoalsPage() {
   const [tier, setTier] = useState<GoalTier>('quarter');
   const [priority, setPriority] = useState<Priority>('high');
   const [targetDate, setTargetDate] = useState('2026-12-31');
+
+  if (isLoadingGoals) {
+    return <GridCardsSkeleton count={4} />;
+  }
 
   const filteredGoals = goals.filter(
     (g) => selectedTierFilter === 'all' || g.tier === selectedTierFilter

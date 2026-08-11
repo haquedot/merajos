@@ -6,6 +6,7 @@ import { isUserAuthenticated } from '../lib/authCheck';
 
 interface CalendarState {
   events: CalendarEvent[];
+  isLoading: boolean;
   selectedDate: string;
   viewMode: 'day' | 'week' | 'month' | 'agenda';
 
@@ -37,13 +38,18 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
   if (typeof window !== 'undefined') {
     db.events.toArray().then((items) => {
       if (items && items.length > 0) {
-        set((state) => ({ events: mergeEvents(state.events, items) }));
+        set((state) => ({ events: mergeEvents(state.events, items), isLoading: false }));
+      } else {
+        set({ isLoading: false });
       }
     });
 
     // Fetch from MongoDB API
     isUserAuthenticated().then((authenticated) => {
-      if (!authenticated) return;
+      if (!authenticated) {
+        set({ isLoading: false });
+        return;
+      }
       fetch('/api/events')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
@@ -51,16 +57,22 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
             set((state) => {
               const merged = mergeEvents(state.events, data.events);
               db.events.bulkPut(merged);
-              return { events: merged };
+              return { events: merged, isLoading: false };
             });
+          } else {
+            set({ isLoading: false });
           }
         })
-        .catch((err) => console.warn('[MongoDB EventSync] Offline or API unreachable', err));
+        .catch((err) => {
+          console.warn('[MongoDB EventSync] Offline or API unreachable', err);
+          set({ isLoading: false });
+        });
     });
   }
 
   return {
     events: [],
+    isLoading: true,
     selectedDate: new Date().toISOString().split('T')[0],
     viewMode: 'week',
 
