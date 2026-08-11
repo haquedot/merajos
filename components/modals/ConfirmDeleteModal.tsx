@@ -32,11 +32,11 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
             <h4 className="text-xs font-bold text-rose-900 dark:text-rose-200">
               Permanent Delete Warning
             </h4>
-            <p className="text-xs text-rose-700 dark:text-rose-300/90 leading-relaxed">
+            <p className="text-xs text-rose-700 dark:text-rose-300/90 leading-relaxed flex flex-wrap">
               {message}
             </p>
             {itemName && (
-              <p className="text-xs font-black text-rose-800 dark:text-rose-200 truncate pt-0.5">
+              <p className="text-xs font-black text-rose-800 dark:text-rose-200 pt-0.5 flex flex-wrap">
                 Item: &quot;{itemName}&quot;
               </p>
             )}

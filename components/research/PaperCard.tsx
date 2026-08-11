@@ -89,59 +89,60 @@ export const PaperCard: React.FC<PaperCardProps> = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
         className={`p-4 rounded-2xl border transition-all ${paper.isImportant
-            ? 'bg-amber-50/40 dark:bg-amber-950/10 border-amber-200 dark:border-amber-900/40'
-            : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 shadow-xs'
+          ? 'bg-amber-50/40 dark:bg-amber-950/10 border-amber-200 dark:border-amber-900/40'
+          : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 shadow-xs'
           }`}
       >
         {/* Top Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+        <div className="flex flex-col items-start justify-between gap-3">
+          <div className="w-full flex items-start justify-between gap-2.5 min-w-0">
             <button
               onClick={() => togglePaperImportant(projectId, sectionId, paper.id)}
               className={`p-1 rounded-lg transition-transform active:scale-125 mt-0.5 ${paper.isImportant
-                  ? 'text-amber-400 fill-amber-400'
-                  : 'text-gray-300 dark:text-gray-600 hover:text-amber-400'
+                ? 'text-amber-400 fill-amber-400'
+                : 'text-gray-300 dark:text-gray-600 hover:text-amber-400'
                 }`}
               title={paper.isImportant ? 'Marked as key paper' : 'Mark as key paper'}
             >
               <Star className="w-4 h-4" />
             </button>
 
-            <div className="min-w-0 flex-1">
-              <h4 className="text-sm font-extrabold text-gray-900 dark:text-white leading-snug">
-                {paper.title}
-              </h4>
-              <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                {paper.authors && <span>{paper.authors}</span>}
-                {paper.year && <span>• {paper.year}</span>}
-                {paper.source && (
-                  <span className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-bold text-gray-600 dark:text-gray-300">
-                    {paper.source}
-                  </span>
-                )}
-                {paper.readingTimeMinutes > 0 && (
-                  <span>• {paper.readingTimeMinutes} min read</span>
-                )}
-              </div>
-            </div>
+            {/* Status Dropdown / Badge */}
+            <select
+              value={paper.status}
+              onChange={(e) =>
+                updatePaper(projectId, sectionId, paper.id, {
+                  status: e.target.value as PaperStatus,
+                })
+              }
+              className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none cursor-pointer"
+            >
+              <option value="unread">Unread</option>
+              <option value="reading">Reading</option>
+              <option value="skimmed">Skimmed</option>
+              <option value="cited">Cited</option>
+              <option value="archived">Archived</option>
+            </select>
+
           </div>
 
-          {/* Status Dropdown / Badge */}
-          <select
-            value={paper.status}
-            onChange={(e) =>
-              updatePaper(projectId, sectionId, paper.id, {
-                status: e.target.value as PaperStatus,
-              })
-            }
-            className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none cursor-pointer"
-          >
-            <option value="unread">Unread</option>
-            <option value="reading">Reading</option>
-            <option value="skimmed">Skimmed</option>
-            <option value="cited">Cited</option>
-            <option value="archived">Archived</option>
-          </select>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-extrabold text-gray-900 dark:text-white leading-snug">
+              {paper.title}
+            </h4>
+            <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">
+              {paper.authors && <span>{paper.authors}</span>}
+              {paper.year && <span>• {paper.year}</span>}
+              {paper.source && (
+                <span className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-bold text-gray-600 dark:text-gray-300">
+                  {paper.source}
+                </span>
+              )}
+              {paper.readingTimeMinutes > 0 && (
+                <span>• {paper.readingTimeMinutes} min read</span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Tags */}
@@ -274,7 +275,7 @@ export const PaperCard: React.FC<PaperCardProps> = ({
           </div>
         </div>
       </motion.div>
-      
+
       {/* Delete Modal */}
       <ConfirmDeleteModal
         isOpen={isDeleteModalOpen}
