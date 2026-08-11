@@ -150,17 +150,19 @@ function getPositionedDayEvents(dayEvents: CalendarEvent[]): PositionedEvent[] {
   return results;
 }
 
+import { CalendarSkeleton } from '../../components/ui/Skeleton';
+
 export default function CalendarPage() {
-  const { events, selectedDate, viewMode, addEvent, updateEvent, deleteEvent, setSelectedDate, setViewMode } = useCalendarStore();
+  const { events, isLoading: isLoadingEvents, selectedDate, viewMode, addEvent, updateEvent, deleteEvent, setSelectedDate, setViewMode } = useCalendarStore();
   const { tasks } = useTaskStore();
   const { session, syncState, syncNow } = useGoogleAuth();
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
+  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
 
   // Form states
   const [title, setTitle] = useState('');
@@ -172,9 +174,27 @@ export default function CalendarPage() {
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
 
+  const timelineScrollRef = React.useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     useCalendarStore.getState().loadFromDB();
   }, []);
+
+  // Auto-scroll timeline to current time or 8am on mount / view change
+  useEffect(() => {
+    if (viewMode === 'day' && timelineScrollRef.current) {
+      const now = new Date();
+      const isSelectedToday = isToday(new Date(selectedDate));
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const currentTimeTop = (currentMinutes / 60) * 60;
+      const targetScroll = isSelectedToday ? Math.max(0, currentTimeTop - 150) : 8 * 60;
+      timelineScrollRef.current.scrollTop = targetScroll;
+    }
+  }, [viewMode, selectedDate]);
+
+  if (isLoadingEvents) {
+    return <CalendarSkeleton />;
+  }
 
   const currDate = new Date(selectedDate);
 
@@ -295,14 +315,10 @@ export default function CalendarPage() {
     setIsFormModalOpen(false);
   };
 
-  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
-
   const handleDeleteFromDetail = async () => {
     if (!selectedEvent) return;
     setEventToDelete(selectedEvent);
   };
-
-  const timelineScrollRef = React.useRef<HTMLDivElement>(null);
 
   // Category filter
   const filteredEvents = events.filter((e) => {
@@ -312,19 +328,6 @@ export default function CalendarPage() {
 
   // 24 Hour Slots (12:00 AM to 11:00 PM)
   const timeSlots = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-
-  // Auto-scroll timeline to current time or 8am on mount / view change
-  useEffect(() => {
-    if (viewMode === 'day' && timelineScrollRef.current) {
-      const now = new Date();
-      const isSelectedToday = isToday(currDate);
-      const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      const currentTimeTop = (currentMinutes / 60) * 60;
-      const targetScroll = isSelectedToday ? Math.max(0, currentTimeTop - 150) : 8 * 60;
-
-      timelineScrollRef.current.scrollTop = targetScroll;
-    }
-  }, [viewMode, selectedDate]);
 
   // Helper for resilient date string matching
   const getEventDateStr = (sDate?: string) => {

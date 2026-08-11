@@ -49,12 +49,17 @@ export class GoogleTasksService {
     const headers = await this.getHeaders();
     if (!headers) return null;
 
-    const body = {
+    const isDone = task.status === 'completed';
+    const body: any = {
       title: task.title,
       notes: task.description || '',
       due: task.dueDate ? `${task.dueDate}T00:00:00.000Z` : undefined,
-      status: task.status === 'completed' ? 'completed' : 'needsAction',
+      status: isDone ? 'completed' : 'needsAction',
     };
+
+    if (isDone) {
+      body.completed = new Date().toISOString();
+    }
 
     try {
       const res = await fetch(`${BASE_URL}/lists/${encodeURIComponent(listId)}/tasks`, {
@@ -73,17 +78,26 @@ export class GoogleTasksService {
   }
 
   public async updateTask(task: Task, listId: string = '@default'): Promise<boolean> {
-    if (!task.googleTaskId) return false;
     const headers = await this.getHeaders();
     if (!headers) return false;
 
-    const body = {
+    if (!task.googleTaskId) {
+      const created = await this.createTask(task, listId);
+      return !!created;
+    }
+
+    const isDone = task.status === 'completed';
+    const body: any = {
       id: task.googleTaskId,
       title: task.title,
       notes: task.description || '',
-      status: task.status === 'completed' ? 'completed' : 'needsAction',
+      status: isDone ? 'completed' : 'needsAction',
       due: task.dueDate ? `${task.dueDate}T00:00:00.000Z` : undefined,
     };
+
+    if (isDone) {
+      body.completed = new Date().toISOString();
+    }
 
     try {
       const res = await fetch(`${BASE_URL}/lists/${encodeURIComponent(listId)}/tasks/${task.googleTaskId}`, {

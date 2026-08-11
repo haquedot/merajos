@@ -6,7 +6,6 @@ import { Navbar } from './Navbar';
 import { RightProductivityPanel } from './RightProductivityPanel';
 import { QuickAddModal } from '../modals/QuickAddModal';
 import { QuickCaptureModal } from '../modals/QuickCaptureModal';
-import { GlobalSearchModal } from '../modals/GlobalSearchModal';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { PlatformTourModal } from '../tour/PlatformTourModal';
 import { GuestModeBanner } from './GuestModeBanner';
@@ -17,6 +16,7 @@ import { KeyboardShortcutsModal } from '../modals/KeyboardShortcutsModal';
 import { FocusOverlayModal } from '../modals/FocusOverlayModal';
 import { DailyReflectionModal } from '../modals/DailyReflectionModal';
 import { useRouter } from 'next/navigation';
+import { GlobalSearchModal } from '../modals/GlobalSearchModal';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -97,7 +97,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     if (isLoadingSettings) return; // wait for DB load
     if (!session) return;          // skip for guests
 
-    const localCompleted = typeof window !== 'undefined' && localStorage.getItem('orbit_onboarding_completed') === 'true';
+    const userKey = session.email ? `orbit_onboarding_${session.email}_completed` : 'orbit_onboarding_completed';
+    const localCompleted = typeof window !== 'undefined' && (
+      localStorage.getItem(userKey) === 'true' ||
+      localStorage.getItem('orbit_onboarding_completed') === 'true'
+    );
     const dbCompleted = !!settings.onboarding?.onboardingCompleted;
 
     if (!localCompleted && !dbCompleted) {
@@ -110,6 +114,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const handleOnboardingComplete = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('orbit_onboarding_completed', 'true');
+      if (session?.email) {
+        localStorage.setItem(`orbit_onboarding_${session.email}_completed`, 'true');
+      }
     }
     useSettingsStore.getState().completeOnboarding();
     setShowOnboarding(false);

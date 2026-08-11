@@ -349,3 +349,113 @@ export async function sendDailyTaskLogEmail(
     return { sent: false, reason: err.message };
   }
 }
+
+export async function sendBetaAccessRequestEmails(userEmail: string, userNote?: string) {
+  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const smtpPort = Number(process.env.SMTP_PORT) || 465;
+  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || '';
+  const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
+  const adminEmail = process.env.ADMIN_EMAIL || 'haquedot@gmail.com';
+
+  if (!smtpUser || !smtpPass) {
+    console.warn('[Nodemailer] SMTP credentials missing. Skipping email dispatch.');
+    return { sent: false, reason: 'SMTP credentials missing' };
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUser, pass: smtpPass },
+    });
+
+    // 1. Email to Admin
+    const adminHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; background-color: #f8fafc; color: #0f172a;">
+     
+        <div style="max-width: 560px; margin: 0 auto; background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <table border="0" cellpadding="0" cellspacing="0" style="width: 100%; display: flex; align-items: center; justify-content: start;  border-bottom: 1px solid #94a3b8; padding-bottom: 12px; margin-bottom: 12px;">
+                              <tr>
+                              <td style="vertical-align: middle; padding-right: 12px;">
+                                <table border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff" class="logo-container" style="background-color: #ffffff !important; background: #ffffff !important;">
+                                  <tr>
+                                    <td bgcolor="#ffffff" class="logo-container" style="background-color: #ffffff !important; background: #ffffff !important; padding: 5px; border-radius: 10px;">
+                                      <img src="https://orbit.merajulhaque.com/logos/orbit-light-icon.png" width="38" height="38" alt="Orbit Logo" style="display: block; width: 38px; height: 38px;" />
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                              <td style="vertical-align: middle;">
+                                <span style="font-size: 22px; font-weight: 800; color: #1f3b99; letter-spacing: 1px; display: block; line-height: 1;">Orbit</span>
+                                <span style="font-size: 8px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; display: block;">Plan. <span style="font-weight: 700; margin-left: 1px; margin-right: 1px; color: #1f3b99">Focus.</span> Execute. Grow.</span>
+                              </td>
+                            </tr>
+                          </table>
+                          <h2 style="color: #1f3b99; margin-top: 0;">🚀 New Orbit Beta Access Request</h2>
+          <p style="font-size: 14px; color: #334155;">A user attempted to sign in with Google but was blocked because Orbit is in Google Beta Testing mode:</p>
+          <div style="background-color: #f1f5f9; padding: 16px; border-radius: 12px; font-size: 13px; margin: 16px 0;">
+            <p style="margin: 0 0 6px 0;"><strong>User Email:</strong> <a href="mailto:${userEmail}" style="color: #2563eb;">${userEmail}</a></p>
+            <p style="margin: 0 0 6px 0;"><strong>Request Time:</strong> ${new Date().toLocaleString()}</p>
+            <p style="margin: 0;"><strong>User Message:</strong> ${userNote || 'None provided'}</p>
+          </div>
+          <p style="font-size: 13px; color: #64748b;"><strong>Action Required:</strong> To authorize this user, go to your <a href="https://console.cloud.google.com/auth/audience?project=meraj-os" target="_blank" style="color: #2563eb; font-weight: bold;">Google Cloud Console OAuth Consent Screen</a> and add <code>${userEmail}</code> under <strong>Test Users</strong>.</p>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: `"Orbit Access Control" <${smtpUser}>`,
+      to: adminEmail,
+      subject: `[Orbit] Google Beta Access Request from ${userEmail}`,
+      html: adminHtml,
+    });
+
+    // 2. Email to User
+    const userHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; background-color: #f8fafc; color: #0f172a;">
+      
+        <div style="max-width: 560px; margin: 0 auto; background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <table border="0" cellpadding="0" cellspacing="0" style="width: 100%; display: flex; align-items: center; justify-content: start;  border-bottom: 1px solid #94a3b8; padding-bottom: 12px; margin-bottom: 12px;">
+                              <tr>
+                              <td style="vertical-align: middle; padding-right: 12px;">
+                                <table border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff" class="logo-container" style="background-color: #ffffff !important; background: #ffffff !important;">
+                                  <tr>
+                                    <td bgcolor="#ffffff" class="logo-container" style="background-color: #ffffff !important; background: #ffffff !important; padding: 5px; border-radius: 10px;">
+                                      <img src="https://orbit.merajulhaque.com/logos/orbit-light-icon.png" width="38" height="38" alt="Orbit Logo" style="display: block; width: 38px; height: 38px;" />
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                              <td style="vertical-align: middle;">
+                                <span style="font-size: 22px; font-weight: 800; color: #1f3b99; letter-spacing: 1px; display: block; line-height: 1;">Orbit</span>
+                                <span style="font-size: 8px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; display: block;">Plan. <span style="font-weight: 700; margin-left: 1px; margin-right: 1px; color: #1f3b99">Focus.</span> Execute. Grow.</span>
+                              </td>
+                            </tr>
+                          </table>
+                          <h2 style="color: #1f3b99; margin-top: 0;">✨ Beta Access Request Received!</h2>
+          <p style="font-size: 14px; color: #334155;">Hi there,</p>
+          <p style="font-size: 14px; color: #334155; line-height: 1.6;">Thank you for requesting Google Beta access for <strong>${userEmail}</strong> on <strong>Orbit</strong>.</p>
+          <p style="font-size: 13px; color: #64748b; line-height: 1.6;">Our developer team has been notified to add your email to the approved Google OAuth testers list. In the meantime, you can explore all features of Orbit using our <strong>Guest / Offline Mode</strong>!</p>
+          <div style="margin-top: 24px; text-align: center;">
+            <a href="https://orbit.merajulhaque.com" style="display: inline-block; background-color: #1f3b99; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 13px;">
+              Continue as Guest →
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: `"Orbit" <${smtpUser}>`,
+      to: userEmail,
+      subject: `[Orbit] Beta Access Request Submitted`,
+      html: userHtml,
+    });
+
+    return { sent: true };
+  } catch (err: any) {
+    console.error('[Nodemailer] Error sending access request email:', err);
+    return { sent: false, reason: err.message };
+  }
+}

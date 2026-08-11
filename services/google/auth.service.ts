@@ -142,10 +142,53 @@ class AuthService {
   public async getAccessToken(): Promise<string | null> {
     const session = await this.getSession();
     if (!session) return null;
-    if (session.expiresAt && Date.now() > session.expiresAt) {
-      console.warn('[AuthService] Token expired.');
+
+    // If token is expired or expiring within 5 minutes, attempt silent refresh
+    if (session.expiresAt && Date.now() > session.expiresAt - 5 * 60 * 1000) {
+      console.log('[AuthService] Token expiring soon. Refreshing silently...');
+      const refreshedSession = await this.refreshAccessTokenSilently();
+      if (refreshedSession) {
+        return refreshedSession.accessToken;
+      }
     }
+
     return session.accessToken;
+  }
+
+  public async refreshAccessTokenSilently(): Promise<GoogleAccountSession | null> {
+    if (typeof window === 'undefined' || !window.google || !window.google.accounts) {
+      return null;
+    }
+
+    return new Promise((resolve) => {
+      try {
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          prompt: '',
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse.error || !tokenResponse.access_token) {
+              return resolve(null);
+            }
+            const session = await db.googleSession.get('me');
+            if (session) {
+              const updatedSession: GoogleAccountSession = {
+                ...session,
+                accessToken: tokenResponse.access_token,
+                expiresAt: Date.now() + (tokenResponse.expires_in || 3600) * 1000,
+              };
+              await db.googleSession.put(updatedSession);
+              return resolve(updatedSession);
+            }
+            resolve(null);
+          },
+        });
+        client.requestAccessToken({ prompt: '' });
+      } catch (err) {
+        console.warn('[AuthService] Silent token refresh failed', err);
+        resolve(null);
+      }
+    });
   }
 }
 

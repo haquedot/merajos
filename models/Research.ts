@@ -1,52 +1,65 @@
-import mongoose, { Schema } from 'mongoose';
-import { Paper, WritingSection, ResearchOverview } from '../types';
+import mongoose, { Schema, Document } from 'mongoose';
 
-export interface ResearchDocument {
-  _id: string;
-  overview: ResearchOverview;
-  papers: Paper[];
-  writingSections: WritingSection[];
-}
-
-const PaperSchema = new Schema({
-  id: { type: String, required: true },
-  title: { type: String, required: true },
-  authors: { type: String, default: '' },
-  year: { type: Number, default: 2026 },
-  source: { type: String, default: '' },
-  notes: { type: String, default: '' },
-  citation: { type: String, default: '' },
-  status: { type: String, enum: ['unread', 'reading', 'cited', 'archived'], default: 'unread' },
-  priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
-  tags: [{ type: String }],
-  pdfUrl: { type: String },
-  readingTimeMinutes: { type: Number, default: 30 },
-});
-
-const WritingSectionSchema = new Schema({
-  id: { type: String, required: true },
-  section: { type: String, required: true },
-  targetWords: { type: Number, default: 1000 },
-  currentWords: { type: Number, default: 0 },
-  status: { type: String, enum: ['not_started', 'drafting', 'reviewing', 'completed'], default: 'not_started' },
-});
-
-const ResearchSchema: Schema = new Schema(
+const ResearchPaperSchema = new Schema(
   {
-    _id: { type: String, required: true },
-    overview: {
-      topic: { type: String, default: 'Research & Thesis Dashboard' },
-      thesisTitle: { type: String, default: 'My Thesis Title' },
-      paperTitle: { type: String, default: 'Research Topic' },
-      progress: { type: Number, default: 0 },
-      hoursSpent: { type: Number, default: 0 },
-      papersRead: { type: Number, default: 0 },
-      writingProgress: { type: Number, default: 0 },
-    },
-    papers: [PaperSchema],
-    writingSections: [WritingSectionSchema],
+    id: { type: String, required: true },
+    title: { type: String, required: true },
+    authors: { type: String, default: '' },
+    year: { type: Number, default: new Date().getFullYear() },
+    source: { type: String, default: '' },
+    pdfUrl: { type: String },
+    doi: { type: String },
+    status: { type: String, default: 'unread' },
+    isImportant: { type: Boolean, default: false },
+    summary: { type: String, default: '' },
+    notes: { type: String, default: '' },
+    citation: { type: String, default: '' },
+    tags: [{ type: String }],
+    readingTimeMinutes: { type: Number, default: 0 },
+    addedAt: { type: String },
   },
-  { timestamps: true, _id: false }
+  { _id: false }
 );
 
-export default mongoose.models.Research || mongoose.model<ResearchDocument>('Research', ResearchSchema);
+const ResearchSectionSchema = new Schema(
+  {
+    id: { type: String, required: true },
+    type: { type: String, required: true },
+    title: { type: String, required: true },
+    description: { type: String },
+    papers: [ResearchPaperSchema],
+    targetWords: { type: Number },
+    currentWords: { type: Number },
+    writingStatus: { type: String },
+    content: { type: String },
+    createdAt: { type: String },
+    order: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
+const ResearchProjectSchema = new Schema(
+  {
+    id: { type: String, required: true },
+    title: { type: String, required: true },
+    description: { type: String },
+    field: { type: String },
+    status: { type: String, default: 'active' },
+    progress: { type: Number, default: 0 },
+    color: { type: String, default: '#3b82f6' },
+    sections: [ResearchSectionSchema],
+    createdAt: { type: String },
+    updatedAt: { type: String },
+  },
+  { _id: false }
+);
+
+const ResearchDocSchema = new Schema(
+  {
+    _id: { type: String, required: true }, // e.g. 'research-main'
+    projects: [ResearchProjectSchema],
+  },
+  { timestamps: true }
+);
+
+export default mongoose.models.Research || mongoose.model('Research', ResearchDocSchema);

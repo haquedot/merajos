@@ -74,40 +74,66 @@ export interface Project {
   techStack: string[];
 }
 
-export type PaperStatus = 'unread' | 'reading' | 'cited' | 'archived';
+// ─── Research Module ──────────────────────────────────────────────────────────
 
-export interface Paper {
+export type PaperStatus = 'unread' | 'reading' | 'cited' | 'skimmed' | 'archived';
+
+export interface ResearchPaper {
   id: string;
   title: string;
   authors: string;
   year: number;
-  source: string;
-  notes: string;
-  citation: string;
-  status: PaperStatus;
-  priority: Priority;
-  tags: string[];
+  source: string;            // e.g. "ArXiv", "IEEE", "NeurIPS 2024"
   pdfUrl?: string;
+  doi?: string;
+  status: PaperStatus;
+  isImportant: boolean;      // ⭐ star flag
+  summary: string;           // user-written summary
+  notes: string;             // raw highlights / personal notes
+  citation: string;          // formatted citation string
+  tags: string[];
   readingTimeMinutes: number;
+  addedAt: string;           // ISO date string
 }
 
-export interface WritingSection {
+export type ResearchSectionType =
+  | 'literature_review'
+  | 'datasets'
+  | 'algorithms'
+  | 'diagrams'
+  | 'writing'
+  | 'notes'
+  | 'custom';
+
+export interface ResearchSection {
   id: string;
-  section: string;
-  targetWords: number;
-  currentWords: number;
-  status: 'not_started' | 'drafting' | 'reviewing' | 'completed';
+  type: ResearchSectionType;
+  title: string;
+  description?: string;
+  papers?: ResearchPaper[];         // for literature_review
+  targetWords?: number;             // for writing
+  currentWords?: number;            // for writing
+  writingStatus?: 'not_started' | 'drafting' | 'reviewing' | 'completed';
+  content?: string;                 // for notes / custom / generic
+  createdAt: string;
+  order: number;
 }
 
-export interface ResearchOverview {
-  topic: string;
-  thesisTitle: string;
-  paperTitle: string;
-  progress: number;
-  hoursSpent: number;
-  papersRead: number;
-  writingProgress: number;
+export type ResearchStatus = 'active' | 'paused' | 'completed' | 'archived';
+
+export interface ResearchProject {
+  id: string;
+  title: string;
+  description?: string;
+  field?: string;            // e.g. "Machine Learning", "Bioinformatics"
+  status: ResearchStatus;
+  progress: number;          // 0–100
+  color?: string;            // accent color
+  sections: ResearchSection[];
+  createdAt: string;
+  updatedAt: string;
 }
+
 
 export type JobStatus = 'Applied' | 'OA' | 'Interview' | 'Rejected' | 'Offer';
 

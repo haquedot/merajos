@@ -29,6 +29,8 @@ import { FocusOverlayModal } from '../../components/modals/FocusOverlayModal';
 import { PersonalRoutineOverlay } from '../../components/today/PersonalRoutineOverlay';
 import { getSmartFocusTask, sortTasksChronologically, parseTimeAndSlotFromText } from '../../lib/taskUtils';
 
+import { TaskSkeleton } from '../../components/ui/Skeleton';
+
 export default function TodayPage() {
   const [viewMode, setViewMode] = useState<'timeline' | 'checklist'>('checklist');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -42,7 +44,11 @@ export default function TodayPage() {
   const [category, setCategory] = useState<Category>('Personal');
   const [customFocusTaskId, setCustomFocusTaskId] = useState<string | null>(null);
 
-  const { tasks, toggleTaskStatus, toggleMIT, addTask } = useTaskStore();
+  const { tasks, isLoading: isLoadingTasks, toggleTaskStatus, toggleMIT, addTask } = useTaskStore();
+
+  if (isLoadingTasks) {
+    return <TaskSkeleton />;
+  }
 
   const todayStr = new Date().toISOString().split('T')[0];
   const rawTodayTasks = tasks.filter((t) => t.dueDate === todayStr);

@@ -1,152 +1,277 @@
 import { create } from 'zustand';
-import { Paper, WritingSection, ResearchOverview } from '../types';
+import {
+  ResearchProject,
+  ResearchSection,
+  ResearchPaper,
+  ResearchStatus,
+  PaperStatus,
+} from '../types';
 import { isUserAuthenticated } from '../lib/authCheck';
 
+const ACTIVE_PROJECT_KEY = 'meraj_os_active_research_project_id';
+
 interface ResearchState {
-  overview: ResearchOverview;
-  papers: Paper[];
-  writingSections: WritingSection[];
-  searchQuery: string;
-  selectedStatusFilter: string;
+  projects: ResearchProject[];
+  activeProjectId: string | null;
+  isLoading: boolean;
 
-  loadFromDB: () => Promise<void>;
-  updateOverview: (updates: Partial<ResearchOverview>) => Promise<void>;
-  addPaper: (paper: Omit<Paper, 'id'>) => Promise<void>;
-  updatePaper: (id: string, updates: Partial<Paper>) => Promise<void>;
-  deletePaper: (id: string) => Promise<void>;
+  // Sync
+  fetchProjects: () => Promise<void>;
+  saveProjects: (projects: ResearchProject[]) => Promise<void>;
 
-  updateWritingSection: (id: string, updates: Partial<WritingSection>) => Promise<void>;
-  setSearchQuery: (query: string) => void;
-  setSelectedStatusFilter: (status: string) => void;
-  resetResearch: () => void;
+  // Project Actions
+  addProject: (data: Omit<ResearchProject, 'id' | 'sections' | 'progress' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateProject: (id: string, updates: Partial<ResearchProject>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  setActiveProject: (id: string | null) => void;
+
+  // Section Actions
+  addSection: (projectId: string, data: Omit<ResearchSection, 'id' | 'createdAt' | 'order'>) => Promise<void>;
+  updateSection: (projectId: string, sectionId: string, updates: Partial<ResearchSection>) => Promise<void>;
+  deleteSection: (projectId: string, sectionId: string) => Promise<void>;
+
+  // Paper Actions
+  addPaper: (projectId: string, sectionId: string, paper: Omit<ResearchPaper, 'id' | 'addedAt'>) => Promise<void>;
+  updatePaper: (projectId: string, sectionId: string, paperId: string, updates: Partial<ResearchPaper>) => Promise<void>;
+  deletePaper: (projectId: string, sectionId: string, paperId: string) => Promise<void>;
+  togglePaperImportant: (projectId: string, sectionId: string, paperId: string) => Promise<void>;
 }
 
-const DEFAULT_OVERVIEW: ResearchOverview = {
-  topic: '',
-  thesisTitle: '',
-  paperTitle: '',
-  progress: 0,
-  hoursSpent: 0,
-  papersRead: 0,
-  writingProgress: 0,
-};
-
 export const useResearchStore = create<ResearchState>((set, get) => {
+  // Load initial activeProjectId from localStorage if available
+  const initialActiveId =
+    typeof window !== 'undefined' ? localStorage.getItem(ACTIVE_PROJECT_KEY) : null;
+
+  // Trigger initial fetch
   if (typeof window !== 'undefined') {
     isUserAuthenticated().then((authenticated) => {
-      if (!authenticated) return;
-      fetch('/api/research')
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (data && data.research) {
-            set({
-              overview: data.research.overview || DEFAULT_OVERVIEW,
-              papers: data.research.papers || [],
-              writingSections: data.research.writingSections || [],
-            });
-          }
-        })
-        .catch((err) => console.warn('[MongoDB ResearchSync] Offline or API unreachable', err));
+      if (authenticated) {
+        get().fetchProjects();
+      }
     });
   }
 
-  const syncToDB = async (state: Partial<ResearchState>) => {
-    const authenticated = await isUserAuthenticated();
-    if (!authenticated) return;
-    const currentState = get();
-    const payload = {
-      overview: state.overview || currentState.overview,
-      papers: state.papers || currentState.papers,
-      writingSections: state.writingSections || currentState.writingSections,
-    };
-
-    fetch('/api/research', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }).catch((err) => console.warn('Failed to sync research to MongoDB API', err));
-  };
-
   return {
-    overview: DEFAULT_OVERVIEW,
-    papers: [],
-    writingSections: [],
-    searchQuery: '',
-    selectedStatusFilter: 'all',
+    projects: [],
+    activeProjectId: initialActiveId,
+    isLoading: false,
 
-    loadFromDB: async () => {
-      const authenticated = await isUserAuthenticated();
-      if (!authenticated) return;
+    fetchProjects: async () => {
+      set({ isLoading: true });
       try {
         const res = await fetch('/api/research');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.research) {
-          set({
-            overview: data.research.overview || DEFAULT_OVERVIEW,
-            papers: data.research.papers || [],
-            writingSections: data.research.writingSections || [],
-          });
+        if (res.ok) {
+          const data = await res.json();
+          set({ projects: data.projects ?? [], isLoading: false });
+        } else {
+          set({ isLoading: false });
         }
       } catch (err) {
-        console.warn('Failed to load research from MongoDB API', err);
+        console.warn('Failed to fetch research projects:', err);
+        set({ isLoading: false });
       }
     },
 
-    updateOverview: async (updates) => {
-      const newOverview = { ...get().overview, ...updates };
-      set({ overview: newOverview });
-      syncToDB({ overview: newOverview });
+    saveProjects: async (projects: ResearchProject[]) => {
+      set({ projects });
+      const authenticated = await isUserAuthenticated();
+      if (!authenticated) return;
+      try {
+        await fetch('/api/research', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projects }),
+        });
+      } catch (err) {
+        console.warn('Failed to save research projects:', err);
+      }
     },
 
-    addPaper: async (paperData) => {
-      const newPaper: Paper = {
-        ...paperData,
-        id: `paper-${Date.now()}`,
+    // ─── Project Actions ───────────────────────────────────────────────────────
+
+    addProject: async (data) => {
+      const now = new Date().toISOString();
+      const newProject: ResearchProject = {
+        ...data,
+        id: `proj_${Date.now()}`,
+        progress: 0,
+        sections: [
+          {
+            id: `sec_${Date.now()}_1`,
+            type: 'literature_review',
+            title: 'Literature Review',
+            papers: [],
+            createdAt: now,
+            order: 0,
+          },
+        ],
+        createdAt: now,
+        updatedAt: now,
       };
-
-      const updatedPapers = [newPaper, ...get().papers];
-      const papersRead = updatedPapers.filter((p) => p.status === 'cited' || p.status === 'reading').length;
-      const newOverview = { ...get().overview, papersRead };
-
-      set({ papers: updatedPapers, overview: newOverview });
-      syncToDB({ papers: updatedPapers, overview: newOverview });
+      const updated = [newProject, ...get().projects];
+      get().setActiveProject(newProject.id);
+      await get().saveProjects(updated);
     },
 
-    updatePaper: async (id, updates) => {
-      const updatedPapers = get().papers.map((p) => (p.id === id ? { ...p, ...updates } : p));
-      const papersRead = updatedPapers.filter((p) => p.status === 'cited' || p.status === 'reading').length;
-      const newOverview = { ...get().overview, papersRead };
-
-      set({ papers: updatedPapers, overview: newOverview });
-      syncToDB({ papers: updatedPapers, overview: newOverview });
-    },
-
-    deletePaper: async (id) => {
-      const updatedPapers = get().papers.filter((p) => p.id !== id);
-      const papersRead = updatedPapers.filter((p) => p.status === 'cited' || p.status === 'reading').length;
-      const newOverview = { ...get().overview, papersRead };
-
-      set({ papers: updatedPapers, overview: newOverview });
-      syncToDB({ papers: updatedPapers, overview: newOverview });
-    },
-
-    updateWritingSection: async (id, updates) => {
-      const updatedSections = get().writingSections.map((s) =>
-        s.id === id ? { ...s, ...updates } : s
+    updateProject: async (id, updates) => {
+      const now = new Date().toISOString();
+      const updated = get().projects.map((p) =>
+        p.id === id ? { ...p, ...updates, updatedAt: now } : p
       );
-
-      const totalTarget = updatedSections.reduce((acc, s) => acc + s.targetWords, 0);
-      const totalCurrent = updatedSections.reduce((acc, s) => acc + s.currentWords, 0);
-      const writingProgress = totalTarget > 0 ? Math.min(100, Math.round((totalCurrent / totalTarget) * 100)) : 0;
-      const newOverview = { ...get().overview, writingProgress };
-
-      set({ writingSections: updatedSections, overview: newOverview });
-      syncToDB({ writingSections: updatedSections, overview: newOverview });
+      await get().saveProjects(updated);
     },
 
-    setSearchQuery: (query) => set({ searchQuery: query }),
-    setSelectedStatusFilter: (status) => set({ selectedStatusFilter: status }),
-    resetResearch: () => set({ overview: DEFAULT_OVERVIEW, papers: [], writingSections: [] }),
+    deleteProject: async (id) => {
+      const updated = get().projects.filter((p) => p.id !== id);
+      if (get().activeProjectId === id) {
+        get().setActiveProject(null);
+      }
+      await get().saveProjects(updated);
+    },
+
+    setActiveProject: (id) => {
+      set({ activeProjectId: id });
+      if (typeof window !== 'undefined') {
+        if (id) localStorage.setItem(ACTIVE_PROJECT_KEY, id);
+        else localStorage.removeItem(ACTIVE_PROJECT_KEY);
+      }
+    },
+
+    // ─── Section Actions ───────────────────────────────────────────────────────
+
+    addSection: async (projectId, data) => {
+      const now = new Date().toISOString();
+      const updated = get().projects.map((proj) => {
+        if (proj.id !== projectId) return proj;
+        const newSection: ResearchSection = {
+          ...data,
+          id: `sec_${Date.now()}`,
+          createdAt: now,
+          order: proj.sections.length,
+          ...(data.type === 'literature_review' ? { papers: [] } : {}),
+        };
+        return {
+          ...proj,
+          sections: [...proj.sections, newSection],
+          updatedAt: now,
+        };
+      });
+      await get().saveProjects(updated);
+    },
+
+    updateSection: async (projectId, sectionId, updates) => {
+      const now = new Date().toISOString();
+      const updated = get().projects.map((proj) => {
+        if (proj.id !== projectId) return proj;
+        return {
+          ...proj,
+          sections: proj.sections.map((s) =>
+            s.id === sectionId ? { ...s, ...updates } : s
+          ),
+          updatedAt: now,
+        };
+      });
+      await get().saveProjects(updated);
+    },
+
+    deleteSection: async (projectId, sectionId) => {
+      const now = new Date().toISOString();
+      const updated = get().projects.map((proj) => {
+        if (proj.id !== projectId) return proj;
+        return {
+          ...proj,
+          sections: proj.sections.filter((s) => s.id !== sectionId),
+          updatedAt: now,
+        };
+      });
+      await get().saveProjects(updated);
+    },
+
+    // ─── Paper Actions ─────────────────────────────────────────────────────────
+
+    addPaper: async (projectId, sectionId, paperData) => {
+      const now = new Date().toISOString();
+      const newPaper: ResearchPaper = {
+        ...paperData,
+        id: `paper_${Date.now()}`,
+        addedAt: now,
+      };
+      const updated = get().projects.map((proj) => {
+        if (proj.id !== projectId) return proj;
+        return {
+          ...proj,
+          sections: proj.sections.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            return {
+              ...sec,
+              papers: [...(sec.papers ?? []), newPaper],
+            };
+          }),
+          updatedAt: now,
+        };
+      });
+      await get().saveProjects(updated);
+    },
+
+    updatePaper: async (projectId, sectionId, paperId, updates) => {
+      const now = new Date().toISOString();
+      const updated = get().projects.map((proj) => {
+        if (proj.id !== projectId) return proj;
+        return {
+          ...proj,
+          sections: proj.sections.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            return {
+              ...sec,
+              papers: (sec.papers ?? []).map((p) =>
+                p.id === paperId ? { ...p, ...updates } : p
+              ),
+            };
+          }),
+          updatedAt: now,
+        };
+      });
+      await get().saveProjects(updated);
+    },
+
+    deletePaper: async (projectId, sectionId, paperId) => {
+      const now = new Date().toISOString();
+      const updated = get().projects.map((proj) => {
+        if (proj.id !== projectId) return proj;
+        return {
+          ...proj,
+          sections: proj.sections.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            return {
+              ...sec,
+              papers: (sec.papers ?? []).filter((p) => p.id !== paperId),
+            };
+          }),
+          updatedAt: now,
+        };
+      });
+      await get().saveProjects(updated);
+    },
+
+    togglePaperImportant: async (projectId, sectionId, paperId) => {
+      const now = new Date().toISOString();
+      const updated = get().projects.map((proj) => {
+        if (proj.id !== projectId) return proj;
+        return {
+          ...proj,
+          sections: proj.sections.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            return {
+              ...sec,
+              papers: (sec.papers ?? []).map((p) =>
+                p.id === paperId ? { ...p, isImportant: !p.isImportant } : p
+              ),
+            };
+          }),
+          updatedAt: now,
+        };
+      });
+      await get().saveProjects(updated);
+    },
   };
 });

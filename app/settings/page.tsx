@@ -46,16 +46,16 @@ import { ModuleKey } from '../../types';
 import { PageHeader } from '../../components/ui/PageHeader';
 
 const MODULE_OPTIONS: { key: ModuleKey; label: string; description: string; alwaysOn?: boolean }[] = [
-  { key: 'tasks',          label: 'Tasks',            description: 'Daily task management & priorities', alwaysOn: true },
-  { key: 'calendar',       label: 'Calendar',         description: 'Events, meetings & scheduling',      alwaysOn: true },
-  { key: 'habits',         label: 'Habits',           description: 'Daily habits & streak tracking' },
-  { key: 'goals',          label: 'Goals',            description: 'Long & short term goals' },
-  { key: 'notes',          label: 'Notes',            description: 'Notes, ideas & brain dump' },
-  { key: 'weekly_planner', label: 'Weekly Planner',   description: 'Week planning & reviews' },
-  { key: 'analytics',      label: 'Analytics',        description: 'Productivity charts & insights' },
-  { key: 'clients',        label: 'Client Projects',  description: 'Manage clients, bugs & features' },
-  { key: 'research',       label: 'Research',         description: 'Papers, thesis & writing tracker' },
-  { key: 'career',         label: 'Career & DSA',     description: 'Job applications, interviews & DSA' },
+  { key: 'tasks', label: 'Tasks', description: 'Daily task management & priorities', alwaysOn: true },
+  { key: 'calendar', label: 'Calendar', description: 'Events, meetings & scheduling', alwaysOn: true },
+  { key: 'habits', label: 'Habits', description: 'Daily habits & streak tracking' },
+  { key: 'goals', label: 'Goals', description: 'Long & short term goals' },
+  { key: 'notes', label: 'Notes', description: 'Notes, ideas & brain dump' },
+  { key: 'weekly_planner', label: 'Weekly Planner', description: 'Week planning & reviews' },
+  { key: 'analytics', label: 'Analytics', description: 'Productivity charts & insights' },
+  { key: 'clients', label: 'Client Projects', description: 'Manage clients, bugs & features' },
+  { key: 'research', label: 'Research', description: 'Papers, thesis & writing tracker' },
+  { key: 'career', label: 'Career & DSA', description: 'Job applications, interviews & DSA' },
 ];
 
 export default function SettingsPage() {
@@ -114,7 +114,6 @@ export default function SettingsPage() {
 
   const { resetTasks } = useTaskStore();
   const { resetProjects } = useProjectStore();
-  const { resetResearch } = useResearchStore();
   const { resetCareer } = useCareerStore();
   const { resetHabits } = useHabitStore();
   const { resetGoals } = useGoalStore();
@@ -168,7 +167,6 @@ export default function SettingsPage() {
   const executeResetAll = () => {
     resetTasks();
     resetProjects();
-    resetResearch();
     resetCareer();
     resetHabits();
     resetGoals();
@@ -337,21 +335,18 @@ export default function SettingsPage() {
                 key={mod.key}
                 onClick={handleToggle}
                 disabled={mod.alwaysOn}
-                className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
-                  enabled
+                className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${enabled
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40'
                     : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
-                } ${mod.alwaysOn ? 'cursor-default' : 'hover:shadow-sm'}`}
+                  } ${mod.alwaysOn ? 'cursor-default' : 'hover:shadow-sm'}`}
               >
-                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
-                  enabled ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
-                }`}>
+                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${enabled ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
                   {enabled && <Check className="w-3 h-3 text-white" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className={`text-xs font-bold ${
-                    enabled ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
-                  }`}>
+                  <div className={`text-xs font-bold ${enabled ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                    }`}>
                     {mod.label}
                     {mod.alwaysOn && (
                       <span className="ml-1.5 text-[9px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full">Always on</span>
@@ -389,11 +384,10 @@ export default function SettingsPage() {
                 emailNotificationsEnabled: !(settings.emailNotificationsEnabled ?? true),
               })
             }
-            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-xs shrink-0 self-start sm:self-auto ${
-              (settings.emailNotificationsEnabled ?? true)
+            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-xs shrink-0 self-start sm:self-auto ${(settings.emailNotificationsEnabled ?? true)
                 ? 'btn-primary'
                 : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700'
-            }`}
+              }`}
           >
             {(settings.emailNotificationsEnabled ?? true) ? (
               <>
@@ -464,11 +458,10 @@ export default function SettingsPage() {
           </div>
 
           {backfillMsg && (
-            <div className={`p-2.5 rounded-xl text-xs font-medium ${
-              backfillMsg.type === 'success'
+            <div className={`p-2.5 rounded-xl text-xs font-medium ${backfillMsg.type === 'success'
                 ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                 : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
-            }`}>
+              }`}>
               {backfillMsg.text}
             </div>
           )}
@@ -484,11 +477,10 @@ export default function SettingsPage() {
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <button
             onClick={() => setTheme('light')}
-            className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${
-              theme === 'light'
+            className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${theme === 'light'
                 ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 font-bold'
                 : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400'
-            }`}
+              }`}
           >
             <Sun className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
             <span className="text-xs">Light Mode</span>
@@ -496,11 +488,10 @@ export default function SettingsPage() {
 
           <button
             onClick={() => setTheme('dark')}
-            className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${
-              theme === 'dark'
+            className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${theme === 'dark'
                 ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 font-bold'
                 : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400'
-            }`}
+              }`}
           >
             <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
             <span className="text-xs">Dark Mode</span>
@@ -563,7 +554,7 @@ export default function SettingsPage() {
         onClose={() => setIsResetModalOpen(false)}
         onConfirm={executeResetAll}
         title="Reset All Local System Data"
-        itemName="Meraj OS Default Reset"
+        itemName="Orbit Default Reset"
         message="Are you sure you want to reset all tasks, projects, calendar events, habits, research notes, and settings to defaults? This action cannot be undone."
       />
     </div>

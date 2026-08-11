@@ -29,6 +29,7 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { Logo } from '../common/Logo';
 import { BRAND } from '../../lib/branding';
 import { SyncStatusBadge } from '../common/SyncStatusBadge';
+import { Tooltip } from '../ui/tooltip';
 
 export const sidebarItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard, moduleKey: null, alwaysShow: true },
@@ -159,6 +160,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                 }`}
               />
               {!collapsed && <span className="truncate z-10 transition-colors duration-200">{item.name}</span>}
+              {collapsed && (
+                <span className="sr-only">{item.name}</span>
+              )}
             </Link>
           );
         })}
@@ -240,7 +244,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:block h-screen sticky top-0 z-30 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'
+        className={`hidden md:block h-screen sticky top-0 z-30 transition-all duration-300 ${collapsed ? 'w-18' : 'w-64'
           }`}
       >
         {sidebarContent}

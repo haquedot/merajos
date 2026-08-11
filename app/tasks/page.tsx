@@ -30,6 +30,8 @@ import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { db } from '../../database/dexie';
 
+import { TaskSkeleton } from '../../components/ui/Skeleton';
+
 export default function TasksPage() {
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,6 +45,7 @@ export default function TasksPage() {
 
   const {
     tasks,
+    isLoading: isLoadingTasks,
     searchQuery,
     selectedCategory,
     selectedPriority,
@@ -198,6 +201,10 @@ export default function TasksPage() {
     { key: 'in_progress', label: 'In Progress', color: 'border-amber-500', badgeBg: 'bg-amber-500/10 text-amber-500' },
     { key: 'completed', label: 'Completed', color: 'border-emerald-500', badgeBg: 'bg-emerald-500/10 text-emerald-500' },
   ];
+
+  if (isLoadingTasks) {
+    return <TaskSkeleton />;
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

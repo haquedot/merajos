@@ -18,7 +18,7 @@ import {
   Database,
 } from 'lucide-react';
 import { useTaskStore } from '../store/useTaskStore';
-import { Task } from '../types';
+import { Task, ResearchProject, ResearchSection, ResearchPaper } from '../types';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useProjectStore } from '../store/useProjectStore';
 import { useResearchStore } from '../store/useResearchStore';
@@ -32,8 +32,9 @@ import { calculateDailyScore } from '../lib/productivityCalculator';
 import { HighchartsLine } from '../components/ui/HighchartsComponents';
 
 import { isUserAuthenticated } from '../lib/authCheck';
-import { NowFocusCard } from '../components/dashboard/NowFocusCard';
-import { FocusOverlayModal } from '../components/modals/FocusOverlayModal';
+import { DashboardSkeleton } from '../components/ui/Skeleton';
+import { NowFocusCard } from '@/components/dashboard/NowFocusCard';
+import { FocusOverlayModal } from '@/components/modals/FocusOverlayModal';
 
 export default function DashboardHome() {
   const [greeting, setGreeting] = useState('Good day');
@@ -42,9 +43,9 @@ export default function DashboardHome() {
   const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
   const [activeFocusTask, setActiveFocusTask] = useState<any>(null);
 
-  const { tasks, toggleTaskStatus } = useTaskStore();
+  const { tasks, toggleTaskStatus, isLoading: isLoadingTasks } = useTaskStore();
   const { projects } = useProjectStore();
-  const { overview: researchOverview, papers: researchPapers } = useResearchStore();
+  const { projects: researchProjects } = useResearchStore();
   const { dsaTopics } = useCareerStore();
   const { habits, toggleHabitForDate } = useHabitStore();
   const { goals } = useGoalStore();
@@ -69,6 +70,10 @@ export default function DashboardHome() {
     });
   }, [tasks]);
 
+  if (!mounted || isLoadingTasks) {
+    return <DashboardSkeleton />;
+  }
+
   const todayStr = new Date().toISOString().split('T')[0];
   const todayTasks = tasks.filter((t) => t.dueDate === todayStr);
   const completedToday = todayTasks.filter((t) => t.status === 'completed').length;
@@ -87,12 +92,15 @@ export default function DashboardHome() {
     ? Math.round(projects.reduce((acc, p) => acc + (p.progress || 0), 0) / projects.length)
     : 0;
 
-  // Real research progress calculation
-  const totalPapers = researchPapers.length;
-  const researchSubtitle = researchOverview.thesisTitle || researchOverview.paperTitle || (researchPapers[0]?.title ?? 'No research added yet');
+  // Real research progress calculation across all projects
+  const allPapers = researchProjects.flatMap((proj: ResearchProject) =>
+    proj.sections.flatMap((s: ResearchSection) => s.papers ?? [])
+  );
+  const totalPapers = allPapers.length;
+  const researchSubtitle = researchProjects[0]?.title ?? 'No research added yet';
   const realResearchProgress = totalPapers > 0
-    ? Math.round((researchPapers.filter((p) => p.status === 'cited' || p.status === 'reading').length / totalPapers) * 100)
-    : (researchOverview.progress || 0);
+    ? Math.round((allPapers.filter((p: ResearchPaper) => p.status === 'cited' || p.status === 'reading').length / totalPapers) * 100)
+    : (researchProjects[0]?.progress || 0);
 
   // Real DSA Solved calculation
   const dsaTotalSolved = dsaTopics.reduce((acc, t) => acc + t.easySolved + t.mediumSolved + t.hardSolved, 0);
@@ -117,7 +125,7 @@ export default function DashboardHome() {
     projectsCount: projects.length,
     goalsCount: goals.length,
     completedGoalsCount: goals.filter((g) => g.progress >= 100).length,
-    researchCount: researchPapers.length,
+    researchCount: totalPapers,
     dsaCount: dsaTopics.length,
   });
 
@@ -317,8 +325,8 @@ export default function DashboardHome() {
                       <div className="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
                         <div
                           className={`w-5 h-5 mt-0.5 sm:mt-0 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${isDone
-                              ? 'bg-emerald-500 border-emerald-500 text-white'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-blue-500'
+                            ? 'bg-emerald-500 border-emerald-500 text-white'
+                            : 'border-gray-300 dark:border-gray-600 hover:border-blue-500'
                             }`}
                         >
                           {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
@@ -489,7 +497,7 @@ export default function DashboardHome() {
                       </span>
                     </div>
                   </div>
-                  <Badge variant="outline" size="sm" className="shrink-0">
+                  <Badge variant={t.status === 'archived' ? 'secondary' : 'outline'} size="sm" className="shrink-0">
                     {t.dueDate}
                   </Badge>
                 </div>

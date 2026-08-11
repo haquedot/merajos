@@ -5,6 +5,7 @@ import { isUserAuthenticated } from '../lib/authCheck';
 
 interface HabitState {
   habits: Habit[];
+  isLoading: boolean;
   
   loadFromDB: () => Promise<void>;
   addHabit: (habit: Omit<Habit, 'id' | 'currentStreak' | 'longestStreak' | 'history'>) => Promise<void>;
@@ -32,12 +33,17 @@ export const useHabitStore = create<HabitState>((set, get) => {
   if (typeof window !== 'undefined') {
     db.habits.toArray().then((localItems) => {
       if (localItems && localItems.length > 0) {
-        set((state) => ({ habits: mergeHabits(state.habits, localItems) }));
+        set((state) => ({ habits: mergeHabits(state.habits, localItems), isLoading: false }));
+      } else {
+        set({ isLoading: false });
       }
     });
 
     isUserAuthenticated().then((authenticated) => {
-      if (!authenticated) return;
+      if (!authenticated) {
+        set({ isLoading: false });
+        return;
+      }
       fetch('/api/habits')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
@@ -45,16 +51,22 @@ export const useHabitStore = create<HabitState>((set, get) => {
             set((state) => {
               const merged = mergeHabits(state.habits, data.habits);
               db.habits.bulkPut(merged);
-              return { habits: merged };
+              return { habits: merged, isLoading: false };
             });
+          } else {
+            set({ isLoading: false });
           }
         })
-        .catch((err) => console.warn('[MongoDB HabitSync] Offline or API unreachable', err));
+        .catch((err) => {
+          console.warn('[MongoDB HabitSync] Offline or API unreachable', err);
+          set({ isLoading: false });
+        });
     });
   }
 
   return {
     habits: [],
+    isLoading: true,
 
     loadFromDB: async () => {
       // 1. Dexie IndexedDB cache load
