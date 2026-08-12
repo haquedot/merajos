@@ -267,10 +267,10 @@ export default function TasksPage() {
       <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-gray-800/80">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-extrabold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 mr-1">
+              {/* <span className="text-xs font-extrabold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 mr-1">
                 <Calendar className="w-3.5 h-3.5 text-blue-500" />
                 Selected Date:
-              </span>
+              </span> */}
 
               {/* Prev Day Button */}
               <button
