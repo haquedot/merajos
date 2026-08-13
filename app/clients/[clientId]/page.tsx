@@ -247,7 +247,7 @@ export default function ClientDetailPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setDeletingConfirm(true)}
-                className="btn-secondary px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-1.5"
+                className="bg-rose-500/10 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-500/20 dark:hover:bg-rose-500/50 flex items-center gap-1.5 cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Delete Workspace</span>
@@ -453,12 +453,12 @@ export default function ClientDetailPage() {
                 project.features.map((feature) => (
                   <div
                     key={feature.id}
-                    className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3 hover:border-purple-200 dark:hover:border-purple-900 transition-colors"
+                    className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-purple-200 dark:hover:border-purple-900 transition-colors"
                   >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex items-start tems-center gap-3 min-w-0 flex-1 w-full sm:w-auto">
                       <button
                         onClick={() => toggleFeature(project.id, feature.id)}
-                        className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs transition-colors shrink-0 ${
+                        className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs transition-colors shrink-0 mt-0.5 sm:mt-0 ${
                           feature.completed
                             ? `${theme.bg} text-white`
                             : 'border border-gray-300 dark:border-gray-600 hover:border-purple-500'
@@ -466,9 +466,9 @@ export default function ClientDetailPage() {
                       >
                         {feature.completed && '✓'}
                       </button>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1 mt-1">
                         <span
-                          className={`text-xs font-bold block truncate ${
+                          className={`text-xs font-bold block leading-snug break-words ${
                             feature.completed ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white'
                           }`}
                         >
@@ -477,14 +477,14 @@ export default function ClientDetailPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center justify-start sm:justify-end gap-2 shrink-0 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800">
                       <Badge variant={feature.priority === 'high' ? 'danger' : theme.badgeVariant} size="sm">
                         {feature.priority || 'medium'}
                       </Badge>
 
                       <button
                         onClick={() => handleCopyFeatureToTask(feature)}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ${theme.bgLight} ${theme.text}`}
+                        className={`cursor-pointer px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ${theme.bgLight} ${theme.text}`}
                         title="Copy feature to Task module"
                       >
                         <Copy className="w-3 h-3" />
@@ -493,7 +493,7 @@ export default function ClientDetailPage() {
 
                       <button
                         onClick={() => deleteFeature(project.id, feature.id)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                        className="cursor-pointer p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -537,16 +537,16 @@ export default function ClientDetailPage() {
                     key={bug.id}
                     className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                   >
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-900 dark:text-white">{bug.title}</span>
+                    <div className="space-y-1 min-w-0 flex-1 w-full sm:w-auto">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-gray-900 dark:text-white leading-snug break-words">{bug.title}</span>
                         <Badge variant={bug.severity === 'critical' || bug.severity === 'high' ? 'danger' : 'warning'} size="sm">
                           {bug.severity}
                         </Badge>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800">
                       <select
                         value={bug.status}
                         onChange={(e) => updateBugStatus(project.id, bug.id, e.target.value as any)}
@@ -610,10 +610,10 @@ export default function ClientDetailPage() {
                 project.invoices.map((inv) => (
                   <div
                     key={inv.id}
-                    className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3"
+                    className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                   >
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-0.5 min-w-0 flex-1 w-full sm:w-auto">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-extrabold text-xs text-gray-900 dark:text-white">
                           Invoice #{inv.invoiceNumber}
                         </span>
@@ -624,28 +624,30 @@ export default function ClientDetailPage() {
                       <span className="text-[11px] text-gray-400 block">Due Date: {inv.dueDate}</span>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800 shrink-0">
                       <span className="font-black text-sm text-gray-900 dark:text-white">
                         {project.currency || '$'}{inv.amount.toLocaleString()}
                       </span>
 
-                      <button
-                        onClick={() => updateInvoiceStatus(project.id, inv.id, inv.status === 'paid' ? 'unpaid' : 'paid')}
-                        className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors ${
-                          inv.status === 'paid'
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
-                            : `${theme.bg} text-white ${theme.bgHover}`
-                        }`}
-                      >
-                        {inv.status === 'paid' ? 'Mark Unpaid' : 'Mark Paid'}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => updateInvoiceStatus(project.id, inv.id, inv.status === 'paid' ? 'unpaid' : 'paid')}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors ${
+                            inv.status === 'paid'
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                              : `${theme.bg} text-white ${theme.bgHover}`
+                          }`}
+                        >
+                          {inv.status === 'paid' ? 'Mark Unpaid' : 'Mark Paid'}
+                        </button>
 
-                      <button
-                        onClick={() => deleteInvoice(project.id, inv.id)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        <button
+                          onClick={() => deleteInvoice(project.id, inv.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -720,10 +722,10 @@ export default function ClientDetailPage() {
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
-            <button type="button" onClick={() => setIsBugModalOpen(false)} className="btn-secondary px-4 py-2 rounded-xl text-xs">
+            <button type="button" onClick={() => setIsBugModalOpen(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
               Cancel
             </button>
-            <button type="submit" className={`px-4 py-2 rounded-xl text-xs font-bold text-white ${theme.bg} ${theme.bgHover}`}>
+            <button type="submit" className={`px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer ${theme.bg} ${theme.bgHover}`}>
               Submit Bug
             </button>
           </div>
@@ -773,10 +775,10 @@ export default function ClientDetailPage() {
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
-            <button type="button" onClick={() => setIsInvoiceModalOpen(false)} className="btn-secondary px-4 py-2 rounded-xl text-xs">
+            <button type="button" onClick={() => setIsInvoiceModalOpen(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
               Cancel
             </button>
-            <button type="submit" className={`px-4 py-2 rounded-xl text-xs font-bold text-white ${theme.bg} ${theme.bgHover}`}>
+            <button type="submit" className={`px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer ${theme.bg} ${theme.bgHover}`}>
               Create Invoice
             </button>
           </div>

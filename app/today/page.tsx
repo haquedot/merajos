@@ -27,6 +27,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { NowFocusCard } from '../../components/dashboard/NowFocusCard';
 import { FocusOverlayModal } from '../../components/modals/FocusOverlayModal';
 import { PersonalRoutineOverlay } from '../../components/today/PersonalRoutineOverlay';
+import { TodayTimelineView } from '../../components/today/TodayTimelineView';
 import { getSmartFocusTask, sortTasksChronologically, parseTimeAndSlotFromText } from '../../lib/taskUtils';
 
 import { TaskSkeleton } from '../../components/ui/Skeleton';
@@ -92,6 +93,11 @@ export default function TodayPage() {
     setIsAddModalOpen(false);
   };
 
+  const handleOpenAddModalWithSlot = (defaultSlot?: TimeSlot) => {
+    if (defaultSlot) setSlot(defaultSlot);
+    setIsAddModalOpen(true);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Today Header Banner */}
@@ -129,7 +135,7 @@ export default function TodayPage() {
             </div>
 
             <button
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={() => handleOpenAddModalWithSlot()}
               className="btn-primary px-3 sm:px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0"
             >
               <Plus className="w-4 h-4" />
@@ -182,187 +188,201 @@ export default function TodayPage() {
         }
       />
 
-      {/* Top 3 MIT Section */}
-      <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4">
-        <div className="flex items-center gap-2">
-          <Target className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 shrink-0" />
-          <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">
-            Top 3 Most Important Tasks (MITs)
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-          {mits.map((task) => {
-            const isDone = task.status === 'completed';
-            return (
-              <motion.div
-                key={task.id}
-                whileHover={{ y: -2 }}
-                onClick={() => toggleTaskStatus(task.id)}
-                className={`p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all ${
-                  isDone
-                    ? 'bg-gray-50/60 dark:bg-gray-800/30 border-gray-200 dark:border-gray-800'
-                    : 'bg-blue-50/30 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span
-                    className={`text-xs font-bold leading-snug break-words min-w-0 flex-1 ${
-                      isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
-                    }`}
-                  >
-                    {task.title}
-                  </span>
-                  <div
-                    className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
-                      isDone ? 'bg-emerald-500 text-white' : 'border border-gray-300 dark:border-gray-600'
-                    }`}
-                  >
-                    {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100 dark:border-gray-800/60">
-                  <Badge variant={task.category === 'Client' ? 'purple' : 'info'} size="sm">
-                    {task.category}
-                  </Badge>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCustomFocusTaskId(task.id);
-                    }}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors ${
-                      effectiveFocusTask?.id === task.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300'
-                    }`}
-                  >
-                    <Target className="w-3 h-3" />
-                    <span>{effectiveFocusTask?.id === task.id ? 'Focused' : 'Set Focus'}</span>
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
-
-          {mits.length < 3 && (
-            <div className="p-3.5 sm:p-4 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center text-center text-xs text-gray-400 italic">
-              + Toggle MIT on any task to add to your top 3 daily focus.
+      {/* RENDER BASED ON VIEW MODE */}
+      {viewMode === 'timeline' ? (
+        <TodayTimelineView
+          tasks={todayTasks}
+          effectiveFocusTaskId={effectiveFocusTask?.id}
+          onToggleTaskStatus={toggleTaskStatus}
+          onToggleMIT={toggleMIT}
+          onSetFocusTask={(id) => setCustomFocusTaskId(id)}
+          onOpenAddModal={handleOpenAddModalWithSlot}
+        />
+      ) : (
+        <>
+          {/* Top 3 MIT Section */}
+          <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 shrink-0" />
+              <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">
+                Top 3 Most Important Tasks (MITs)
+              </h2>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Personal Routine Timeline Anchors */}
-      <PersonalRoutineOverlay />
-
-      {/* 4 Time Slots Sections */}
-      <div className="space-y-4 sm:space-y-6">
-        {slotSections.map((sec) => {
-          const Icon = sec.icon;
-          const slotTasks = todayTasks.filter((t) => {
-            const parsed = parseTimeAndSlotFromText(`${t.title} ${t.description || ''}`, t.dueDate);
-            const effectiveSlot = (t.timeSlot && t.timeSlot !== 'afternoon') ? t.timeSlot : parsed.timeSlot;
-            return effectiveSlot === sec.key;
-          });
-
-          return (
-            <div
-              key={sec.key}
-              className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4"
-            >
-              <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${sec.color} shrink-0`} />
-                  <h3 className="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
-                    {sec.title}
-                  </h3>
-                </div>
-                <span className="text-[11px] sm:text-xs font-semibold text-gray-400 shrink-0">
-                  {slotTasks.filter((t) => t.status === 'completed').length}/{slotTasks.length} Tasks
-                </span>
-              </div>
-
-              {slotTasks.length === 0 ? (
-                <p className="text-xs text-gray-400 italic py-2">No tasks scheduled for this slot.</p>
-              ) : (
-                <div className="space-y-2.5">
-                  {slotTasks.map((task) => {
-                    const isDone = task.status === 'completed';
-                    return (
-                      <div
-                        key={task.id}
-                        className="p-3 sm:p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 hover:bg-gray-100/80 dark:hover:bg-gray-800 transition-colors"
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+              {mits.map((task) => {
+                const isDone = task.status === 'completed';
+                return (
+                  <motion.div
+                    key={task.id}
+                    whileHover={{ y: -2 }}
+                    onClick={() => toggleTaskStatus(task.id)}
+                    className={`p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all ${
+                      isDone
+                        ? 'bg-gray-50/60 dark:bg-gray-800/30 border-gray-200 dark:border-gray-800'
+                        : 'bg-blue-50/30 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span
+                        className={`text-xs font-bold leading-snug break-words min-w-0 flex-1 ${
+                          isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
+                        }`}
                       >
-                        <div className="flex items-start sm:items-center gap-3 min-w-0 w-full sm:w-auto">
-                          <button
-                            onClick={() => toggleTaskStatus(task.id)}
-                            className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors shrink-0 mt-0.5 sm:mt-0 ${
-                              isDone ? 'bg-emerald-500 text-white' : 'border border-gray-300 dark:border-gray-600'
-                            }`}
-                          >
-                            {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
-                          </button>
-                          <div className="min-w-0 flex-1">
-                            <span
-                              className={`text-xs sm:text-sm font-bold block leading-snug break-words ${
-                                isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
-                              }`}
-                            >
-                              {task.title}
-                            </span>
-                            {task.description && (
-                              <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">
-                                {task.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800/80 shrink-0">
-                          <div className="flex items-center gap-1.5">
-                            <Badge variant={task.category === 'Client' ? 'purple' : task.category === 'Research' ? 'info' : 'secondary'} size="sm">
-                              {task.category}
-                            </Badge>
-                            <Badge variant={task.priority === 'urgent' ? 'danger' : 'secondary'} size="sm">
-                              {task.priority}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              onClick={() => setCustomFocusTaskId(task.id)}
-                              className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors flex items-center gap-1 ${
-                                effectiveFocusTask?.id === task.id
-                                  ? 'bg-blue-600 text-white shadow-xs'
-                                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-400'
-                              }`}
-                              title="Set as Current Focus Task"
-                            >
-                              <Target className="w-3 h-3" />
-                              <span>{effectiveFocusTask?.id === task.id ? 'Focused' : 'Set Focus'}</span>
-                            </button>
-                            <button
-                              onClick={() => toggleMIT(task.id)}
-                              className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors ${
-                                task.mit
-                                  ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
-                                  : 'bg-gray-200/70 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-                              }`}
-                            >
-                              {task.mit ? '★ MIT' : 'Set MIT'}
-                            </button>
-                          </div>
-                        </div>
+                        {task.title}
+                      </span>
+                      <div
+                        className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
+                          isDone ? 'bg-emerald-500 text-white' : 'border border-gray-300 dark:border-gray-600'
+                        }`}
+                      >
+                        {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
                       </div>
-                    );
-                  })}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100 dark:border-gray-800/60">
+                      <Badge variant={task.category === 'Client' ? 'purple' : 'info'} size="sm">
+                        {task.category}
+                      </Badge>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCustomFocusTaskId(task.id);
+                        }}
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors ${
+                          effectiveFocusTask?.id === task.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300'
+                        }`}
+                      >
+                        <Target className="w-3 h-3" />
+                        <span>{effectiveFocusTask?.id === task.id ? 'Focused' : 'Set Focus'}</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+              {mits.length < 3 && (
+                <div className="p-3.5 sm:p-4 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center text-center text-xs text-gray-400 italic">
+                  + Toggle MIT on any task to add to your top 3 daily focus.
                 </div>
               )}
             </div>
-          );
-        })}
-      </div>
+          </div>
+
+          {/* Personal Routine Timeline Anchors */}
+          <PersonalRoutineOverlay />
+
+          {/* 4 Time Slots Sections */}
+          <div className="space-y-4 sm:space-y-6">
+            {slotSections.map((sec) => {
+              const Icon = sec.icon;
+              const slotTasks = todayTasks.filter((t) => {
+                const parsed = parseTimeAndSlotFromText(`${t.title} ${t.description || ''}`, t.dueDate);
+                const effectiveSlot = t.timeSlot && t.timeSlot !== 'afternoon' ? t.timeSlot : parsed.timeSlot;
+                return effectiveSlot === sec.key;
+              });
+
+              return (
+                <div
+                  key={sec.key}
+                  className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4"
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${sec.color} shrink-0`} />
+                      <h3 className="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                        {sec.title}
+                      </h3>
+                    </div>
+                    <span className="text-[11px] sm:text-xs font-semibold text-gray-400 shrink-0">
+                      {slotTasks.filter((t) => t.status === 'completed').length}/{slotTasks.length} Tasks
+                    </span>
+                  </div>
+
+                  {slotTasks.length === 0 ? (
+                    <p className="text-xs text-gray-400 italic py-2">No tasks scheduled for this slot.</p>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {slotTasks.map((task) => {
+                        const isDone = task.status === 'completed';
+                        return (
+                          <div
+                            key={task.id}
+                            className="p-3 sm:p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 hover:bg-gray-100/80 dark:hover:bg-gray-800 transition-colors"
+                          >
+                            <div className="flex items-start sm:items-center gap-3 min-w-0 w-full sm:w-auto">
+                              <button
+                                onClick={() => toggleTaskStatus(task.id)}
+                                className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors shrink-0 mt-0.5 sm:mt-0 ${
+                                  isDone ? 'bg-emerald-500 text-white' : 'border border-gray-300 dark:border-gray-600'
+                                }`}
+                              >
+                                {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
+                              </button>
+                              <div className="min-w-0 flex-1">
+                                <span
+                                  className={`text-xs sm:text-sm font-bold block leading-snug break-words ${
+                                    isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
+                                  }`}
+                                >
+                                  {task.title}
+                                </span>
+                                {task.description && (
+                                  <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">
+                                    {task.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800/80 shrink-0">
+                              <div className="flex items-center gap-1.5">
+                                <Badge variant={task.category === 'Client' ? 'purple' : task.category === 'Research' ? 'info' : 'secondary'} size="sm">
+                                  {task.category}
+                                </Badge>
+                                <Badge variant={task.priority === 'urgent' ? 'danger' : 'secondary'} size="sm">
+                                  {task.priority}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  onClick={() => setCustomFocusTaskId(task.id)}
+                                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors flex items-center gap-1 ${
+                                    effectiveFocusTask?.id === task.id
+                                      ? 'bg-blue-600 text-white shadow-xs'
+                                      : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-400'
+                                  }`}
+                                  title="Set as Current Focus Task"
+                                >
+                                  <Target className="w-3 h-3" />
+                                  <span>{effectiveFocusTask?.id === task.id ? 'Focused' : 'Set Focus'}</span>
+                                </button>
+                                <button
+                                  onClick={() => toggleMIT(task.id)}
+                                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors ${
+                                    task.mit
+                                      ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
+                                      : 'bg-gray-200/70 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
+                                  }`}
+                                >
+                                  {task.mit ? '★ MIT' : 'Set MIT'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* Add Task Modal */}
       <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add Task for Today">

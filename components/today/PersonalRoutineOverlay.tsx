@@ -56,11 +56,11 @@ export const PersonalRoutineOverlay: React.FC = () => {
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-[#1F3B99] dark:text-[#6D5BFF]" />
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white">
-            Daily Personal Routine Anchors
+            Daily Personal Routine
           </h3>
         </div>
         <span className="text-[11px] font-bold text-[#1F3B99] dark:text-[#6D5BFF]">
-          {completedRoutines.length}/{DEFAULT_ROUTINES.length} Completed
+          {completedRoutines.length}/{DEFAULT_ROUTINES.length}
         </span>
       </div>
 
