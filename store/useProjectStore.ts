@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Project, ProjectFeature, ProjectBug } from '../types';
+import { Project, ProjectFeature, ProjectBug, ProjectInvoice } from '../types';
 import { isUserAuthenticated } from '../lib/authCheck';
 
 interface ProjectState {
@@ -13,10 +13,18 @@ interface ProjectState {
   setActiveProjectId: (id: string) => void;
 
   toggleFeature: (projectId: string, featureId: string) => Promise<void>;
-  addFeature: (projectId: string, title: string) => Promise<void>;
+  addFeature: (projectId: string, feature: Omit<ProjectFeature, 'id'> | string) => Promise<void>;
+  deleteFeature: (projectId: string, featureId: string) => Promise<void>;
   
   addBug: (projectId: string, bug: Omit<ProjectBug, 'id'>) => Promise<void>;
   updateBugStatus: (projectId: string, bugId: string, status: ProjectBug['status']) => Promise<void>;
+  deleteBug: (projectId: string, bugId: string) => Promise<void>;
+
+  addInvoice: (projectId: string, invoice: Omit<ProjectInvoice, 'id'>) => Promise<void>;
+  updateInvoiceStatus: (projectId: string, invoiceId: string, status: ProjectInvoice['status']) => Promise<void>;
+  deleteInvoice: (projectId: string, invoiceId: string) => Promise<void>;
+
+  saveProjectNotes: (projectId: string, notes: string) => Promise<void>;
   
   resetProjects: () => void;
 }
@@ -61,14 +69,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       const newProj: Project = {
         ...data,
         id: newId,
+        invoices: data.invoices || [],
+        features: data.features || [],
+        bugs: data.bugs || [],
       };
 
       set((state) => ({
-        projects: [...state.projects, newProj],
+        projects: [newProj, ...state.projects],
         activeProjectId: state.activeProjectId || newId,
       }));
 
-      // Persist to MongoDB API
       fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,15 +140,13 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       }).catch((err) => console.warn('Failed to update feature in MongoDB API', err));
     },
 
-    addFeature: async (projectId, title) => {
+    addFeature: async (projectId, featureInput) => {
       const currentProj = get().projects.find((p) => p.id === projectId);
       if (!currentProj) return;
 
-      const newFeature: ProjectFeature = {
-        id: `f-${Date.now()}`,
-        title,
-        completed: false,
-      };
+      const newFeature: ProjectFeature = typeof featureInput === 'string'
+        ? { id: `f-${Date.now()}`, title: featureInput, completed: false, priority: 'medium' }
+        : { ...featureInput, id: `f-${Date.now()}` };
 
       const updatedFeatures = [...currentProj.features, newFeature];
       const completedCount = updatedFeatures.filter((f) => f.completed).length;
@@ -158,6 +166,29 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: projectId, features: updatedFeatures, progress: newProgress }),
       }).catch((err) => console.warn('Failed to add feature to MongoDB API', err));
+    },
+
+    deleteFeature: async (projectId, featureId) => {
+      const currentProj = get().projects.find((p) => p.id === projectId);
+      if (!currentProj) return;
+
+      const updatedFeatures = currentProj.features.filter((f) => f.id !== featureId);
+      const completedCount = updatedFeatures.filter((f) => f.completed).length;
+      const newProgress = updatedFeatures.length > 0
+        ? Math.round((completedCount / updatedFeatures.length) * 100)
+        : 0;
+
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === projectId ? { ...p, features: updatedFeatures, progress: newProgress } : p
+        ),
+      }));
+
+      fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: projectId, features: updatedFeatures, progress: newProgress }),
+      }).catch((err) => console.warn('Failed to delete feature in MongoDB API', err));
     },
 
     addBug: async (projectId, bugData) => {
@@ -204,6 +235,117 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: projectId, bugs: updatedBugs }),
       }).catch((err) => console.warn('Failed to update bug status in MongoDB API', err));
+    },
+
+    deleteBug: async (projectId, bugId) => {
+      const currentProj = get().projects.find((p) => p.id === projectId);
+      if (!currentProj) return;
+
+      const updatedBugs = currentProj.bugs.filter((b) => b.id !== bugId);
+
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === projectId ? { ...p, bugs: updatedBugs } : p
+        ),
+      }));
+
+      fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: projectId, bugs: updatedBugs }),
+      }).catch((err) => console.warn('Failed to delete bug in MongoDB API', err));
+    },
+
+    addInvoice: async (projectId, invoiceData) => {
+      const currentProj = get().projects.find((p) => p.id === projectId);
+      if (!currentProj) return;
+
+      const newInvoice: ProjectInvoice = {
+        ...invoiceData,
+        id: `inv-${Date.now()}`,
+      };
+
+      const updatedInvoices = [...(currentProj.invoices || []), newInvoice];
+      const newAmountPaid = updatedInvoices
+        .filter((inv) => inv.status === 'paid')
+        .reduce((sum, inv) => sum + inv.amount, 0);
+
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === projectId ? { ...p, invoices: updatedInvoices, amountPaid: newAmountPaid } : p
+        ),
+      }));
+
+      fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: projectId, invoices: updatedInvoices, amountPaid: newAmountPaid }),
+      }).catch((err) => console.warn('Failed to add invoice to MongoDB API', err));
+    },
+
+    updateInvoiceStatus: async (projectId, invoiceId, status) => {
+      const currentProj = get().projects.find((p) => p.id === projectId);
+      if (!currentProj) return;
+
+      const updatedInvoices = (currentProj.invoices || []).map((inv) =>
+        inv.id === invoiceId
+          ? {
+              ...inv,
+              status,
+              paidDate: status === 'paid' ? new Date().toISOString().split('T')[0] : inv.paidDate,
+            }
+          : inv
+      );
+
+      const newAmountPaid = updatedInvoices
+        .filter((inv) => inv.status === 'paid')
+        .reduce((sum, inv) => sum + inv.amount, 0);
+
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === projectId ? { ...p, invoices: updatedInvoices, amountPaid: newAmountPaid } : p
+        ),
+      }));
+
+      fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: projectId, invoices: updatedInvoices, amountPaid: newAmountPaid }),
+      }).catch((err) => console.warn('Failed to update invoice in MongoDB API', err));
+    },
+
+    deleteInvoice: async (projectId, invoiceId) => {
+      const currentProj = get().projects.find((p) => p.id === projectId);
+      if (!currentProj) return;
+
+      const updatedInvoices = (currentProj.invoices || []).filter((inv) => inv.id !== invoiceId);
+      const newAmountPaid = updatedInvoices
+        .filter((inv) => inv.status === 'paid')
+        .reduce((sum, inv) => sum + inv.amount, 0);
+
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === projectId ? { ...p, invoices: updatedInvoices, amountPaid: newAmountPaid } : p
+        ),
+      }));
+
+      fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: projectId, invoices: updatedInvoices, amountPaid: newAmountPaid }),
+      }).catch((err) => console.warn('Failed to delete invoice in MongoDB API', err));
+    },
+
+    saveProjectNotes: async (projectId, notes) => {
+      set((state) => ({
+        projects: state.projects.map((p) => (p.id === projectId ? { ...p, notes } : p)),
+      }));
+
+      fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: projectId, notes }),
+      }).catch((err) => console.warn('Failed to save project notes to MongoDB API', err));
     },
 
     resetProjects: () => set({ projects: [], activeProjectId: '' }),
