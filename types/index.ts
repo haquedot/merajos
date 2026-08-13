@@ -49,29 +49,55 @@ export interface CalendarEvent {
 export interface ProjectFeature {
   id: string;
   title: string;
+  description?: string;
   completed: boolean;
+  priority?: 'low' | 'medium' | 'high';
+  createdAt?: string;
 }
 
 export interface ProjectBug {
   id: string;
   title: string;
+  description?: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   status: 'open' | 'in_progress' | 'resolved';
+  createdAt?: string;
+}
+
+export interface ProjectInvoice {
+  id: string;
+  invoiceNumber: string;
+  amount: number;
+  status: 'unpaid' | 'paid' | 'overdue';
+  dueDate: string;
+  paidDate?: string;
+  notes?: string;
 }
 
 export interface Project {
   id: string;
   name: string;
   clientName: string;
+  clientEmail?: string;
+  clientPhone?: string;
   description: string;
-  status: 'active' | 'completed' | 'on_hold';
+  status: 'active' | 'completed' | 'on_hold' | 'archived';
   progress: number; // 0 to 100
+  budget?: number;
+  amountPaid?: number;
+  currency?: string;
   estimatedHours: number;
   actualHours: number;
+  startDate?: string;
   deadline: string;
+  color?: string;
   features: ProjectFeature[];
   bugs: ProjectBug[];
+  invoices?: ProjectInvoice[];
   techStack: string[];
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ─── Research Module ──────────────────────────────────────────────────────────

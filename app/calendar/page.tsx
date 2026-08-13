@@ -340,7 +340,7 @@ export default function CalendarPage() {
       {/* Header Bar */}
       <PageHeader
         icon={CalendarIcon}
-        iconBgColor="bg-blue-600 text-white"
+        iconBgColor="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400"
         title="Calendar & Events"
         badgeText={`${filteredEvents.length} Total`}
         badgeVariant="blue"
@@ -360,7 +360,7 @@ export default function CalendarPage() {
 
             <button
               onClick={() => openCreateModalForDate(selectedDate)}
-              className="px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5 shrink-0"
+              className="px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold text-white btn-primary flex items-center gap-1.5 shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span>New Event</span>
