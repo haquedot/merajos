@@ -190,6 +190,52 @@ export interface InterviewTopic {
   checklist: InterviewChecklistItem[];
 }
 
+export interface SubjectTopicChecklist {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface SubjectTopic {
+  id: string;
+  title: string;
+  description?: string;
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+  status: 'todo' | 'in_progress' | 'mastered';
+  resources?: { title: string; url: string }[];
+  checklist: SubjectTopicChecklist[];
+  notes?: string;
+  lastRevised?: string;
+}
+
+export interface SubjectPlan {
+  id: string;
+  title: string;
+  category: string;
+  description?: string;
+  colorTheme?: string;
+  topics: SubjectTopic[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DSAProblemItem {
+  id: string;
+  title: string;
+  leetcodeUrl?: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  completed: boolean;
+  needsRevision: boolean;
+  solutionNotes?: string;
+}
+
+export interface DSAPrimaryCategory {
+  id: string;
+  name: string;
+  category: string;
+  problems: DSAProblemItem[];
+}
+
 export interface DSATopic {
   id: string;
   name: string;
