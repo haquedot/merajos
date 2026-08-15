@@ -18,6 +18,10 @@ import { Badge } from '../../components/ui/Badge';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { DatePicker } from '../../components/ui/date-picker';
+import { Button } from '../../components/ui/button';
 
 import { GridCardsSkeleton } from '../../components/ui/Skeleton';
 
@@ -93,26 +97,28 @@ export default function GoalsPage() {
         actions={
           <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
             {/* Filter Tabs */}
-            <select
-              value={selectedTierFilter}
-              onChange={(e) => setSelectedTierFilter(e.target.value)}
-              className="flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 min-w-0"
-            >
-              <option value="all">All Goal Horizons</option>
-              <option value="long_term">Long-term Goals</option>
-              <option value="quarter">Quarter Goals (Q3/Q4)</option>
-              <option value="monthly">Monthly Goals</option>
-              <option value="weekly">Weekly Goals</option>
-              <option value="daily">Daily Goals</option>
-            </select>
+            <div className="w-full sm:w-48">
+              <Select
+                value={selectedTierFilter}
+                onValueChange={(val) => setSelectedTierFilter(val)}
+                options={[
+                  { value: 'all', label: 'All Goal Horizons' },
+                  { value: 'long_term', label: 'Long-term Goals' },
+                  { value: 'quarter', label: 'Quarter Goals (Q3/Q4)' },
+                  { value: 'monthly', label: 'Monthly Goals' },
+                  { value: 'weekly', label: 'Weekly Goals' },
+                  { value: 'daily', label: 'Daily Goals' },
+                ]}
+              />
+            </div>
 
-            <button
+            <Button
               onClick={() => setIsModalOpen(true)}
-              className="btn-primary px-3.5 sm:px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0"
+              className="shrink-0 flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
               <span>New Goal</span>
-            </button>
+            </Button>
           </div>
         }
       />
@@ -221,8 +227,7 @@ export default function GoalsPage() {
 
                 {/* Add New Milestone Row */}
                 <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="text"
+                  <Input
                     placeholder="Add new milestone..."
                     value={activeGoalId === goal.id ? newMilestoneTitle : ''}
                     onFocus={() => setActiveGoalId(goal.id)}
@@ -236,15 +241,16 @@ export default function GoalsPage() {
                         handleAddMilestone(goal.id);
                       }
                     }}
-                    className="flex-1 px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white min-w-0"
+                    className="flex-1 min-w-0"
                   />
-                  <button
+                  <Button
                     onClick={() => handleAddMilestone(goal.id)}
-                    className="btn-primary px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shrink-0"
+                    size="sm"
+                    className="shrink-0 flex items-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add</span>
-                  </button>
+                  </Button>
                 </div>
               </div>
             </motion.div>
@@ -259,13 +265,11 @@ export default function GoalsPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Goal Title *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Publish Research Paper on Attention Efficiency"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
@@ -278,7 +282,7 @@ export default function GoalsPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Detail your key success criteria..."
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-rose-500"
             />
           </div>
 
@@ -287,46 +291,43 @@ export default function GoalsPage() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Goal Horizon Tier
               </label>
-              <select
+              <Select
                 value={tier}
-                onChange={(e) => setTier(e.target.value as GoalTier)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="long_term">Long Term</option>
-                <option value="quarter">Quarterly (Q3/Q4)</option>
-                <option value="monthly">Monthly</option>
-                <option value="weekly">Weekly</option>
-                <option value="daily">Daily</option>
-              </select>
+                onValueChange={(val) => setTier(val as GoalTier)}
+                options={[
+                  { value: 'long_term', label: 'Long Term' },
+                  { value: 'quarter', label: 'Quarterly (Q3/Q4)' },
+                  { value: 'monthly', label: 'Monthly' },
+                  { value: 'weekly', label: 'Weekly' },
+                  { value: 'daily', label: 'Daily' },
+                ]}
+              />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Target Date
               </label>
-              <input
-                type="date"
+              <DatePicker
                 value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                onChange={(val) => setTargetDate(val)}
               />
             </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
               Save Goal
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>

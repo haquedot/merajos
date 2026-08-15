@@ -24,6 +24,9 @@ import { Task, TimeSlot, Priority, Category } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { Button } from '../../components/ui/button';
 import { NowFocusCard } from '../../components/dashboard/NowFocusCard';
 import { FocusOverlayModal } from '../../components/modals/FocusOverlayModal';
 import { PersonalRoutineOverlay } from '../../components/today/PersonalRoutineOverlay';
@@ -391,13 +394,11 @@ export default function TodayPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Task Title *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Practice 3 DSA tree questions"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
@@ -406,48 +407,47 @@ export default function TodayPage() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Time Slot
               </label>
-              <select
+              <Select
                 value={slot}
-                onChange={(e) => setSlot(e.target.value as TimeSlot)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="morning">Morning</option>
-                <option value="afternoon">Afternoon</option>
-                <option value="evening">Evening</option>
-                <option value="night">Night</option>
-              </select>
+                onValueChange={(val) => setSlot(val as TimeSlot)}
+                options={[
+                  { value: 'morning', label: 'Morning' },
+                  { value: 'afternoon', label: 'Afternoon' },
+                  { value: 'evening', label: 'Evening' },
+                  { value: 'night', label: 'Night' },
+                ]}
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Priority
               </label>
-              <select
+              <Select
                 value={priority}
-                onChange={(e) => setPriority(e.target.value as Priority)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+                onValueChange={(val) => setPriority(val as Priority)}
+                options={[
+                  { value: 'low', label: 'Low' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'high', label: 'High' },
+                  { value: 'urgent', label: 'Urgent' },
+                ]}
+              />
             </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setIsAddModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
               Save Today's Task
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>

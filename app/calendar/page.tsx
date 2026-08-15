@@ -45,6 +45,10 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { DatePicker } from '../../components/ui/date-picker';
+import { Button } from '../../components/ui/button';
 
 import { PageHeader } from '../../components/ui/PageHeader';
 
@@ -939,13 +943,11 @@ export default function CalendarPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Event Title *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Add title and time block"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
@@ -953,11 +955,9 @@ export default function CalendarPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Date
             </label>
-            <input
-              type="date"
+            <DatePicker
               value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+              onChange={(val) => setDate(val)}
             />
           </div>
 
@@ -966,22 +966,20 @@ export default function CalendarPage() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Start Time
               </label>
-              <input
+              <Input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 End Time
               </label>
-              <input
+              <Input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
           </div>
@@ -991,10 +989,10 @@ export default function CalendarPage() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Category
               </label>
-              <select
+              <Select
                 value={category}
-                onChange={(e) => {
-                  const cat = e.target.value as Category;
+                onValueChange={(val) => {
+                  const cat = val as Category;
                   setCategory(cat);
                   const colorMap: Record<string, string> = {
                     Client: '#8b5cf6',
@@ -1004,13 +1002,13 @@ export default function CalendarPage() {
                   };
                   setColor(colorMap[cat] || '#3b82f6');
                 }}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="Client">Client Work</option>
-                <option value="Research">Research & Thesis</option>
-                <option value="Career">Career & DSA</option>
-                <option value="Personal">Personal</option>
-              </select>
+                options={[
+                  { value: 'Client', label: 'Client Work' },
+                  { value: 'Research', label: 'Research & Thesis' },
+                  { value: 'Career', label: 'Career & DSA' },
+                  { value: 'Personal', label: 'Personal' },
+                ]}
+              />
             </div>
 
             <div>
@@ -1030,12 +1028,10 @@ export default function CalendarPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Location
             </label>
-            <input
-              type="text"
+            <Input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Add location or Google Meet link"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
@@ -1048,27 +1044,26 @@ export default function CalendarPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add notes or agenda..."
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => {
                 setIsFormModalOpen(false);
                 setEditingEvent(null);
               }}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
               {editingEvent ? 'Update Event' : 'Save Event'}
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>

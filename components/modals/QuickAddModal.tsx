@@ -6,8 +6,13 @@ import { useTaskStore } from '../../store/useTaskStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { useNotesStore } from '../../store/useNotesStore';
 import { useProjectStore } from '../../store/useProjectStore';
-import { Priority, Category, TaskStatus, RecurringOption } from '../../types';
+import { Priority, Category } from '../../types';
 import { CheckSquare, Calendar, FileText, Sparkles } from 'lucide-react';
+import { Input } from '../ui/input';
+import { Select } from '../ui/select';
+import { DatePicker } from '../ui/date-picker';
+import { Button } from '../ui/button';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 
 interface QuickAddModalProps {
   isOpen: boolean;
@@ -116,40 +121,23 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Quick Capture & Create" maxWidth="lg">
-      <div className="flex items-center gap-2 mb-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
-        <button
-          onClick={() => setTab('task')}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-            tab === 'task'
-              ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
-              : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-          }`}
-        >
-          <CheckSquare className="w-3.5 h-3.5" />
-          Task
-        </button>
-        <button
-          onClick={() => setTab('event')}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-            tab === 'event'
-              ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
-              : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-          }`}
-        >
-          <Calendar className="w-3.5 h-3.5" />
-          Calendar Event
-        </button>
-        <button
-          onClick={() => setTab('note')}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-            tab === 'note'
-              ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
-              : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-          }`}
-        >
-          <FileText className="w-3.5 h-3.5" />
-          Quick Note
-        </button>
+      <div className="mb-4">
+        <Tabs value={tab} onValueChange={(val) => setTab(val as any)}>
+          <TabsList className="w-full">
+            <TabsTrigger value="task" className="flex-1">
+              <CheckSquare className="w-3.5 h-3.5 mr-1" />
+              Task
+            </TabsTrigger>
+            <TabsTrigger value="event" className="flex-1">
+              <Calendar className="w-3.5 h-3.5 mr-1" />
+              Calendar Event
+            </TabsTrigger>
+            <TabsTrigger value="note" className="flex-1">
+              <FileText className="w-3.5 h-3.5 mr-1" />
+              Quick Note
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {tab === 'task' && (
@@ -158,13 +146,11 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Task Title *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
               placeholder="e.g. Refactor checkout API endpoint"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -177,7 +163,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               value={taskDesc}
               onChange={(e) => setTaskDesc(e.target.value)}
               placeholder="Add additional details or subtasks..."
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50/70 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 text-xs font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] resize-none transition-all shadow-2xs"
             />
           </div>
 
@@ -186,34 +172,34 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Category
               </label>
-              <select
+              <Select
                 value={taskCategory}
-                onChange={(e) => setTaskCategory(e.target.value as Category)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="Client">Client</option>
-                <option value="Research">Research</option>
-                <option value="Career">Career</option>
-                <option value="Personal">Personal</option>
-                <option value="College">College</option>
-                <option value="Habit">Habit</option>
-              </select>
+                onValueChange={(val) => setTaskCategory(val as Category)}
+                options={[
+                  { value: 'Client', label: 'Client' },
+                  { value: 'Research', label: 'Research' },
+                  { value: 'Career', label: 'Career' },
+                  { value: 'Personal', label: 'Personal' },
+                  { value: 'College', label: 'College' },
+                  { value: 'Habit', label: 'Habit' },
+                ]}
+              />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Priority
               </label>
-              <select
+              <Select
                 value={taskPriority}
-                onChange={(e) => setTaskPriority(e.target.value as Priority)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+                onValueChange={(val) => setTaskPriority(val as Priority)}
+                options={[
+                  { value: 'low', label: 'Low' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'high', label: 'High' },
+                  { value: 'urgent', label: 'Urgent' },
+                ]}
+              />
             </div>
           </div>
 
@@ -222,35 +208,33 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               <Calendar className="w-3.5 h-3.5 text-blue-500" />
               Link to Calendar Event (Optional - Next 7 Days)
             </label>
-            <select
+            <Select
               value={taskEventId}
-              onChange={(e) => setTaskEventId(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white"
-            >
-              <option value="">-- No Calendar Event (Standalone Task) --</option>
-              {(() => {
-                const now = new Date();
-                now.setHours(0, 0, 0, 0);
-                const limitDate = new Date(now);
-                limitDate.setDate(now.getDate() + 7);
-                const limitStr = limitDate.toISOString().split('T')[0];
-                const todayIso = new Date().toISOString().split('T')[0];
+              onValueChange={setTaskEventId}
+              options={[
+                { value: '', label: '-- No Calendar Event (Standalone Task) --' },
+                ...(() => {
+                  const now = new Date();
+                  now.setHours(0, 0, 0, 0);
+                  const limitDate = new Date(now);
+                  limitDate.setDate(now.getDate() + 7);
+                  const limitStr = limitDate.toISOString().split('T')[0];
+                  const todayIso = new Date().toISOString().split('T')[0];
 
-                const upcoming = events
-                  .filter((e) => e.startDate >= todayIso && e.startDate <= limitStr)
-                  .sort((a, b) => {
-                    const dComp = a.startDate.localeCompare(b.startDate);
-                    if (dComp !== 0) return dComp;
-                    return (a.startTime || '').localeCompare(b.startTime || '');
-                  });
-
-                return upcoming.map((evt) => (
-                  <option key={evt.id} value={evt.id}>
-                    📅 {evt.startDate} {evt.startTime ? `@ ${evt.startTime}` : ''} — {evt.title}
-                  </option>
-                ));
-              })()}
-            </select>
+                  return events
+                    .filter((e) => e.startDate >= todayIso && e.startDate <= limitStr)
+                    .sort((a, b) => {
+                      const dComp = a.startDate.localeCompare(b.startDate);
+                      if (dComp !== 0) return dComp;
+                      return (a.startTime || '').localeCompare(b.startTime || '');
+                    })
+                    .map((evt) => ({
+                      value: evt.id,
+                      label: `📅 ${evt.startDate} ${evt.startTime ? `@ ${evt.startTime}` : ''} — ${evt.title}`,
+                    }));
+                })(),
+              ]}
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
@@ -258,11 +242,9 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Due Date
               </label>
-              <input
-                type="date"
+              <DatePicker
                 value={taskDueDate}
-                onChange={(e) => setTaskDueDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                onChange={setTaskDueDate}
               />
             </div>
 
@@ -270,11 +252,10 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Scheduled Time
               </label>
-              <input
+              <Input
                 type="time"
                 value={taskTime}
                 onChange={(e) => setTaskTime(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
 
@@ -282,13 +263,12 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Est. Hours
               </label>
-              <input
+              <Input
                 type="number"
                 min="0.5"
                 step="0.5"
                 value={taskEstHours}
                 onChange={(e) => setTaskEstHours(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
           </div>
@@ -298,18 +278,14 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Link Client Project
               </label>
-              <select
+              <Select
                 value={taskProjectId}
-                onChange={(e) => setTaskProjectId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="">-- Select Project --</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setTaskProjectId}
+                options={[
+                  { value: '', label: '-- Select Project --' },
+                  ...projects.map((p) => ({ value: p.id, label: p.name })),
+                ]}
+              />
             </div>
           )}
 
@@ -319,28 +295,21 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               id="mit-checkbox"
               checked={taskMit}
               onChange={(e) => setTaskMit(e.target.checked)}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
             />
-            <label htmlFor="mit-checkbox" className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+            <label htmlFor="mit-checkbox" className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1 cursor-pointer">
               Mark as Top 3 MIT (Most Important Task for Today)
               <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
             </label>
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
+            <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary px-5 py-2 rounded-xl text-xs"
-            >
+            </Button>
+            <Button type="submit">
               Add Task
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -351,13 +320,11 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Event Title *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={eventTitle}
               onChange={(e) => setEventTitle(e.target.value)}
               placeholder="e.g. Sanab Tech Sync"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white"
             />
           </div>
 
@@ -365,11 +332,9 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Date
             </label>
-            <input
-              type="date"
+            <DatePicker
               value={eventDate}
-              onChange={(e) => setEventDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+              onChange={setEventDate}
             />
           </div>
 
@@ -378,40 +343,31 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Start Time
               </label>
-              <input
+              <Input
                 type="time"
                 value={eventStart}
                 onChange={(e) => setEventStart(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 End Time
               </label>
-              <input
+              <Input
                 type="time"
                 value={eventEnd}
                 onChange={(e) => setEventEnd(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
+            <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary px-5 py-2 rounded-xl text-xs"
-            >
+            </Button>
+            <Button type="submit">
               Add Event
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -422,13 +378,11 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Note Title *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={noteTitle}
               onChange={(e) => setNoteTitle(e.target.value)}
               placeholder="e.g. Thesis Sparse Attention Key Points"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white"
             />
           </div>
 
@@ -441,24 +395,17 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               value={noteContent}
               onChange={(e) => setNoteContent(e.target.value)}
               placeholder="Write your note content here..."
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50/70 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 text-xs font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] resize-none transition-all shadow-2xs"
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
+            <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary px-5 py-2 rounded-xl text-xs"
-            >
+            </Button>
+            <Button type="submit">
               Save Note
-            </button>
+            </Button>
           </div>
         </form>
       )}

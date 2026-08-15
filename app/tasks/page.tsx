@@ -28,6 +28,10 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { DatePicker } from '../../components/ui/date-picker';
+import { Button } from '../../components/ui/button';
 import { db } from '../../database/dexie';
 
 import { TaskSkeleton } from '../../components/ui/Skeleton';
@@ -321,15 +325,12 @@ export default function TasksPage() {
 
               {/* Custom Date Picker */}
               <div className="flex items-center gap-1.5 ml-1">
-                <input
-                  type="date"
+                <DatePicker
                   value={activeDateStr || todayStr}
-                  onChange={(e) => {
-                    const selected = e.target.value;
+                  onChange={(selected) => {
                     setCustomSelectedDate(selected);
                     setDateFilter(selected === todayStr ? 'today' : 'custom');
                   }}
-                  className="px-2.5 py-1 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white cursor-pointer"
                 />
               </div>
             </div>
@@ -350,52 +351,48 @@ export default function TasksPage() {
 
           {/* Filters and Search Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
-            <div className="relative w-full">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <Input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
 
-            <select
+            <Select
               value={selectedCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
-            >
-              <option value="all">All Categories</option>
-              <option value="Client Work">Client Work</option>
-              <option value="Research">Research</option>
-              <option value="Career">Career</option>
-              <option value="Personal">Personal</option>
-              <option value="Habit">Habit</option>
-            </select>
+              onValueChange={(val) => setFilterCategory(val)}
+              options={[
+                { value: 'all', label: 'All Categories' },
+                { value: 'Client Work', label: 'Client Work' },
+                { value: 'Research', label: 'Research' },
+                { value: 'Career', label: 'Career' },
+                { value: 'Personal', label: 'Personal' },
+                { value: 'Habit', label: 'Habit' },
+              ]}
+            />
 
-            <select
+            <Select
               value={selectedPriority}
-              onChange={(e) => setFilterPriority(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
-            >
-              <option value="all">All Priorities</option>
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
+              onValueChange={(val) => setFilterPriority(val)}
+              options={[
+                { value: 'all', label: 'All Priorities' },
+                { value: 'urgent', label: 'Urgent' },
+                { value: 'high', label: 'High' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'low', label: 'Low' },
+              ]}
+            />
 
-            <select
+            <Select
               value={selectedStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
-            >
-              <option value="all">All Statuses</option>
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
+              onValueChange={(val) => setFilterStatus(val)}
+              options={[
+                { value: 'all', label: 'All Statuses' },
+                { value: 'todo', label: 'To Do' },
+                { value: 'in_progress', label: 'In Progress' },
+                { value: 'completed', label: 'Completed' },
+              ]}
+            />
           </div>
         </div>
 
@@ -660,12 +657,10 @@ export default function TasksPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Title *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
@@ -677,7 +672,7 @@ export default function TasksPage() {
               rows={3}
               value={formDesc}
               onChange={(e) => setFormDesc(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -686,33 +681,33 @@ export default function TasksPage() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Category
               </label>
-              <select
+              <Select
                 value={formCategory}
-                onChange={(e) => setFormCategory(e.target.value as Category)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="Client">Client</option>
-                <option value="Research">Research</option>
-                <option value="Career">Career</option>
-                <option value="Personal">Personal</option>
-                <option value="College">College</option>
-                <option value="Habit">Habit</option>
-              </select>
+                onValueChange={(val) => setFormCategory(val as Category)}
+                options={[
+                  { value: 'Client', label: 'Client' },
+                  { value: 'Research', label: 'Research' },
+                  { value: 'Career', label: 'Career' },
+                  { value: 'Personal', label: 'Personal' },
+                  { value: 'College', label: 'College' },
+                  { value: 'Habit', label: 'Habit' },
+                ]}
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Priority
               </label>
-              <select
+              <Select
                 value={formPriority}
-                onChange={(e) => setFormPriority(e.target.value as Priority)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+                onValueChange={(val) => setFormPriority(val as Priority)}
+                options={[
+                  { value: 'low', label: 'Low' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'high', label: 'High' },
+                  { value: 'urgent', label: 'Urgent' },
+                ]}
+              />
             </div>
           </div>
 
@@ -721,35 +716,34 @@ export default function TasksPage() {
               <Calendar className="w-3.5 h-3.5 text-blue-500" />
               Link to Calendar Event (Optional - Next 7 Days)
             </label>
-            <select
+            <Select
               value={formEventId}
-              onChange={(e) => setFormEventId(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white"
-            >
-              <option value="">-- No Calendar Event (Standalone Task) --</option>
-              {(() => {
-                const now = new Date();
-                now.setHours(0, 0, 0, 0);
-                const limitDate = new Date(now);
-                limitDate.setDate(now.getDate() + 7);
-                const limitStr = limitDate.toISOString().split('T')[0];
-                const todayIso = new Date().toISOString().split('T')[0];
+              onValueChange={(val) => setFormEventId(val)}
+              options={[
+                { value: '', label: '-- No Calendar Event (Standalone Task) --' },
+                ...(() => {
+                  const now = new Date();
+                  now.setHours(0, 0, 0, 0);
+                  const limitDate = new Date(now);
+                  limitDate.setDate(now.getDate() + 7);
+                  const limitStr = limitDate.toISOString().split('T')[0];
+                  const todayIso = new Date().toISOString().split('T')[0];
 
-                const upcoming = events
-                  .filter((e) => e.startDate >= todayIso && e.startDate <= limitStr)
-                  .sort((a, b) => {
-                    const dComp = a.startDate.localeCompare(b.startDate);
-                    if (dComp !== 0) return dComp;
-                    return (a.startTime || '').localeCompare(b.startTime || '');
-                  });
+                  const upcoming = events
+                    .filter((e) => e.startDate >= todayIso && e.startDate <= limitStr)
+                    .sort((a, b) => {
+                      const dComp = a.startDate.localeCompare(b.startDate);
+                      if (dComp !== 0) return dComp;
+                      return (a.startTime || '').localeCompare(b.startTime || '');
+                    });
 
-                return upcoming.map((evt) => (
-                  <option key={evt.id} value={evt.id}>
-                    📅 {evt.startDate} {evt.startTime ? `@ ${evt.startTime}` : ''} — {evt.title}
-                  </option>
-                ));
-              })()}
-            </select>
+                  return upcoming.map((evt) => ({
+                    value: evt.id,
+                    label: `📅 ${evt.startDate} ${evt.startTime ? `@ ${evt.startTime}` : ''} — ${evt.title}`,
+                  }));
+                })(),
+              ]}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -757,43 +751,40 @@ export default function TasksPage() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Status
               </label>
-              <select
+              <Select
                 value={formStatus}
-                onChange={(e) => setFormStatus(e.target.value as TaskStatus)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="todo">To Do</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
+                onValueChange={(val) => setFormStatus(val as TaskStatus)}
+                options={[
+                  { value: 'todo', label: 'To Do' },
+                  { value: 'in_progress', label: 'In Progress' },
+                  { value: 'completed', label: 'Completed' },
+                ]}
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Due Date
               </label>
-              <input
-                type="date"
+              <DatePicker
                 value={formDueDate}
-                onChange={(e) => setFormDueDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                onChange={(val) => setFormDueDate(val)}
               />
             </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
-              {editingTask ? 'Update Task' : 'Save Task'}
-            </button>
+              {editingTask ? 'Save Changes' : 'Create Task'}
+            </Button>
           </div>
         </form>
       </Modal>

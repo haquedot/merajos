@@ -44,6 +44,9 @@ import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 import { BRAND } from '../../lib/branding';
 import { ModuleKey } from '../../types';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { Input } from '../../components/ui/input';
+import { DatePicker } from '../../components/ui/date-picker';
+import { Button } from '../../components/ui/button';
 
 const MODULE_OPTIONS: { key: ModuleKey; label: string; description: string; alwaysOn?: boolean }[] = [
   { key: 'tasks', label: 'Tasks', description: 'Daily task management & priorities', alwaysOn: true },
@@ -407,12 +410,12 @@ export default function SettingsPage() {
           <label className="text-xs font-extrabold text-gray-700 dark:text-gray-300 block">
             Notification Recipient Email Address
           </label>
-          <input
+          <Input
             type="email"
             readOnly
             disabled
             value={session?.email || settings.notificationEmail || 'No Google Account Connected'}
-            className="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 cursor-not-allowed select-none opacity-90 font-medium truncate"
+            className="cursor-not-allowed select-none opacity-90 truncate"
           />
           <p className="text-[11px] text-gray-400">
             Automatically synchronized with your signed-in Google Account (non-editable).
@@ -440,20 +443,21 @@ export default function SettingsPage() {
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-              <input
-                type="date"
-                value={backfillDate}
-                onChange={(e) => setBackfillDate(e.target.value)}
-                className="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white"
-              />
-              <button
+              <div className="w-36">
+                <DatePicker
+                  value={backfillDate}
+                  onChange={(val) => setBackfillDate(val)}
+                />
+              </div>
+              <Button
                 onClick={() => handleRunBackfill(backfillDate)}
                 disabled={isBackfilling}
-                className="btn-primary px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                size="sm"
+                className="shrink-0 flex items-center gap-1.5"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isBackfilling ? 'animate-spin' : ''}`} />
                 <span>{isBackfilling ? 'Processing...' : 'Run / Backfill'}</span>
-              </button>
+              </Button>
             </div>
           </div>
 

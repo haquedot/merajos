@@ -17,6 +17,8 @@ import {
 import { useWeeklyStore } from '../../store/useWeeklyStore';
 import { Badge } from '../../components/ui/Badge';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { Input } from '../../components/ui/input';
+import { Button } from '../../components/ui/button';
 
 import { DashboardSkeleton } from '../../components/ui/Skeleton';
 
@@ -116,12 +118,11 @@ export default function WeeklyPlannerPage() {
                 <span className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0">
                   {idx + 1}
                 </span>
-                <input
-                  type="text"
+                <Input
                   value={item}
                   onChange={(e) => handlePriorityChange(idx, e.target.value)}
                   placeholder={`Objective ${idx + 1}...`}
-                  className="w-full bg-transparent text-xs font-semibold text-gray-800 dark:text-gray-200 focus:outline-hidden"
+                  className="flex-1 min-w-0"
                 />
               </div>
             ))}
@@ -185,19 +186,20 @@ export default function WeeklyPlannerPage() {
             }}
             className="flex items-center gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-800"
           >
-            <input
-              type="text"
+            <Input
               value={newResearchGoal}
               onChange={(e) => setNewResearchGoal(e.target.value)}
               placeholder="Add goal..."
-              className="flex-1 min-w-0 px-2.5 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+              className="flex-1 min-w-0"
             />
-            <button
+            <Button
               type="submit"
-              className="p-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 shrink-0"
+              size="sm"
+              variant="secondary"
+              className="shrink-0 p-2"
             >
               <Plus className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </form>
         </div>
 
@@ -238,19 +240,20 @@ export default function WeeklyPlannerPage() {
             }}
             className="flex items-center gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-800"
           >
-            <input
-              type="text"
+            <Input
               value={newCareerGoal}
               onChange={(e) => setNewCareerGoal(e.target.value)}
               placeholder="Add goal..."
-              className="flex-1 min-w-0 px-2.5 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+              className="flex-1 min-w-0"
             />
-            <button
+            <Button
               type="submit"
-              className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0"
+              size="sm"
+              variant="secondary"
+              className="shrink-0 p-2"
             >
               <Plus className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </form>
         </div>
 
@@ -291,19 +294,20 @@ export default function WeeklyPlannerPage() {
             }}
             className="flex items-center gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-800"
           >
-            <input
-              type="text"
+            <Input
               value={newClientGoal}
               onChange={(e) => setNewClientGoal(e.target.value)}
               placeholder="Add goal..."
-              className="flex-1 min-w-0 px-2.5 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+              className="flex-1 min-w-0"
             />
-            <button
+            <Button
               type="submit"
-              className="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 shrink-0"
+              size="sm"
+              variant="secondary"
+              className="shrink-0 p-2"
             >
               <Plus className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </form>
         </div>
 
@@ -344,19 +348,20 @@ export default function WeeklyPlannerPage() {
             }}
             className="flex items-center gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-800"
           >
-            <input
-              type="text"
+            <Input
               value={newPersonalGoal}
               onChange={(e) => setNewPersonalGoal(e.target.value)}
               placeholder="Add goal..."
-              className="flex-1 min-w-0 px-2.5 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+              className="flex-1 min-w-0"
             />
-            <button
+            <Button
               type="submit"
-              className="p-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shrink-0"
+              size="sm"
+              variant="secondary"
+              className="shrink-0 p-2"
             >
               <Plus className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </form>
         </div>
       </div>
@@ -435,13 +440,13 @@ export default function WeeklyPlannerPage() {
               onChange={(e) => setScore(Number(e.target.value))}
               className="w-full xs:w-32 sm:w-40 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
-            <input
+            <Input
               type="number"
               min="0"
               max="100"
               value={score}
               onChange={(e) => setScore(Math.min(100, Math.max(0, Number(e.target.value))))}
-              className="w-16 px-2.5 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-center text-gray-900 dark:text-white shrink-0"
+              className="w-16 text-center shrink-0"
             />
           </div>
         </div>

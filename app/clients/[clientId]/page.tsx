@@ -39,6 +39,10 @@ import { CircularProgress } from '../../../components/ui/CircularProgress';
 import { Modal } from '../../../components/ui/Modal';
 import { ConfirmDeleteModal } from '../../../components/modals/ConfirmDeleteModal';
 import { PageHeader } from '../../../components/ui/PageHeader';
+import { Input } from '../../../components/ui/input';
+import { Select } from '../../../components/ui/select';
+import { DatePicker } from '../../../components/ui/date-picker';
+import { Button } from '../../../components/ui/button';
 import { getProjectTheme } from '../../../lib/projectTheme';
 
 export default function ClientDetailPage() {
@@ -416,29 +420,28 @@ export default function ClientDetailPage() {
 
             {/* Add Feature Form */}
             <form onSubmit={handleAddFeatureSubmit} className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={newFeatureTitle}
-                onChange={(e) => setNewFeatureTitle(e.target.value)}
-                placeholder="Enter new feature requirement..."
-                className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              />
-              <select
-                value={newFeaturePriority}
-                onChange={(e) => setNewFeaturePriority(e.target.value as any)}
-                className="px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white font-semibold"
-              >
-                <option value="low">Low Priority</option>
-                <option value="medium">Medium Priority</option>
-                <option value="high">High Priority</option>
-              </select>
-              <button
-                type="submit"
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 text-white transition-colors ${theme.bg} ${theme.bgHover}`}
-              >
+              <div className="flex-1">
+                <Input
+                  value={newFeatureTitle}
+                  onChange={(e) => setNewFeatureTitle(e.target.value)}
+                  placeholder="Enter new feature requirement..."
+                />
+              </div>
+              <div className="w-full sm:w-44">
+                <Select
+                  value={newFeaturePriority}
+                  onValueChange={(val) => setNewFeaturePriority(val as any)}
+                  options={[
+                    { value: 'low', label: 'Low Priority' },
+                    { value: 'medium', label: 'Medium Priority' },
+                    { value: 'high', label: 'High Priority' },
+                  ]}
+                />
+              </div>
+              <Button type="submit" className="shrink-0 flex items-center gap-1">
                 <Plus className="w-4 h-4" />
                 <span>Add Feature</span>
-              </button>
+              </Button>
             </form>
 
             {/* Feature Cards List */}
@@ -547,15 +550,17 @@ export default function ClientDetailPage() {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800">
-                      <select
-                        value={bug.status}
-                        onChange={(e) => updateBugStatus(project.id, bug.id, e.target.value as any)}
-                        className="px-2.5 py-1 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300"
-                      >
-                        <option value="open">Open</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="resolved">Resolved</option>
-                      </select>
+                      <div className="w-28">
+                        <Select
+                          value={bug.status}
+                          onValueChange={(val) => updateBugStatus(project.id, bug.id, val as any)}
+                          options={[
+                            { value: 'open', label: 'Open' },
+                            { value: 'in_progress', label: 'In Progress' },
+                            { value: 'resolved', label: 'Resolved' },
+                          ]}
+                        />
+                      </div>
 
                       <button
                         onClick={() => handleCopyBugToTask(bug)}
@@ -697,37 +702,35 @@ export default function ClientDetailPage() {
         <form onSubmit={handleAddBugSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Bug Title *</label>
-            <input
-              type="text"
+            <Input
               required
               value={newBugTitle}
               onChange={(e) => setNewBugTitle(e.target.value)}
               placeholder="e.g. Payment Gateway timeout on checkout"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
           <div>
             <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Severity Level</label>
-            <select
+            <Select
               value={newBugSeverity}
-              onChange={(e) => setNewBugSeverity(e.target.value as any)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-            >
-              <option value="low">Low Severity</option>
-              <option value="medium">Medium Severity</option>
-              <option value="high">High Severity</option>
-              <option value="critical">Critical (Blocking)</option>
-            </select>
+              onValueChange={(val) => setNewBugSeverity(val as any)}
+              options={[
+                { value: 'low', label: 'Low Severity' },
+                { value: 'medium', label: 'Medium Severity' },
+                { value: 'high', label: 'High Severity' },
+                { value: 'critical', label: 'Critical (Blocking)' },
+              ]}
+            />
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
-            <button type="button" onClick={() => setIsBugModalOpen(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+            <Button type="button" variant="ghost" onClick={() => setIsBugModalOpen(false)}>
               Cancel
-            </button>
-            <button type="submit" className={`px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer ${theme.bg} ${theme.bgHover}`}>
+            </Button>
+            <Button type="submit">
               Submit Bug
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>
@@ -742,45 +745,40 @@ export default function ClientDetailPage() {
         <form onSubmit={handleAddInvoiceSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Invoice # *</label>
-            <input
-              type="text"
+            <Input
               required
               value={newInvoiceNumber}
               onChange={(e) => setNewInvoiceNumber(e.target.value)}
               placeholder="INV-2026-001"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
           <div>
             <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Amount ($) *</label>
-            <input
+            <Input
               type="number"
               required
               value={newInvoiceAmount}
               onChange={(e) => setNewInvoiceAmount(e.target.value ? Number(e.target.value) : '')}
               placeholder="1200"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
           <div>
             <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Due Date</label>
-            <input
-              type="date"
+            <DatePicker
               value={newInvoiceDueDate}
-              onChange={(e) => setNewInvoiceDueDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+              onChange={(val) => setNewInvoiceDueDate(val)}
             />
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
-            <button type="button" onClick={() => setIsInvoiceModalOpen(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+            <Button type="button" variant="ghost" onClick={() => setIsInvoiceModalOpen(false)}>
               Cancel
-            </button>
-            <button type="submit" className={`px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer ${theme.bg} ${theme.bgHover}`}>
+            </Button>
+            <Button type="submit">
               Create Invoice
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>

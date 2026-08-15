@@ -22,6 +22,9 @@ import { Note } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { Button } from '../../components/ui/button';
 
 import { NotesSkeleton } from '../../components/ui/Skeleton';
 
@@ -147,28 +150,23 @@ export default function NotesPage() {
 
           {/* Search & Filter */}
           <div className="space-y-2">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search notes..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              />
-            </div>
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search notes..."
+            />
 
-            <select
+            <Select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
-            >
-              <option value="all">All Folders</option>
-              <option value="Career">Career</option>
-              <option value="Research">Research</option>
-              <option value="Client">Client</option>
-              <option value="Personal">Personal</option>
-            </select>
+              onValueChange={(val) => setSelectedCategory(val)}
+              options={[
+                { value: 'all', label: 'All Folders' },
+                { value: 'Career', label: 'Career' },
+                { value: 'Research', label: 'Research' },
+                { value: 'Client', label: 'Client' },
+                { value: 'Personal', label: 'Personal' },
+              ]}
+            />
           </div>
 
           {/* Note Cards List */}

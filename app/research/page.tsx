@@ -21,6 +21,9 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Badge } from '../../components/ui/Badge';
 import { GridCardsSkeleton } from '../../components/ui/Skeleton';
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { Button } from '../../components/ui/button';
 
 // ─── New Project Modal ────────────────────────────────────────────────────────
 
@@ -74,13 +77,12 @@ function NewProjectModal({
           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1.5">
             Project Title *
           </label>
-          <input
+          <Input
             required
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Federated Learning in Healthcare"
-            className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -89,27 +91,26 @@ function NewProjectModal({
             <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1.5">
               Field / Domain
             </label>
-            <input
+            <Input
               value={field}
               onChange={(e) => setField(e.target.value)}
               placeholder="e.g. Machine Learning"
-              className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1.5">
               Status
             </label>
-            <select
+            <Select
               value={status}
-              onChange={(e) => setStatus(e.target.value as ResearchStatus)}
-              className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
-              <option value="archived">Archived</option>
-            </select>
+              onValueChange={(val) => setStatus(val as ResearchStatus)}
+              options={[
+                { value: 'active', label: 'Active' },
+                { value: 'paused', label: 'Paused' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'archived', label: 'Archived' },
+              ]}
+            />
           </div>
         </div>
 
@@ -122,7 +123,7 @@ function NewProjectModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief description of this research project..."
-            className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] resize-none"
           />
         </div>
 
@@ -136,7 +137,7 @@ function NewProjectModal({
                 key={c}
                 type="button"
                 onClick={() => setColor(c)}
-                className={`w-7 h-7 rounded-full border-2 transition-all ${color === c ? 'border-gray-900 dark:border-white scale-110' : 'border-transparent'}`}
+                className={`w-7 h-7 rounded-full border-2 transition-all cursor-pointer ${color === c ? 'border-gray-900 dark:border-white scale-110' : 'border-transparent'}`}
                 style={{ backgroundColor: c }}
               />
             ))}
@@ -144,16 +145,16 @@ function NewProjectModal({
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             Cancel
-          </button>
-          <button type="submit" className="btn-primary px-5 py-2 rounded-xl text-xs">
+          </Button>
+          <Button type="submit">
             {editProject ? 'Save Changes' : 'Create Project'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -320,13 +321,13 @@ export default function ResearchPage() {
         badgeVariant="purple"
         subtitle={`${activeCount} active · Manage your research, literature, and writing progress`}
         actions={
-          <button
+          <Button
             onClick={() => { setEditProject(null); setIsModalOpen(true); }}
-            className="btn-primary px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0"
+            className="flex items-center gap-1.5 shrink-0"
           >
             <Plus className="w-4 h-4" />
             New Project
-          </button>
+          </Button>
         }
       />
 
@@ -341,12 +342,12 @@ export default function ResearchPage() {
               Create your first research project to start managing papers, sections, and writing progress.
             </p>
           </div>
-          <button
+          <Button
             onClick={() => setIsModalOpen(true)}
-            className="btn-primary px-5 py-2.5 rounded-xl text-sm flex items-center gap-2"
+            className="flex items-center gap-2"
           >
             <Plus className="w-4 h-4" /> Create First Project
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

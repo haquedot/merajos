@@ -27,6 +27,9 @@ import { SubjectTopic } from '../../../types';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { PageHeader } from '../../../components/ui/PageHeader';
+import { Input } from '../../../components/ui/input';
+import { Select } from '../../../components/ui/select';
+import { Button } from '../../../components/ui/button';
 import { AddTopicModal } from '../../../components/career/AddTopicModal';
 import { ConfirmDeleteModal } from '../../../components/modals/ConfirmDeleteModal';
 import { PRESET_SUBJECT_PLANS } from '../../../lib/careerPresets';
@@ -378,19 +381,21 @@ export default function SubjectReaderPage({ params }: PageProps) {
 
                 <div className="flex items-center gap-2 flex-wrap shrink-0 w-full sm:w-auto justify-between sm:justify-end">
                   {/* Status Selector */}
-                  <select
-                    value={currentTopic.status}
-                    onChange={(e) =>
-                      updateSubjectTopic(plan.id, currentTopic.id, {
-                        status: e.target.value as any,
-                      })
-                    }
-                    className="px-2.5 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white cursor-pointer"
-                  >
-                    <option value="todo">Todo</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="mastered">Mastered</option>
-                  </select>
+                  <div className="w-32">
+                    <Select
+                      value={currentTopic.status}
+                      onValueChange={(val) =>
+                        updateSubjectTopic(plan.id, currentTopic.id, {
+                          status: val as any,
+                        })
+                      }
+                      options={[
+                        { value: 'todo', label: 'Todo' },
+                        { value: 'in_progress', label: 'In Progress' },
+                        { value: 'mastered', label: 'Mastered' },
+                      ]}
+                    />
+                  </div>
 
                   <div className="flex items-center gap-1.5">
                     <button
@@ -551,12 +556,10 @@ export default function SubjectReaderPage({ params }: PageProps) {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Topic Title *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
@@ -564,15 +567,15 @@ export default function SubjectReaderPage({ params }: PageProps) {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Difficulty
             </label>
-            <select
+            <Select
               value={editDifficulty}
-              onChange={(e) => setEditDifficulty(e.target.value as any)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-            >
-              <option value="Beginner">Beginner</option>
-              <option value="Intermediate">Intermediate</option>
-              <option value="Advanced">Advanced</option>
-            </select>
+              onValueChange={(val) => setEditDifficulty(val as any)}
+              options={[
+                { value: 'Beginner', label: 'Beginner' },
+                { value: 'Intermediate', label: 'Intermediate' },
+                { value: 'Advanced', label: 'Advanced' },
+              ]}
+            />
           </div>
 
           <div>
@@ -583,7 +586,7 @@ export default function SubjectReaderPage({ params }: PageProps) {
               rows={3}
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -595,21 +598,21 @@ export default function SubjectReaderPage({ params }: PageProps) {
               rows={3}
               value={editNotes}
               onChange={(e) => setEditNotes(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setIsEditTopicModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400"
             >
               Cancel
-            </button>
-            <button type="submit" className="btn-primary px-5 py-2 rounded-xl text-xs font-bold">
+            </Button>
+            <Button type="submit">
               Update Topic
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>
