@@ -32,6 +32,10 @@ import { JobApplication, JobStatus, DSATopic, InterviewTopic } from '../../types
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { DatePicker } from '../../components/ui/date-picker';
+import { Button } from '../../components/ui/button';
 import { GridCardsSkeleton } from '../../components/ui/Skeleton';
 import { SubjectPlanCard } from '../../components/career/SubjectPlanCard';
 import { AddSubjectModal } from '../../components/career/AddSubjectModal';
@@ -403,16 +407,18 @@ export default function CareerPage() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
-                    <select
-                      value={subjectCategoryFilter}
-                      onChange={(e) => setSubjectCategoryFilter(e.target.value)}
-                      className="px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
-                    >
-                      <option value="all">All Categories</option>
-                      <option value="Web Development">Web Development</option>
-                      <option value="System Architecture">System Architecture</option>
-                      <option value="CS Core">CS Fundamentals</option>
-                    </select>
+                    <div className="w-40">
+                      <Select
+                        value={subjectCategoryFilter}
+                        onValueChange={(val) => setSubjectCategoryFilter(val)}
+                        options={[
+                          { value: 'all', label: 'All Categories' },
+                          { value: 'Web Development', label: 'Web Development' },
+                          { value: 'System Architecture', label: 'System Architecture' },
+                          { value: 'CS Core', label: 'CS Fundamentals' },
+                        ]}
+                      />
+                    </div>
 
                     <button
                       onClick={() => setIsSubjectModalOpen(true)}
@@ -864,18 +870,20 @@ export default function CareerPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <select
-                    value={jobStatusFilter}
-                    onChange={(e) => setJobStatusFilter(e.target.value)}
-                    className="px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
-                  >
-                    <option value="all">All Pipeline Stages</option>
-                    <option value="Applied">Applied</option>
-                    <option value="OA">Online Assessment (OA)</option>
-                    <option value="Interview">Interview</option>
-                    <option value="Offer">Offer</option>
-                    <option value="Rejected">Rejected</option>
-                  </select>
+                  <div className="w-44">
+                    <Select
+                      value={jobStatusFilter}
+                      onValueChange={(val) => setJobStatusFilter(val)}
+                      options={[
+                        { value: 'all', label: 'All Pipeline Stages' },
+                        { value: 'Applied', label: 'Applied' },
+                        { value: 'OA', label: 'Online Assessment (OA)' },
+                        { value: 'Interview', label: 'Interview' },
+                        { value: 'Offer', label: 'Offer' },
+                        { value: 'Rejected', label: 'Rejected' },
+                      ]}
+                    />
+                  </div>
 
                   <button
                     onClick={handleOpenAddJob}
@@ -926,17 +934,19 @@ export default function CareerPage() {
                           </span>
                         </div>
 
-                        <select
-                          value={job.status}
-                          onChange={(e) => updateJob(job.id, { status: e.target.value as JobStatus })}
-                          className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
-                        >
-                          <option value="Applied">Applied</option>
-                          <option value="OA">OA</option>
-                          <option value="Interview">Interview</option>
-                          <option value="Offer">Offer</option>
-                          <option value="Rejected">Rejected</option>
-                        </select>
+                        <div className="w-28">
+                          <Select
+                            value={job.status}
+                            onValueChange={(val) => updateJob(job.id, { status: val as JobStatus })}
+                            options={[
+                              { value: 'Applied', label: 'Applied' },
+                              { value: 'OA', label: 'OA' },
+                              { value: 'Interview', label: 'Interview' },
+                              { value: 'Offer', label: 'Offer' },
+                              { value: 'Rejected', label: 'Rejected' },
+                            ]}
+                          />
+                        </div>
                       </div>
 
                       <div className="space-y-1 text-xs text-gray-500">
@@ -1000,13 +1010,11 @@ export default function CareerPage() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Company *
               </label>
-              <input
-                type="text"
+              <Input
                 required
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
                 placeholder="Google / Stripe / Linear"
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
 
@@ -1014,13 +1022,11 @@ export default function CareerPage() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Role *
               </label>
-              <input
-                type="text"
+              <Input
                 required
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder="Software Engineer"
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
           </div>
@@ -1030,29 +1036,27 @@ export default function CareerPage() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Pipeline Status
               </label>
-              <select
+              <Select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as JobStatus)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="Applied">Applied</option>
-                <option value="OA">OA</option>
-                <option value="Interview">Interview</option>
-                <option value="Offer">Offer</option>
-                <option value="Rejected">Rejected</option>
-              </select>
+                onValueChange={(val) => setStatus(val as JobStatus)}
+                options={[
+                  { value: 'Applied', label: 'Applied' },
+                  { value: 'OA', label: 'OA' },
+                  { value: 'Interview', label: 'Interview' },
+                  { value: 'Offer', label: 'Offer' },
+                  { value: 'Rejected', label: 'Rejected' },
+                ]}
+              />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Salary Estimate
               </label>
-              <input
-                type="text"
+              <Input
                 value={salary}
                 onChange={(e) => setSalary(e.target.value)}
                 placeholder="$160,000 - $200,000"
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
           </div>
@@ -1066,21 +1070,21 @@ export default function CareerPage() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Referral contact, recruiter name, interview notes..."
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setIsJobModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400"
             >
               Cancel
-            </button>
-            <button type="submit" className="btn-primary px-5 py-2 rounded-xl text-xs font-bold">
+            </Button>
+            <Button type="submit">
               {editingJob ? 'Update Application' : 'Save Application'}
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>
@@ -1109,13 +1113,11 @@ export default function CareerPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Topic Name *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={dsaName}
               onChange={(e) => setDsaName(e.target.value)}
               placeholder="e.g. Dynamic Programming (2D), Heap & Priority Queue"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
@@ -1123,12 +1125,10 @@ export default function CareerPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Category Sheet
             </label>
-            <input
-              type="text"
+            <Input
               value={dsaCategory}
               onChange={(e) => setDsaCategory(e.target.value)}
               placeholder="Striver SDE / NeetCode 150 / LeetCode 75"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
@@ -1137,36 +1137,33 @@ export default function CareerPage() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Easy Target
               </label>
-              <input
+              <Input
                 type="number"
                 min="0"
                 value={dsaEasy}
                 onChange={(e) => setDsaEasy(parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Medium Target
               </label>
-              <input
+              <Input
                 type="number"
                 min="0"
                 value={dsaMed}
                 onChange={(e) => setDsaMed(parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Hard Target
               </label>
-              <input
+              <Input
                 type="number"
                 min="0"
                 value={dsaHard}
                 onChange={(e) => setDsaHard(parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
           </div>
@@ -1175,26 +1172,24 @@ export default function CareerPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Notes
             </label>
-            <input
-              type="text"
+            <Input
               value={dsaNotes}
               onChange={(e) => setDsaNotes(e.target.value)}
               placeholder="Focus area, key algorithms..."
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setIsDSAModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400"
             >
               Cancel
-            </button>
-            <button type="submit" className="btn-primary px-5 py-2 rounded-xl text-xs font-bold">
+            </Button>
+            <Button type="submit">
               {editingDSA ? 'Update Topic' : 'Add DSA Topic'}
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>
@@ -1210,13 +1205,11 @@ export default function CareerPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Category Title *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={interviewCategory}
               onChange={(e) => setInterviewCategory(e.target.value)}
               placeholder="e.g. MongoDB & Indexing / Web Security / System Design"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
@@ -1229,21 +1222,21 @@ export default function CareerPage() {
               value={interviewNotes}
               onChange={(e) => setInterviewNotes(e.target.value)}
               placeholder="Key concepts to review..."
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setIsInterviewModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400"
             >
               Cancel
-            </button>
-            <button type="submit" className="btn-primary px-5 py-2 rounded-xl text-xs font-bold">
+            </Button>
+            <Button type="submit">
               {editingInterview ? 'Update Category' : 'Add Category'}
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>

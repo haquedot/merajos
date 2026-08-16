@@ -3,6 +3,7 @@
 import React from 'react';
 import { Modal } from '../ui/Modal';
 import { AlertTriangle, Trash2 } from 'lucide-react';
+import { Button } from '../ui/button';
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
@@ -44,24 +45,25 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
         </div>
 
         <div className="flex items-center justify-end gap-2.5 pt-2">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="destructive"
             onClick={() => {
               onConfirm();
               onClose();
             }}
-            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+            className="flex items-center gap-1.5"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Delete Permanently</span>
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

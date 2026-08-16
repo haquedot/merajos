@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { useCareerStore } from '../../store/useCareerStore';
+import { Input } from '../ui/input';
+import { Select } from '../ui/select';
+import { Button } from '../ui/button';
 
 interface AddTopicModalProps {
   isOpen: boolean;
@@ -73,13 +76,11 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({ isOpen, subjectId,
           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
             Topic Title *
           </label>
-          <input
-            type="text"
+          <Input
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Microtask Queue & Promises in Node.js"
-            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
           />
         </div>
 
@@ -88,27 +89,25 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({ isOpen, subjectId,
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Difficulty
             </label>
-            <select
+            <Select
               value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as any)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-            >
-              <option value="Beginner">Beginner</option>
-              <option value="Intermediate">Intermediate</option>
-              <option value="Advanced">Advanced</option>
-            </select>
+              onValueChange={(val) => setDifficulty(val as any)}
+              options={[
+                { value: 'Beginner', label: 'Beginner' },
+                { value: 'Intermediate', label: 'Intermediate' },
+                { value: 'Advanced', label: 'Advanced' },
+              ]}
+            />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Resource Links (Title | URL)
             </label>
-            <input
-              type="text"
+            <Input
               value={resourceRaw}
               onChange={(e) => setResourceRaw(e.target.value)}
               placeholder="Docs | https://react.dev"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
         </div>
@@ -122,7 +121,7 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({ isOpen, subjectId,
             value={checklistRaw}
             onChange={(e) => setChecklistRaw(e.target.value)}
             placeholder="Understand event loop execution order&#10;Implement Debounce & Throttle from scratch&#10;Audit LCP & INP metrics"
-            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50/70 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 text-xs font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] resize-none transition-all shadow-2xs"
           />
         </div>
 
@@ -135,21 +134,17 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({ isOpen, subjectId,
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Key formula, code snippet, or interview tip..."
-            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50/70 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 text-xs font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] resize-none transition-all shadow-2xs"
           />
         </div>
 
         <div className="flex justify-end gap-2 pt-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400"
-          >
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
-          </button>
-          <button type="submit" className="btn-primary px-5 py-2 rounded-xl text-xs font-bold">
+          </Button>
+          <Button type="submit">
             Add Topic
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

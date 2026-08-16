@@ -32,6 +32,10 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { DatePicker } from '../../components/ui/date-picker';
+import { Button } from '../../components/ui/button';
 import { getProjectTheme, PROJECT_COLOR_MAP, ProjectColorKey } from '../../lib/projectTheme';
 
 const COLOR_OPTIONS = Object.values(PROJECT_COLOR_MAP);
@@ -460,13 +464,11 @@ export default function ClientsPage() {
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
                 Project Name *
               </label>
-              <input
-                type="text"
+              <Input
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g. Health Platform App"
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
 
@@ -474,12 +476,10 @@ export default function ClientsPage() {
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
                 Client / Company Name
               </label>
-              <input
-                type="text"
+              <Input
                 value={formData.clientName}
                 onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
                 placeholder="e.g. WhatBytes Inc."
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
           </div>
@@ -489,12 +489,11 @@ export default function ClientsPage() {
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
                 Client Email
               </label>
-              <input
+              <Input
                 type="email"
                 value={formData.clientEmail}
                 onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
                 placeholder="client@company.com"
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
 
@@ -502,12 +501,10 @@ export default function ClientsPage() {
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
                 Client Phone
               </label>
-              <input
-                type="text"
+              <Input
                 value={formData.clientPhone}
                 onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
                 placeholder="+1 555 123 4567"
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
           </div>
@@ -521,42 +518,40 @@ export default function ClientsPage() {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Overview of deliverables, goals, and key client milestones..."
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF]"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Status</label>
-              <select
+              <Select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="on_hold">On Hold</option>
-                <option value="archived">Archived</option>
-              </select>
+                onValueChange={(val) => setFormData({ ...formData, status: val as any })}
+                options={[
+                  { value: 'active', label: 'Active' },
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'on_hold', label: 'On Hold' },
+                  { value: 'archived', label: 'Archived' },
+                ]}
+              />
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Total Budget ($)</label>
-              <input
+              <Input
                 type="number"
                 value={formData.budget}
                 onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Amount Paid ($)</label>
-              <input
+              <Input
                 type="number"
                 value={formData.amountPaid}
                 onChange={(e) => setFormData({ ...formData, amountPaid: Number(e.target.value) })}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
           </div>
@@ -564,22 +559,18 @@ export default function ClientsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Target Deadline</label>
-              <input
-                type="date"
+              <DatePicker
                 value={formData.deadline}
-                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                onChange={(val) => setFormData({ ...formData, deadline: val })}
               />
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Tech Stack (comma separated)</label>
-              <input
-                type="text"
+              <Input
                 value={formData.techStack}
                 onChange={(e) => setFormData({ ...formData, techStack: e.target.value })}
                 placeholder="Next.js, TypeScript, TailwindCSS"
-                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
               />
             </div>
           </div>

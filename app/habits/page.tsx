@@ -19,6 +19,9 @@ import { HabitHeatmap } from '../../components/ui/SVGCharts';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { Button } from '../../components/ui/button';
 
 import { HabitsSkeleton } from '../../components/ui/Skeleton';
 
@@ -160,13 +163,11 @@ export default function HabitsPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Habit Name *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Read 20 pages of thesis paper"
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
             />
           </div>
 
@@ -174,34 +175,33 @@ export default function HabitsPage() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Category
             </label>
-            <select
+            <Select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-            >
-              <option value="Spiritual">Spiritual</option>
-              <option value="Health">Health</option>
-              <option value="Academic">Academic</option>
-              <option value="Work">Work</option>
-              <option value="Career">Career</option>
-              <option value="Personal">Personal</option>
-            </select>
+              onValueChange={(val) => setCategory(val)}
+              options={[
+                { value: 'Spiritual', label: 'Spiritual' },
+                { value: 'Health', label: 'Health' },
+                { value: 'Academic', label: 'Academic' },
+                { value: 'Work', label: 'Work' },
+                { value: 'Career', label: 'Career' },
+                { value: 'Personal', label: 'Personal' },
+              ]}
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn-primary px-5 py-2 rounded-xl text-xs"
             >
               Save Habit
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>
