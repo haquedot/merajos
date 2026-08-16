@@ -41,6 +41,7 @@ import { isUserAuthenticated } from '../lib/authCheck';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { NowFocusCard } from '@/components/dashboard/NowFocusCard';
 import { FocusOverlayModal } from '@/components/modals/FocusOverlayModal';
+import { PublicAppOverviewBanner } from '@/components/landing/PublicAppOverviewBanner';
 
 export default function DashboardHome() {
   const [greeting, setGreeting] = useState('Good day');
@@ -185,6 +186,9 @@ export default function DashboardHome() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Public App Overview & Hero Banner (Google OAuth Verification Compliance) */}
+      <PublicAppOverviewBanner />
+
       {/* Top Banner Greeting */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
