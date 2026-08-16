@@ -187,7 +187,7 @@ export default function DashboardHome() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Public App Overview & Hero Banner (Google OAuth Verification Compliance) */}
-      <PublicAppOverviewBanner />
+      {/* <PublicAppOverviewBanner /> */}
 
       {/* Top Banner Greeting */}
       <motion.div
