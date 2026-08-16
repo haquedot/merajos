@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import {
   Settings,
   Sun,
@@ -25,6 +26,8 @@ import {
   MailX,
   LayoutGrid,
   Sliders,
+  ShieldCheck,
+  Scale,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useTaskStore } from '../../store/useTaskStore';
@@ -545,6 +548,17 @@ export default function SettingsPage() {
         <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
           Orbit is an intelligent productivity platform designed to help professionals, students, developers, researchers, and creators organize their work, stay focused, and make consistent progress toward their goals.
         </p>
+        <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center gap-4 text-xs font-semibold">
+          <Link href="/privacy" className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Privacy Policy</span>
+          </Link>
+          <span className="text-gray-300 dark:text-gray-700">•</span>
+          <Link href="/terms" className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+            <Scale className="w-3.5 h-3.5" />
+            <span>Terms of Service</span>
+          </Link>
+        </div>
       </div>
 
       {/* Re-run Setup modal trigger from Settings */}
