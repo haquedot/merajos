@@ -18,6 +18,7 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   habits: 'Habits',
   goals: 'Goals',
   notes: 'Notes',
+  links: 'Saved Links',
   weekly_planner: 'Weekly Planner',
   analytics: 'Analytics',
   clients: 'Client Projects',

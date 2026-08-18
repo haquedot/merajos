@@ -308,6 +308,18 @@ export interface Note {
   updatedAt: string;
 }
 
+export interface SavedLink {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+  category: string;
+  tags: string[];
+  isFavorite: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type UserRole = 'student' | 'freelancer' | 'researcher' | 'professional' | 'custom';
 
 export type ModuleKey =
@@ -316,6 +328,7 @@ export type ModuleKey =
   | 'habits'
   | 'goals'
   | 'notes'
+  | 'links'
   | 'weekly_planner'
   | 'analytics'
   | 'clients'
