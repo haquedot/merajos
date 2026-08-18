@@ -15,7 +15,6 @@ import { useNotesStore } from '../store/useNotesStore';
 import { useCalendarStore } from '../store/useCalendarStore';
 
 import { RequestAccessModal } from '../components/modals/RequestAccessModal';
-import { SignInEmailModal } from '../components/modals/SignInEmailModal';
 
 interface AuthContextType {
   session: GoogleAccountSession | null;
@@ -46,7 +45,6 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [syncMessage, setSyncMessage] = useState<string>('');
   const [accessModalOpen, setAccessModalOpen] = useState(false);
-  const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [blockedEmail, setBlockedEmail] = useState('');
 
   const clientId =
@@ -101,32 +99,16 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const handleSignIn = async () => {
-    // Open email pre-check modal first to avoid unverified Google 403 popups
-    setEmailModalOpen(true);
-  };
-
-  const directOAuthSignIn = async () => {
-    // Detect when user returns to main window after Google OAuth window interaction
-    const handleFocus = () => {
-      setTimeout(async () => {
-        const sess = await authService.getSession();
-        if (!sess) {
-          // If no session created, Google popup was closed or blocked with 403
-          setAccessModalOpen(true);
-        }
-        window.removeEventListener('focus', handleFocus);
-      }, 1000);
-    };
-
-    window.addEventListener('focus', handleFocus);
-
     try {
       const sess = await authService.signIn();
       setSession(sess);
       await syncService.syncAll();
     } catch (err: any) {
-      console.error('Google Sign In failed or blocked:', err);
-      setAccessModalOpen(true);
+      console.error('Google Sign In result:', err);
+      // Only show access request modal if Google explicitly returned access_denied
+      if (err?.error === 'access_denied' || err?.error === 'unauthorized_client') {
+        setAccessModalOpen(true);
+      }
     }
   };
 
@@ -179,12 +161,6 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
         }}
       >
         {children}
-        <SignInEmailModal
-          isOpen={emailModalOpen}
-          onClose={() => setEmailModalOpen(false)}
-          onProceedToOAuth={directOAuthSignIn}
-          onRequestAccess={(email) => handleOpenAccessModal(email)}
-        />
         <RequestAccessModal
           isOpen={accessModalOpen}
           onClose={handleCloseAccessModal}
