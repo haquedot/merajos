@@ -58,11 +58,11 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`relative w-full ${widthClasses} bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 p-4 sm:p-6 z-10 overflow-hidden max-h-[85vh] sm:max-h-[90vh] flex flex-col my-auto`}
+            className={`relative w-full ${widthClasses} bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 z-10 overflow-hidden max-h-[85vh] sm:max-h-[90vh] flex flex-col my-auto`}
           >
-            <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 dark:border-gray-800 shrink-0">
+            <div className="flex items-center justify-between px-3 sm:px-6 pt-3 sm:pt-6 pb-3.5 border-b border-gray-100 dark:border-gray-800 shrink-0">
               {title ? (
-                <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+                <h3 className="text-xs sm:text-base md:text-lg font-bold text-gray-900 dark:text-white leading-tight min-w-0 pr-2">
                   {title}
                 </h3>
               ) : (
@@ -76,7 +76,7 @@ export const Modal: React.FC<ModalProps> = ({
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto pt-4 min-h-0 touch-scroll">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0 touch-scroll">
               {children}
             </div>
           </motion.div>
