@@ -1,25 +1,23 @@
 'use client';
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Award,
-  CheckCircle2,
-  X,
-  Sparkles,
   CheckSquare,
   Flame,
   Target,
   Briefcase,
   BookOpen,
   GraduationCap,
-  Info,
+  Sparkles,
+  Zap,
+  CheckCircle2,
   TrendingUp,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { ScoreBreakdownItem } from '../../lib/productivityCalculator';
 import { CircularProgress } from '../ui/CircularProgress';
-import { Badge } from '../ui/Badge';
 
 interface DailyScoreBreakdownModalProps {
   isOpen: boolean;
@@ -38,17 +36,49 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
 }) => {
   if (!isOpen) return null;
 
-  // Determine Performance Rank & Color based on score
-  const getRankBadge = (score: number) => {
-    if (score >= 90) return { label: 'Apex Performer 🏆', color: 'emerald', bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' };
-    if (score >= 75) return { label: 'High Productivity 🔥', color: 'blue', bg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30' };
-    if (score >= 50) return { label: 'On Track ⚡', color: 'purple', bg: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30' };
-    if (score > 0) return { label: 'In Progress 🎯', color: 'amber', bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30' };
-    return { label: 'Not Started Yet 🚀', color: 'gray', bg: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30' };
+  // Friendly human rank, message, and guidance based on daily score
+  const getHumanMotivation = (score: number) => {
+    if (score >= 90) {
+      return {
+        label: 'Superstar Day 🏆',
+        message: 'Outstanding work! You crushed almost all your goals today.',
+        encouragement: 'Keep this momentum going for tomorrow!',
+        color: '#10B981',
+      };
+    }
+    if (score >= 75) {
+      return {
+        label: 'Great Progress 🔥',
+        message: "You're having a very productive day!",
+        encouragement: 'Finish up your remaining tasks to hit 90%+',
+        color: '#3B82F6',
+      };
+    }
+    if (score >= 50) {
+      return {
+        label: 'On Track ⚡',
+        message: 'Good steady progress today.',
+        encouragement: 'Complete 1 or 2 more tasks to push your score higher.',
+        color: '#8B5CF6',
+      };
+    }
+    if (score > 0) {
+      return {
+        label: 'Getting Started 🌱',
+        message: "You've started making progress today.",
+        encouragement: 'Check off your top priority tasks to boost your score!',
+        color: '#F59E0B',
+      };
+    }
+    return {
+      label: 'Not Started Yet 🚀',
+      message: 'No activities completed for this date yet.',
+      encouragement: 'Check off your first task or habit to get on the board!',
+      color: '#6B7280',
+    };
   };
 
-  const rank = getRankBadge(dailyScore);
-  const totalPointsEarned = breakdownItems.reduce((acc, item) => acc + item.pointsEarned, 0);
+  const motivation = getHumanMotivation(dailyScore);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -62,104 +92,121 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
     }
   };
 
+  // Simplify category titles for everyday users
+  const getFriendlyTitle = (label: string, category: string) => {
+    switch (category) {
+      case 'tasks': return 'Daily Tasks & Priorities';
+      case 'habits': return 'Habits Routine';
+      case 'goals': return 'Quarterly Goals';
+      case 'projects': return 'Client Work & Projects';
+      case 'research': return 'Research Reading';
+      case 'career': return 'Career Prep & DSA';
+      default: return label;
+    }
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Daily Score Breakdown (${dateTitle})`} maxWidth="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Productivity Summary (${dateTitle})`} maxWidth="lg">
       <div className="space-y-6">
-        {/* Top Hero Banner: Circular Score Ring & Rank */}
+        {/* Top Hero Banner: Friendly Score & Human Encouragement */}
         <div className="relative p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-white overflow-hidden shadow-xl border border-indigo-500/20 flex flex-col sm:flex-row items-center justify-between gap-5">
           {/* Ambient Glow */}
           <div className="absolute -top-12 -right-12 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="flex items-center gap-4 z-10">
+          <div className="flex items-center gap-4.5 z-10 w-full sm:w-auto">
+            {/* Score Ring */}
             <div className="relative shrink-0">
               <CircularProgress
                 percentage={dailyScore}
-                size={84}
+                size={86}
                 strokeWidth={8}
-                color={dailyScore >= 75 ? '#34D399' : dailyScore >= 50 ? '#818CF8' : '#FBBF24'}
-                trailColor="rgba(255, 255, 255, 0.1)"
+                color={motivation.color}
+                trailColor="rgba(255, 255, 255, 0.12)"
                 showText={false}
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black tracking-tight">{dailyScore}</span>
-                <span className="text-[10px] text-gray-300 font-bold uppercase -mt-1">/ 100</span>
+                <span className="text-2xl font-black tracking-tight">{dailyScore}%</span>
+                <span className="text-[9px] text-gray-300 font-bold uppercase -mt-1">Score</span>
               </div>
             </div>
 
-            <div className="space-y-1.5 text-center sm:text-left">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border backdrop-blur-md bg-white/10 text-white border-white/20">
+            {/* Motivation Header */}
+            <div className="space-y-1 text-left min-w-0 flex-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border backdrop-blur-md bg-white/10 text-white border-white/20">
                 <Award className="w-3.5 h-3.5 text-amber-400" />
-                <span>{rank.label}</span>
+                <span>{motivation.label}</span>
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                Productivity Calculation
+              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
+                {motivation.message}
               </h3>
-              <p className="text-xs text-gray-300">
-                {totalPointsEarned} total points earned across {breakdownItems.length} active modules today.
+              <p className="text-xs text-gray-300/90 leading-relaxed">
+                {motivation.encouragement}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Section Title */}
-        <div className="flex items-center justify-between">
+        {/* Simple Section Header */}
+        <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-indigo-500" />
             <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
-              Point Breakdown by Activity
+              Activity Progress Breakdown
             </h4>
           </div>
-          <span className="text-xs text-gray-400 font-semibold">
-            Weight Breakdown
+          <span className="text-xs text-gray-400 font-medium">
+            {breakdownItems.length} active areas
           </span>
         </div>
 
         {/* Breakdown Items List */}
         {breakdownItems.length === 0 ? (
           <div className="p-6 text-center text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
-            No active tasks or routines recorded for this date yet.
+            No tasks or habits scheduled for this date.
           </div>
         ) : (
           <div className="space-y-3">
             {breakdownItems.map((item) => {
               const Icon = getCategoryIcon(item.category);
+              const friendlyTitle = getFriendlyTitle(item.label, item.category);
 
               return (
                 <div
                   key={item.id}
-                  className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-gray-800/40 border border-slate-200/80 dark:border-gray-800 space-y-2.5 transition-all hover:border-indigo-200 dark:hover:border-indigo-900"
+                  className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-800 space-y-2.5 transition-all"
                 >
-                  {/* Category Header & Points Earned */}
+                  {/* Category Header */}
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
                         style={{ backgroundColor: `${item.color}15`, color: item.color }}
                       >
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <span className="font-extrabold text-xs text-gray-900 dark:text-white block truncate">
-                          {item.label}
+                        <span className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white block truncate">
+                          {friendlyTitle}
                         </span>
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400 block truncate">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 block truncate">
                           {item.details}
                         </span>
                       </div>
                     </div>
 
+                    {/* Completion Badge */}
                     <div className="text-right shrink-0">
-                      <span className="font-black text-sm text-gray-900 dark:text-white block">
-                        +{item.pointsEarned} <span className="text-[10px] text-gray-400 font-normal">/ {item.maxPoints} pts</span>
-                      </span>
-                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 block">
-                        {item.percentage}% completion
+                      <span
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black shadow-2xs"
+                        style={{ backgroundColor: `${item.color}18`, color: item.color }}
+                      >
+                        {item.percentage}% Done
                       </span>
                     </div>
                   </div>
 
-                  {/* Progress Bar */}
+                  {/* Clean Visual Progress Bar */}
                   <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700/60 overflow-hidden">
                     <motion.div
                       className="h-full rounded-full"
@@ -175,15 +222,16 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
           </div>
         )}
 
-        {/* How it Works Footer Callout */}
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 flex items-start gap-3 text-xs text-indigo-900 dark:text-indigo-300">
-          <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <span className="font-bold block">How Orbit Daily Score is Weighted:</span>
-            <p className="text-[11px] leading-relaxed text-indigo-700 dark:text-indigo-300/80">
-              Score is calculated dynamically: <strong>40% Core Tasks & Most Important Tasks (MITs)</strong> + <strong>60% Active Routines</strong> (Habit streaks, goal progress, client work, research & career problems).
-            </p>
+        {/* How to Boost Your Score - Simple Guidance Box */}
+        <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 space-y-2 text-xs text-indigo-950 dark:text-indigo-200">
+          <div className="flex items-center gap-2 font-extrabold text-indigo-900 dark:text-indigo-300">
+            <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
+            <span>How to increase your Daily Score:</span>
           </div>
+          <ul className="space-y-1 text-[11px] text-indigo-800 dark:text-indigo-300/90 pl-6 list-disc leading-relaxed">
+            <li><strong>Complete your Top Priority Tasks (MITs)</strong> for the biggest score boost.</li>
+            <li><strong>Maintain your Habit Streaks & Goals</strong> to keep your momentum growing every day.</li>
+          </ul>
         </div>
       </div>
     </Modal>
