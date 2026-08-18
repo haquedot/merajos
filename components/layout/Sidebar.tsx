@@ -30,7 +30,6 @@ import { Logo } from '../common/Logo';
 import { BRAND } from '../../lib/branding';
 import { SyncStatusBadge } from '../common/SyncStatusBadge';
 import {
-  TooltipProvider,
   Tooltip,
   TooltipTrigger,
   TooltipContent,
@@ -127,8 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
       </div>
 
       {/* Navigation List */}
-      <TooltipProvider delay={100}>
-        <div id="tour-sidebar-navigation" className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+      <div id="tour-sidebar-navigation" className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
           {visibleItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -286,7 +284,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
             </button>
           )}
         </div>
-      </TooltipProvider>
 
       {/* Footer Branding Info */}
       {!collapsed && (

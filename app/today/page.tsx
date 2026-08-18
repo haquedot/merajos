@@ -34,12 +34,21 @@ import { TodayTimelineView } from '../../components/today/TodayTimelineView';
 import { getSmartFocusTask, sortTasksChronologically, parseTimeAndSlotFromText } from '../../lib/taskUtils';
 
 import { TaskSkeleton } from '../../components/ui/Skeleton';
+import { useHabitStore } from '../../store/useHabitStore';
+import { useGoalStore } from '../../store/useGoalStore';
+import { useProjectStore } from '../../store/useProjectStore';
+import { useResearchStore } from '../../store/useResearchStore';
+import { useCareerStore } from '../../store/useCareerStore';
+import { calculateDailyScore } from '../../lib/productivityCalculator';
+import { DailyScoreBreakdownModal } from '../../components/modals/DailyScoreBreakdownModal';
 
 export default function TodayPage() {
   const [viewMode, setViewMode] = useState<'timeline' | 'checklist'>('checklist');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
   const [activeFocusTask, setActiveFocusTask] = useState<any>(null);
+
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
 
   // New task form
   const [title, setTitle] = useState('');
@@ -49,6 +58,11 @@ export default function TodayPage() {
   const [customFocusTaskId, setCustomFocusTaskId] = useState<string | null>(null);
 
   const { tasks, isLoading: isLoadingTasks, toggleTaskStatus, toggleMIT, addTask } = useTaskStore();
+  const { habits } = useHabitStore();
+  const { goals } = useGoalStore();
+  const { projects } = useProjectStore();
+  const { projects: researchProjects } = useResearchStore();
+  const { dsaTopics } = useCareerStore();
 
   if (isLoadingTasks) {
     return <TaskSkeleton />;
@@ -62,6 +76,24 @@ export default function TodayPage() {
 
   const completedCount = todayTasks.filter((t) => t.status === 'completed').length;
   const progressPercent = todayTasks.length > 0 ? Math.round((completedCount / todayTasks.length) * 100) : 100;
+
+  // Real Habits Completed calculation
+  const habitCompletedToday = habits.filter((h) => !!h.history[todayStr]).length;
+  const totalPapers = researchProjects.reduce((acc, p) => {
+    return acc + p.sections.reduce((sAcc, s) => sAcc + (s.papers ? s.papers.length : 0), 0);
+  }, 0);
+
+  const { dailyScore, breakdownItems } = calculateDailyScore({
+    todayTasks,
+    habitsCount: habits.length,
+    completedHabitsCount: habitCompletedToday,
+    habitsList: habits.map((h) => ({ id: h.id, name: h.name, isCompleted: !!h.history[todayStr] })),
+    projectsCount: projects.length,
+    goalsCount: goals.length,
+    completedGoalsCount: goals.filter((g) => g.progress >= 100).length,
+    researchCount: totalPapers,
+    dsaCount: dsaTopics.length,
+  });
 
   const mits = todayTasks.filter((t) => t.mit);
   const smartFocusTask = getSmartFocusTask(todayTasks);
@@ -113,6 +145,16 @@ export default function TodayPage() {
         subtitle={`${format(new Date(), 'EEEE, MMMM d, yyyy')} • Plan your day in 4 distinct time slots`}
         actions={
           <>
+            {/* Daily Score Breakdown Button */}
+            <button
+              onClick={() => setIsScoreModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 transition-all cursor-pointer shrink-0"
+              title="Click to view detailed Daily Score breakdown pointers"
+            >
+              <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              <span>Score: {dailyScore}/100</span>
+            </button>
+
             {/* View Mode Toggle */}
             <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold shrink-0">
               <button
@@ -149,6 +191,14 @@ export default function TodayPage() {
           </>
         }
       >
+        {/* Daily Score Breakdown Modal */}
+        <DailyScoreBreakdownModal
+          isOpen={isScoreModalOpen}
+          onClose={() => setIsScoreModalOpen(false)}
+          dailyScore={dailyScore}
+          breakdownItems={breakdownItems}
+          dateTitle="Today"
+        />
         {/* Progress Bar Header */}
         <div className="space-y-1.5 pt-2 border-t border-gray-100 dark:border-gray-800/80">
           <div className="flex items-center justify-between text-[11px] sm:text-xs font-semibold">
