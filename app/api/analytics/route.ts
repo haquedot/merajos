@@ -19,7 +19,7 @@ export async function GET() {
     if (!yesterdaySnapshot) {
       console.log(`[Analytics API] Auto-generating missing snapshot for yesterday (${yesterdayStr})...`);
       try {
-        await calculateDailyTasksAndLogAnalytics(undefined, undefined, yesterdayStr);
+        await calculateDailyTasksAndLogAnalytics(undefined, { sendEmail: false }, yesterdayStr);
       } catch (err) {
         console.error(`[Analytics API] Failed to auto-backfill yesterday snapshot (${yesterdayStr}):`, err);
       }

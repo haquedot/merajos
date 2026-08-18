@@ -68,9 +68,9 @@ export default function TasksPage() {
   const { projects } = useProjectStore();
   const { events } = useCalendarStore();
 
-  // Date filter state (default: 'today')
+  // Date filter state (default: 'all')
   const todayStr = new Date().toISOString().split('T')[0];
-  const [dateFilter, setDateFilter] = useState<'today' | 'custom'>('today');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'custom'>('today');
   const [customSelectedDate, setCustomSelectedDate] = useState<string>(todayStr);
 
   const activeDateStr = dateFilter === 'today' ? todayStr : dateFilter === 'custom' ? customSelectedDate : null;
@@ -291,6 +291,20 @@ export default function TasksPage() {
               >
                 ← Prev
               </button>
+
+              {/* <button
+                type="button"
+                onClick={() => {
+                  setDateFilter('all');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  dateFilter === 'all'
+                    ? 'bg-[#1F3B99] dark:bg-[#6D5BFF] text-white shadow-xs'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                All Tasks ({tasks.length})
+              </button> */}
 
               <button
                 type="button"

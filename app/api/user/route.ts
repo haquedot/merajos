@@ -27,24 +27,32 @@ export async function POST(req: Request) {
   try {
     await connectToDatabase();
     const body = await req.json();
-    const { email, name, picture, googleId, role, onboardingCompleted, enabledModules } = body;
+    const { email, name, picture, googleId, role, onboardingCompleted, enabledModules, workStartTime, workEndTime } = body;
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
+
+    const existingUser = await User.findOne({ email }).lean();
+    const isAlreadyOnboarded = existingUser?.onboardingCompleted === true;
+    const finalOnboardingCompleted = onboardingCompleted !== undefined
+      ? Boolean(onboardingCompleted)
+      : isAlreadyOnboarded;
 
     const user = await User.findOneAndUpdate(
       { email },
       {
         $set: {
           email,
-          name: name || 'Orbit User',
-          picture,
-          googleId,
+          name: name || (existingUser as any)?.name || 'Orbit User',
+          picture: picture || (existingUser as any)?.picture,
+          googleId: googleId || (existingUser as any)?.googleId,
           lastLoginAt: new Date(),
+          onboardingCompleted: finalOnboardingCompleted,
           ...(role && { role }),
-          ...(onboardingCompleted !== undefined && { onboardingCompleted }),
           ...(enabledModules && { enabledModules }),
+          ...(workStartTime && { workStartTime }),
+          ...(workEndTime && { workEndTime }),
         },
       },
       { upsert: true, returnDocument: 'after' }

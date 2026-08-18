@@ -55,7 +55,9 @@ export default function TodayPage() {
   }
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const rawTodayTasks = tasks.filter((t) => t.dueDate === todayStr);
+  const rawTodayTasks = tasks.filter(
+    (t) => t.dueDate === todayStr || (t.dueDate < todayStr && t.status !== 'completed')
+  );
   const todayTasks = sortTasksChronologically(rawTodayTasks);
 
   const completedCount = todayTasks.filter((t) => t.status === 'completed').length;

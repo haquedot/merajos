@@ -17,7 +17,7 @@ const matchesCategory = (taskCat: string | undefined, targetCat: string) => {
 
 export async function calculateDailyTasksAndLogAnalytics(
   clientTasks?: any[],
-  emailOptions?: { enabled?: boolean; recipientEmail?: string },
+  emailOptions?: { enabled?: boolean; recipientEmail?: string; sendEmail?: boolean },
   targetDateStr?: string
 ) {
   await connectToDatabase();
@@ -188,10 +188,14 @@ export async function calculateDailyTasksAndLogAnalytics(
     { upsert: true, returnDocument: 'after' }
   );
 
-  console.log(`[NodeCron 11:45 PM] Snapshot saved for ${todayStr}. Triggering email dispatch...`);
-  
-  // Trigger Nodemailer Email Dispatch with allTasks array and options
-  const emailResult = await sendDailyTaskLogEmail(snapshot.toObject(), allTasks, emailOptions);
+  let emailResult = null;
+  // Send email ONLY if sendEmail is explicitly true or undefined (for 11:45 PM cron/manual run)
+  if (emailOptions?.sendEmail !== false) {
+    console.log(`[Snapshot] Snapshot saved for ${todayStr}. Triggering email dispatch...`);
+    emailResult = await sendDailyTaskLogEmail(snapshot.toObject(), allTasks, emailOptions);
+  } else {
+    console.log(`[Snapshot] Snapshot saved for ${todayStr}. Email dispatch skipped (sendEmail=false).`);
+  }
 
   return {
     snapshot: snapshot.toObject(),

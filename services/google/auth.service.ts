@@ -145,10 +145,13 @@ class AuthService {
 
     // If token is expired or expiring within 5 minutes, attempt silent refresh
     if (session.expiresAt && Date.now() > session.expiresAt - 5 * 60 * 1000) {
-      console.log('[AuthService] Token expiring soon. Refreshing silently...');
+      console.log('[AuthService] Token expiring soon. Attempting silent refresh...');
       const refreshedSession = await this.refreshAccessTokenSilently();
       if (refreshedSession) {
         return refreshedSession.accessToken;
+      } else {
+        console.warn('[AuthService] Silent token refresh failed. Token expired.');
+        return null;
       }
     }
 

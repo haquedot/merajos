@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { UserSettings, OnboardingProfile } from '../types';
 import { INITIAL_SETTINGS } from './seedData';
 import { isUserAuthenticated } from '../lib/authCheck';
+import { authService } from '../services/google/auth.service';
 
 interface SettingsState {
   settings: UserSettings;
@@ -171,6 +172,22 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newSettings),
         });
+        const sess = await authService.getSession();
+        if (sess?.email) {
+          localStorage.setItem(`orbit_onboarding_${sess.email}_completed`, 'true');
+          await fetch('/api/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: sess.email,
+              onboardingCompleted: true,
+              role: profile.role,
+              enabledModules: profile.enabledModules,
+              workStartTime: profile.workStartTime,
+              workEndTime: profile.workEndTime,
+            }),
+          });
+        }
       } catch (err) {
         console.warn('Failed to save onboarding profile to MongoDB API', err);
       }
@@ -208,6 +225,22 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedSettings),
           });
+          const sess = await authService.getSession();
+          if (sess?.email) {
+            localStorage.setItem(`orbit_onboarding_${sess.email}_completed`, 'true');
+            await fetch('/api/user', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: sess.email,
+                onboardingCompleted: true,
+                role: existing?.role || 'custom',
+                enabledModules: existing?.enabledModules || [],
+                workStartTime: existing?.workStartTime || '09:00',
+                workEndTime: existing?.workEndTime || '18:00',
+              }),
+            });
+          }
         } catch (err) {
           console.warn('Failed to save completed onboarding to MongoDB API', err);
         }

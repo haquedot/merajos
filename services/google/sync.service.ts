@@ -72,6 +72,12 @@ class SyncService {
         return;
       }
 
+      const token = await authService.getAccessToken();
+      if (!token) {
+        this.notify('error', 'Google session expired. Click to re-authenticate.');
+        return;
+      }
+
       // 1. Process Offline Queue first
       await this.processOfflineQueue();
 
@@ -84,8 +90,10 @@ class SyncService {
           const listTasks = await googleTasksService.fetchTasksForList(list.id);
           allRemoteTasks.push(...listTasks);
         }
-      } else {
-        // Default task list fetch
+      }
+      
+      // Fallback to default list if no tasks found
+      if (allRemoteTasks.length === 0) {
         const defaultTasks = await googleTasksService.fetchTasksForList('@default');
         allRemoteTasks.push(...defaultTasks);
       }
