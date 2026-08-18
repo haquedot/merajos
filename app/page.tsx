@@ -42,6 +42,7 @@ import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { NowFocusCard } from '@/components/dashboard/NowFocusCard';
 import { FocusOverlayModal } from '@/components/modals/FocusOverlayModal';
 import { PublicAppOverviewBanner } from '@/components/landing/PublicAppOverviewBanner';
+import { DailyScoreBreakdownModal } from '../components/modals/DailyScoreBreakdownModal';
 
 export default function DashboardHome() {
   const [greeting, setGreeting] = useState('Good day');
@@ -49,6 +50,7 @@ export default function DashboardHome() {
   const [latestSnapshots, setLatestSnapshots] = useState<any[]>([]);
   const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
   const [activeFocusTask, setActiveFocusTask] = useState<any>(null);
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
 
   const { tasks, toggleTaskStatus, isLoading: isLoadingTasks } = useTaskStore();
   const { projects } = useProjectStore();
@@ -125,7 +127,7 @@ export default function DashboardHome() {
   const habitCompletionRate = habits.length > 0 ? Math.round((habitCompletedToday / habits.length) * 100) : 0;
 
   // Dynamic Modular Daily Score Calculation with Empty State Guard
-  const { dailyScore, hasRecordedItems } = calculateDailyScore({
+  const { dailyScore, hasRecordedItems, breakdownItems } = calculateDailyScore({
     todayTasks,
     habitsCount: habits.length,
     completedHabitsCount: habitCompletedToday,
@@ -206,8 +208,12 @@ export default function DashboardHome() {
           </p>
         </div>
 
-        {/* Progress Ring Widget */}
-        <div className="relative z-10 flex items-center gap-3.5 sm:gap-6 bg-white/10 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white/20 w-full sm:w-auto justify-between sm:justify-start shrink-0">
+        {/* Progress Ring Widget (Clickable to view Score Breakdown) */}
+        <div
+          onClick={() => setIsScoreModalOpen(true)}
+          className="relative z-10 flex items-center gap-3.5 sm:gap-6 bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white/20 w-full sm:w-auto justify-between sm:justify-start shrink-0 cursor-pointer transition-all duration-200 group"
+          title="Click to view full Daily Score breakdown"
+        >
           <CircularProgress
             percentage={hasRecordedItems ? taskCompletionRate : 0}
             size={76}
@@ -217,17 +223,28 @@ export default function DashboardHome() {
             showText={true}
           />
           <div className="flex flex-col">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-blue-100">Daily Score</span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-blue-100">Daily Score</span>
+              <Info className="w-3 h-3 text-blue-200 opacity-60 group-hover:opacity-100 transition-opacity" />
+            </div>
             <span className="text-xl sm:text-2xl font-black text-white">
               {hasRecordedItems ? `${dailyScore} / 100` : 'Not Started'}
             </span>
-            <span className="text-[10px] sm:text-xs text-emerald-300 font-bold flex items-center gap-1 mt-0.5" title="Calculated dynamically from active user modules & MIT tasks">
+            <span className="text-[10px] sm:text-xs text-emerald-300 font-bold flex items-center gap-1 mt-0.5" title="Click to open score breakdown modal">
               <Flame className="w-3.5 h-3.5 fill-current text-amber-300 shrink-0" />
-              {hasRecordedItems ? `${dailyScore}% Score Today` : 'Add tasks to start'}
+              {hasRecordedItems ? `${dailyScore}% Score Today (Click for details)` : 'Add tasks to start'}
             </span>
           </div>
         </div>
       </motion.div>
+
+      {/* Daily Score Breakdown Modal */}
+      <DailyScoreBreakdownModal
+        isOpen={isScoreModalOpen}
+        onClose={() => setIsScoreModalOpen(false)}
+        dailyScore={dailyScore}
+        breakdownItems={breakdownItems}
+      />
 
       {/* NOW / Current Focus Card */}
       <NowFocusCard

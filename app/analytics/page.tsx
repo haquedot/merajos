@@ -40,6 +40,8 @@ import { PageHeader } from '../../components/ui/PageHeader';
 
 import { DashboardSkeleton } from '../../components/ui/Skeleton';
 import { isUserAuthenticated } from '../../lib/authCheck';
+import { calculateDailyScore, ScoreBreakdownItem } from '../../lib/productivityCalculator';
+import { DailyScoreBreakdownModal } from '../../components/modals/DailyScoreBreakdownModal';
 
 export default function AnalyticsPage() {
   const { tasks } = useTaskStore();
@@ -53,6 +55,59 @@ export default function AnalyticsPage() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedSnapshotDate, setExpandedSnapshotDate] = useState<string | null>(null);
+
+  const [scoreModalState, setScoreModalState] = useState<{
+    isOpen: boolean;
+    score: number;
+    date: string;
+    items: any[];
+  }>({
+    isOpen: false,
+    score: 0,
+    date: 'Today',
+    items: [],
+  });
+
+  const openScoreModalForSnapshot = (snap: any) => {
+    const score = snap.productivityScore || snap.taskCompletionRate || 0;
+    const totalTasks = snap.totalTasks || 0;
+    const completedTasks = snap.completedTasks || 0;
+    const taskRate = snap.taskCompletionRate || (totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0);
+
+    const items: ScoreBreakdownItem[] = [
+      {
+        id: 'tasks',
+        label: 'Task Completion',
+        category: 'tasks',
+        pointsEarned: Math.round((taskRate / 100) * 40),
+        maxPoints: 40,
+        details: `${completedTasks} of ${totalTasks} tasks completed`,
+        percentage: taskRate,
+        color: '#3B82F6',
+      },
+    ];
+
+    if (snap.totalHabitsCount && snap.totalHabitsCount > 0) {
+      const habitRate = snap.habitCompletionRate || Math.round(((snap.completedHabitsCount || 0) / snap.totalHabitsCount) * 100);
+      items.push({
+        id: 'habits',
+        label: 'Habits Routine',
+        category: 'habits' as const,
+        pointsEarned: Math.round((habitRate / 100) * 60),
+        maxPoints: 60,
+        details: `${snap.completedHabitsCount || 0} of ${snap.totalHabitsCount} habits maintained`,
+        percentage: habitRate,
+        color: '#10B981',
+      });
+    }
+
+    setScoreModalState({
+      isOpen: true,
+      score,
+      date: snap.date || 'Historical Date',
+      items,
+    });
+  };
 
   // Fetch live MongoDB analytics and snapshots (if authenticated)
   useEffect(() => {
@@ -331,9 +386,17 @@ export default function AnalyticsPage() {
                       </div>
 
                       <div className="flex items-center gap-1.5 flex-wrap text-xs">
-                        <span className="font-extrabold text-gray-900 dark:text-white">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openScoreModalForSnapshot(snap);
+                          }}
+                          className="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-extrabold hover:bg-indigo-100 transition-colors border border-indigo-200/60 dark:border-indigo-800"
+                          title="Click to view detailed score breakdown pointers for this date"
+                        >
                           Score: {snap.productivityScore || snap.taskCompletionRate}%
-                        </span>
+                        </button>
                         <span className="text-gray-300 dark:text-gray-600 hidden xs:inline">•</span>
                         <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                           {snap.completedTasks} Completed
@@ -485,6 +548,15 @@ export default function AnalyticsPage() {
           </div>
         )}
       </div>
+
+      {/* Daily Score Breakdown Modal */}
+      <DailyScoreBreakdownModal
+        isOpen={scoreModalState.isOpen}
+        onClose={() => setScoreModalState((prev) => ({ ...prev, isOpen: false }))}
+        dailyScore={scoreModalState.score}
+        breakdownItems={scoreModalState.items}
+        dateTitle={scoreModalState.date}
+      />
     </div>
   );
 }

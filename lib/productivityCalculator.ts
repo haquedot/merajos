@@ -11,14 +11,26 @@ export interface DailyScoreParams {
   dsaCount?: number;
 }
 
+export interface ScoreBreakdownItem {
+  id: string;
+  label: string;
+  category: 'tasks' | 'habits' | 'goals' | 'projects' | 'research' | 'career';
+  pointsEarned: number;
+  maxPoints: number;
+  details: string;
+  percentage: number;
+  color: string;
+}
+
 /**
- * Calculates the dynamic modular daily score for Orbit (0-100).
+ * Calculates the dynamic modular daily score for Orbit (0-100) with detailed pointer breakdown.
  * Implements empty-state protection: returns 0 if no activity/items exist.
  */
 export function calculateDailyScore(params: DailyScoreParams): {
   dailyScore: number;
   hasRecordedItems: boolean;
   taskCompletionRate: number;
+  breakdownItems: ScoreBreakdownItem[];
 } {
   const {
     todayTasks,
@@ -35,8 +47,9 @@ export function calculateDailyScore(params: DailyScoreParams): {
   const completedTasks = todayTasks.filter((t) => t.status === 'completed').length;
   const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  // Empty State Protection Guard:
-  // If zero tasks, habits, goals, projects, research or DSA items are scheduled/logged, return 0 (Not Started).
+  const breakdownItems: ScoreBreakdownItem[] = [];
+
+  // Empty State Guard
   const hasRecordedItems =
     totalTasks > 0 ||
     habitsCount > 0 ||
@@ -50,11 +63,13 @@ export function calculateDailyScore(params: DailyScoreParams): {
       dailyScore: 0,
       hasRecordedItems: false,
       taskCompletionRate: 0,
+      breakdownItems: [],
     };
   }
 
-  // 1. Core Task & MIT Score (Weight: 40%)
+  // 1. Core Task & MIT Score (Weight: 40% -> Max 40 Points)
   let taskScore = 0;
+  let taskPointsEarned = 0;
   if (totalTasks > 0) {
     const todayMits = todayTasks.filter((t) => t.mit);
     const completedTodayMits = todayMits.filter((t) => t.status === 'completed').length;
@@ -62,19 +77,52 @@ export function calculateDailyScore(params: DailyScoreParams): {
 
     // Base task rate 60% + MIT completion 40% boost
     taskScore = Math.round(taskCompletionRate * 0.6 + mitCompletionRate * 0.4);
+    taskPointsEarned = Math.round((taskScore / 100) * 40);
+
+    breakdownItems.push({
+      id: 'tasks_mits',
+      label: 'Tasks & Key Priorities (MITs)',
+      category: 'tasks',
+      pointsEarned: taskPointsEarned,
+      maxPoints: 40,
+      details: `${completedTasks} of ${totalTasks} tasks done (${completedTodayMits}/${todayMits.length} MITs)`,
+      percentage: taskScore,
+      color: '#3B82F6', // Blue
+    });
   }
 
-  // 2. Dynamic Modules Score (Weight: 60% evenly split across enabled active user modules)
-  const activeModuleScores: number[] = [];
+  // 2. Dynamic Modules Score (Weight: 60% split across active modules)
+  const activeModules: {
+    id: string;
+    label: string;
+    category: 'habits' | 'goals' | 'projects' | 'research' | 'career';
+    rate: number;
+    details: string;
+    color: string;
+  }[] = [];
 
   if (habitsCount > 0) {
     const habitRate = Math.round((completedHabitsCount / habitsCount) * 100);
-    activeModuleScores.push(habitRate);
+    activeModules.push({
+      id: 'habits',
+      label: 'Daily Habits Routine',
+      category: 'habits',
+      rate: habitRate,
+      details: `${completedHabitsCount} of ${habitsCount} daily habits maintained`,
+      color: '#10B981', // Emerald
+    });
   }
 
   if (goalsCount > 0) {
     const goalRate = Math.round((completedGoalsCount / goalsCount) * 100);
-    activeModuleScores.push(goalRate);
+    activeModules.push({
+      id: 'goals',
+      label: 'Quarterly Goals Progress',
+      category: 'goals',
+      rate: goalRate,
+      details: `${completedGoalsCount} of ${goalsCount} target goals reached`,
+      color: '#8B5CF6', // Purple
+    });
   }
 
   if (projectsCount > 0) {
@@ -83,7 +131,15 @@ export function calculateDailyScore(params: DailyScoreParams): {
     );
     if (clientTasks.length > 0) {
       const completedClient = clientTasks.filter((t) => t.status === 'completed').length;
-      activeModuleScores.push(Math.round((completedClient / clientTasks.length) * 100));
+      const clientRate = Math.round((completedClient / clientTasks.length) * 100);
+      activeModules.push({
+        id: 'projects',
+        label: 'Client Projects',
+        category: 'projects',
+        rate: clientRate,
+        details: `${completedClient} of ${clientTasks.length} client tasks completed`,
+        color: '#F59E0B', // Amber
+      });
     }
   }
 
@@ -91,7 +147,15 @@ export function calculateDailyScore(params: DailyScoreParams): {
     const researchTasks = todayTasks.filter((t) => t.category === 'Research');
     if (researchTasks.length > 0) {
       const completedResearch = researchTasks.filter((t) => t.status === 'completed').length;
-      activeModuleScores.push(Math.round((completedResearch / researchTasks.length) * 100));
+      const researchRate = Math.round((completedResearch / researchTasks.length) * 100);
+      activeModules.push({
+        id: 'research',
+        label: 'Research & Academic',
+        category: 'research',
+        rate: researchRate,
+        details: `${completedResearch} of ${researchTasks.length} research tasks completed`,
+        color: '#06B6D4', // Cyan
+      });
     }
   }
 
@@ -99,13 +163,38 @@ export function calculateDailyScore(params: DailyScoreParams): {
     const careerTasks = todayTasks.filter((t) => t.category === 'Career');
     if (careerTasks.length > 0) {
       const completedCareer = careerTasks.filter((t) => t.status === 'completed').length;
-      activeModuleScores.push(Math.round((completedCareer / careerTasks.length) * 100));
+      const careerRate = Math.round((completedCareer / careerTasks.length) * 100);
+      activeModules.push({
+        id: 'career',
+        label: 'Career & DSA Practice',
+        category: 'career',
+        rate: careerRate,
+        details: `${completedCareer} of ${careerTasks.length} career problems solved`,
+        color: '#EC4899', // Pink
+      });
     }
   }
 
+  const moduleWeightMax = 60;
+  const maxPointsPerModule = activeModules.length > 0 ? moduleWeightMax / activeModules.length : 0;
+
+  activeModules.forEach((mod) => {
+    const pts = Math.round((mod.rate / 100) * maxPointsPerModule);
+    breakdownItems.push({
+      id: mod.id,
+      label: mod.label,
+      category: mod.category,
+      pointsEarned: pts,
+      maxPoints: Math.round(maxPointsPerModule),
+      details: mod.details,
+      percentage: mod.rate,
+      color: mod.color,
+    });
+  });
+
   const dynamicModulesAvg =
-    activeModuleScores.length > 0
-      ? activeModuleScores.reduce((a, b) => a + b, 0) / activeModuleScores.length
+    activeModules.length > 0
+      ? activeModules.reduce((a, b) => a + b.rate, 0) / activeModules.length
       : taskScore;
 
   const dailyScore = Math.min(100, Math.round(taskScore * 0.40 + dynamicModulesAvg * 0.60));
@@ -114,5 +203,6 @@ export function calculateDailyScore(params: DailyScoreParams): {
     dailyScore,
     hasRecordedItems: true,
     taskCompletionRate,
+    breakdownItems,
   };
 }
