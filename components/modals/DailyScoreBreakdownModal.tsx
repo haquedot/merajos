@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Award,
@@ -20,6 +21,8 @@ import {
   CheckCircle2,
   Circle,
   Star,
+  ExternalLink,
+  ArrowUpRight,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { ScoreBreakdownItem } from '../../lib/productivityCalculator';
@@ -40,6 +43,7 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
   breakdownItems,
   dateTitle = 'Today',
 }) => {
+  const router = useRouter();
   const [showDetails, setShowDetails] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
@@ -47,6 +51,24 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
 
   const toggleCategory = (id: string) => {
     setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const getCategoryRoute = (category: string) => {
+    switch (category) {
+      case 'tasks': return '/today';
+      case 'habits': return '/habits';
+      case 'goals': return '/goals';
+      case 'projects': return '/clients';
+      case 'research': return '/research';
+      case 'career': return '/career';
+      default: return '/today';
+    }
+  };
+
+  const handleCategoryRedirect = (category: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    onClose();
+    router.push(getCategoryRoute(category));
   };
 
   // Friendly human rank, message, and guidance based on daily score
@@ -120,37 +142,37 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Productivity Summary (${dateTitle})`} maxWidth="lg">
-      <div className="space-y-5">
+      <div className="space-y-4 sm:space-y-5">
         {/* Top Hero Banner: Friendly Score & Human Encouragement */}
-        <div className="relative p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-white overflow-hidden shadow-xl border border-indigo-500/20 flex flex-col sm:flex-row items-center justify-between gap-5">
+        <div className="relative p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-white overflow-hidden shadow-xl border border-indigo-500/20 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 sm:gap-5 text-center sm:text-left">
           {/* Ambient Glow */}
           <div className="absolute -top-12 -right-12 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="flex items-center gap-4.5 z-10 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-3.5 sm:gap-4.5 z-10 w-full">
             {/* Score Ring */}
             <div className="relative shrink-0">
               <CircularProgress
                 percentage={dailyScore}
-                size={86}
-                strokeWidth={8}
+                size={76}
+                strokeWidth={7}
                 color={motivation.color}
                 trailColor="rgba(255, 255, 255, 0.12)"
                 showText={false}
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black tracking-tight">{dailyScore}%</span>
-                <span className="text-[9px] text-gray-300 font-bold uppercase -mt-1">Score</span>
+                <span className="text-xl sm:text-2xl font-black tracking-tight">{dailyScore}%</span>
+                <span className="text-[8px] sm:text-[9px] text-gray-300 font-bold uppercase -mt-0.5 sm:-mt-1">Score</span>
               </div>
             </div>
 
             {/* Motivation Header */}
-            <div className="space-y-1 text-left min-w-0 flex-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border backdrop-blur-md bg-white/10 text-white border-white/20">
-                <Award className="w-3.5 h-3.5 text-amber-400" />
+            <div className="space-y-1 min-w-0 flex-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-extrabold border backdrop-blur-md bg-white/10 text-white border-white/20">
+                <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <span>{motivation.label}</span>
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-tight leading-snug">
                 {motivation.message}
               </h3>
               <p className="text-xs text-gray-300/90 leading-relaxed">
@@ -163,12 +185,12 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
         {/* Simple Section Header */}
         <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-indigo-500" />
-            <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
+            <TrendingUp className="w-4 h-4 text-indigo-500 shrink-0" />
+            <h4 className="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white">
               Activity Overview
             </h4>
           </div>
-          <span className="text-xs text-gray-400 font-medium">
+          <span className="text-[11px] sm:text-xs text-gray-400 font-medium">
             {breakdownItems.length} active areas
           </span>
         </div>
@@ -179,7 +201,7 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
             No tasks or habits scheduled for this date.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             {breakdownItems.map((item) => {
               const Icon = getCategoryIcon(item.category);
               const friendlyTitle = getFriendlyTitle(item.label, item.category);
@@ -189,39 +211,49 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
               return (
                 <div
                   key={item.id}
-                  className="p-3.5 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-800 space-y-2.5 transition-all"
+                  className="p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-800 space-y-2.5 transition-all"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3">
+                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                       <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
                         style={{ backgroundColor: `${item.color}15`, color: item.color }}
                       >
                         <Icon className="w-4 h-4" />
                       </div>
-                      <div className="min-w-0">
-                        <span className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white block truncate">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white block leading-tight break-words">
                           {friendlyTitle}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 block truncate">
+                        <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 block leading-tight mt-0.5">
                           {item.details}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto sm:ml-0">
                       <span
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black shadow-2xs"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-black shadow-2xs"
                         style={{ backgroundColor: `${item.color}18`, color: item.color }}
                       >
                         {item.percentage}% Done
                       </span>
 
+                      {/* Go to Module Page Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleCategoryRedirect(item.category, e)}
+                        className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-indigo-600 dark:text-indigo-400 transition-colors flex items-center gap-1 text-[11px] font-bold"
+                        title={`Open ${friendlyTitle} page`}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+
                       {hasItems && (
                         <button
                           type="button"
                           onClick={() => toggleCategory(item.id)}
-                          className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 transition-colors"
                           title="View exact tasks"
                         >
                           {isCategoryExpanded ? (
@@ -253,31 +285,42 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
                       exit={{ opacity: 0, height: 0 }}
                       className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 space-y-1.5"
                     >
-                      <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">
-                        Exact Items ({item.itemList!.length}):
-                      </span>
-                      <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                        <span className="uppercase tracking-wider">
+                          Exact Items ({item.itemList!.length}):
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCategoryRedirect(item.category)}
+                          className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5 text-[10px]"
+                        >
+                          View all in {friendlyTitle} <ArrowUpRight className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                         {item.itemList!.map((subItem) => (
                           <div
                             key={subItem.id}
-                            className={`p-2 rounded-xl text-xs flex items-center justify-between gap-2 border ${
+                            onClick={() => handleCategoryRedirect(item.category)}
+                            className={`group p-2 sm:p-2.5 rounded-xl text-xs flex items-center justify-between gap-2 border transition-all cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 ${
                               subItem.isCompleted
                                 ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200/60 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-300'
                                 : 'bg-white dark:bg-gray-900 border-gray-200/60 dark:border-gray-800 text-gray-700 dark:text-gray-300'
                             }`}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
                               {subItem.isCompleted ? (
                                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                               ) : (
                                 <Circle className="w-4 h-4 text-gray-400 shrink-0" />
                               )}
-                              <span className={`font-semibold truncate ${subItem.isCompleted ? 'line-through opacity-80' : ''}`}>
+                              <span className={`font-semibold break-words leading-tight ${subItem.isCompleted ? 'line-through opacity-80' : ''}`}>
                                 {subItem.title}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1.5 shrink-0 ml-1">
                               {subItem.isMit && (
                                 <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-extrabold text-[10px] flex items-center gap-0.5">
                                   <Star className="w-3 h-3 fill-current" /> MIT
@@ -290,6 +333,7 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
                               }`}>
                                 {subItem.isCompleted ? `+${subItem.pointsEarned} pts` : `0 / ${subItem.maxPoints} pts`}
                               </span>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
                             </div>
                           </div>
                         ))}
@@ -307,13 +351,13 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
           <button
             type="button"
             onClick={() => setShowDetails((prev) => !prev)}
-            className="w-full p-3 rounded-2xl bg-slate-100 dark:bg-gray-800/80 hover:bg-slate-200 dark:hover:bg-gray-800 transition-colors flex items-center justify-between gap-2 text-xs font-bold text-gray-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700"
+            className="w-full p-3 rounded-2xl bg-slate-100 dark:bg-gray-800/80 hover:bg-slate-200 dark:hover:bg-gray-800 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 sm:gap-2 text-xs font-bold text-gray-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700 text-left"
           >
             <div className="flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-indigo-500" />
-              <span>Detailed Points & Exact Calculation Formula</span>
+              <Calculator className="w-4 h-4 text-indigo-500 shrink-0" />
+              <span>Detailed Points & Calculation Formula</span>
             </div>
-            <div className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 text-[11px] font-extrabold">
+            <div className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 text-[11px] font-extrabold self-end sm:self-auto">
               <span>{showDetails ? 'Hide Details' : 'Show Points & Math'}</span>
               {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </div>
@@ -329,9 +373,9 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
                 transition={{ duration: 0.25, ease: 'easeInOut' }}
                 className="overflow-hidden"
               >
-                <div className="mt-3 p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 space-y-4 text-xs">
+                <div className="mt-3 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 space-y-3.5 text-xs">
                   {/* Total Points Header */}
-                  <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex flex-wrap items-center justify-between gap-1 pb-2 border-b border-gray-100 dark:border-gray-800">
                     <span className="font-extrabold text-gray-900 dark:text-white">
                       Itemized Point Breakdown ({totalPointsEarned} total pts)
                     </span>
@@ -341,23 +385,23 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
                   </div>
 
                   {/* Itemized List with Exact Points, Max Points & Tasks List */}
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {breakdownItems.map((item) => (
                       <div
                         key={item.id}
                         className="p-3 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-200/60 dark:border-gray-800 space-y-2"
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <span className="font-bold text-gray-900 dark:text-white block truncate">
+                        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <span className="font-bold text-gray-900 dark:text-white block leading-tight break-words">
                               {item.label}
                             </span>
-                            <span className="text-[11px] text-gray-500 truncate block">
+                            <span className="text-[11px] text-gray-500 block leading-tight mt-0.5">
                               {item.details}
                             </span>
                           </div>
                           <div className="text-right shrink-0">
-                            <span className="font-black text-sm text-gray-900 dark:text-white block">
+                            <span className="font-black text-xs sm:text-sm text-gray-900 dark:text-white block">
                               +{item.pointsEarned} <span className="text-[10px] text-gray-400 font-normal">/ {item.maxPoints} pts</span>
                             </span>
                             <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">
@@ -370,19 +414,23 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
                         {item.itemList && item.itemList.length > 0 && (
                           <div className="pt-2 border-t border-gray-200 dark:border-gray-700/60 space-y-1">
                             {item.itemList.map((sub) => (
-                              <div key={sub.id} className="flex items-center justify-between text-[11px] py-0.5">
-                                <div className="flex items-center gap-1.5 truncate">
+                              <div
+                                key={sub.id}
+                                onClick={() => handleCategoryRedirect(item.category)}
+                                className="flex items-center justify-between text-[11px] py-1 cursor-pointer hover:bg-gray-200/40 dark:hover:bg-gray-700/40 px-1.5 rounded-lg transition-colors"
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-2">
                                   {sub.isCompleted ? (
                                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                                   ) : (
                                     <Circle className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                                   )}
-                                  <span className={sub.isCompleted ? 'line-through text-gray-400' : 'text-gray-700 dark:text-gray-300 font-medium'}>
+                                  <span className={`break-words leading-tight ${sub.isCompleted ? 'line-through text-gray-400' : 'text-gray-700 dark:text-gray-300 font-medium'}`}>
                                     {sub.title}
                                   </span>
-                                  {sub.isMit && <span className="text-[9px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-950 px-1 rounded">MIT</span>}
+                                  {sub.isMit && <span className="text-[9px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-950 px-1 rounded shrink-0">MIT</span>}
                                 </div>
-                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded shrink-0 ${
                                   sub.isCompleted
                                     ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
                                     : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
@@ -414,12 +462,12 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
         </div>
 
         {/* How to Boost Your Score - Simple Guidance Box */}
-        <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 space-y-2 text-xs text-indigo-950 dark:text-indigo-200">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 space-y-1.5 text-xs text-indigo-950 dark:text-indigo-200">
           <div className="flex items-center gap-2 font-extrabold text-indigo-900 dark:text-indigo-300">
             <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
             <span>How to increase your Daily Score:</span>
           </div>
-          <ul className="space-y-1 text-[11px] text-indigo-800 dark:text-indigo-300/90 pl-6 list-disc leading-relaxed">
+          <ul className="space-y-1 text-[11px] text-indigo-800 dark:text-indigo-300/90 pl-5 sm:pl-6 list-disc leading-relaxed">
             <li><strong>Complete your Top Priority Tasks (MITs)</strong> for the biggest score boost.</li>
             <li><strong>Maintain your Habit Streaks & Goals</strong> to keep your momentum growing every day.</li>
           </ul>
