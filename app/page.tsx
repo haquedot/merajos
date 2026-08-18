@@ -43,6 +43,9 @@ import { NowFocusCard } from '@/components/dashboard/NowFocusCard';
 import { FocusOverlayModal } from '@/components/modals/FocusOverlayModal';
 import { PublicAppOverviewBanner } from '@/components/landing/PublicAppOverviewBanner';
 import { DailyScoreBreakdownModal } from '../components/modals/DailyScoreBreakdownModal';
+import { QuickAddModal } from '@/components/modals/QuickAddModal';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 export default function DashboardHome() {
   const [greeting, setGreeting] = useState('Good day');
@@ -51,6 +54,7 @@ export default function DashboardHome() {
   const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
   const [activeFocusTask, setActiveFocusTask] = useState<any>(null);
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   const { tasks, toggleTaskStatus, isLoading: isLoadingTasks } = useTaskStore();
   const { projects } = useProjectStore();
@@ -131,6 +135,7 @@ export default function DashboardHome() {
     todayTasks,
     habitsCount: habits.length,
     completedHabitsCount: habitCompletedToday,
+    habitsList: habits.map((h) => ({ id: h.id, name: h.name, isCompleted: !!h.history[todayStr] })),
     projectsCount: projects.length,
     goalsCount: goals.length,
     completedGoalsCount: goals.filter((g) => g.progress >= 100).length,
@@ -195,7 +200,7 @@ export default function DashboardHome() {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-white border border-[#E2E8F0] dark:border-[#243244] relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 shadow-md"
+        className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-white border border-indigo-500/20 dark:border-[#243244] relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 shadow-md"
       >
         <div className="relative z-10 space-y-1.5 sm:space-y-2">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
@@ -210,12 +215,13 @@ export default function DashboardHome() {
 
         {/* Progress Ring Widget (Clickable to view Score Breakdown) */}
         <div
-          onClick={() => setIsScoreModalOpen(true)}
+          onClick={() => {
+            hasRecordedItems ? setIsScoreModalOpen(true) : setQuickAddOpen(true);
+          }}
           className="relative z-10 flex items-center gap-3.5 sm:gap-6 bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white/20 w-full sm:w-auto justify-between sm:justify-start shrink-0 cursor-pointer transition-all duration-200 group"
-          title="Click to view full Daily Score breakdown"
         >
           <CircularProgress
-            percentage={hasRecordedItems ? taskCompletionRate : 0}
+            percentage={hasRecordedItems ? dailyScore : 0}
             size={76}
             strokeWidth={7}
             color="#ffffff"
@@ -225,14 +231,28 @@ export default function DashboardHome() {
           <div className="flex flex-col">
             <div className="flex items-center gap-1">
               <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-blue-100">Daily Score</span>
-              <Info className="w-3 h-3 text-blue-200 opacity-60 group-hover:opacity-100 transition-opacity" />
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="w-3 h-3 text-blue-200 opacity-60 group-hover:opacity-100 transition-opacity" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-gray-900 text-white font-medium text-xs px-3 py-1.5 rounded-xl shadow-xl">
+                  {hasRecordedItems ? 'Click for details' : 'Click to start'}
+                </TooltipContent>
+              </Tooltip>
             </div>
             <span className="text-xl sm:text-2xl font-black text-white">
               {hasRecordedItems ? `${dailyScore} / 100` : 'Not Started'}
             </span>
-            <span className="text-[10px] sm:text-xs text-emerald-300 font-bold flex items-center gap-1 mt-0.5" title="Click to open score breakdown modal">
-              <Flame className="w-3.5 h-3.5 fill-current text-amber-300 shrink-0" />
-              {hasRecordedItems ? `${dailyScore}% Score Today (Click for details)` : 'Add tasks to start'}
+            <span className="text-[10px] sm:text-xs text-emerald-300 font-bold flex items-center gap-1 mt-0.5">
+              <Button
+                variant={'link'}
+                className='text-emerald-300 hover:underline p-0 h-auto text-[10px] sm:text-xs'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  hasRecordedItems ? setIsScoreModalOpen(true) : setQuickAddOpen(true);
+                }}>
+                {hasRecordedItems ? `Click for details` : `Add tasks to start`}
+              </Button>
             </span>
           </div>
         </div>
@@ -268,44 +288,88 @@ export default function DashboardHome() {
         }
       />
 
+      {/* quick add modal */}
+      <QuickAddModal
+        isOpen={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+      />
+
       {/* Overview Stat Cards Grid: 2 cols on mobile, 4 cols on desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatisticCard
-          title="Active Projects"
-          value={activeProjectsCount}
-          subtitle={activeProjectSubtitle}
-          icon={Briefcase}
-          iconBgColor="bg-purple-50 dark:bg-purple-950/40"
-          iconColor="text-purple-500"
-          trend={{ value: `${avgProjectProgress}% Avg`, positive: avgProjectProgress >= 50 }}
-        />
-        <StatisticCard
-          title="Research Progress"
-          value={`${realResearchProgress}%`}
-          subtitle={researchSubtitle}
-          icon={BookOpen}
-          iconBgColor="bg-blue-50 dark:bg-blue-950/40"
-          iconColor="text-blue-500"
-          trend={{ value: `${totalPapers} Paper${totalPapers === 1 ? '' : 's'}`, positive: totalPapers > 0 }}
-        />
-        <StatisticCard
-          title="DSA Solved"
-          value={dsaTotalSolved}
-          subtitle={dsaSubtitle}
-          icon={GraduationCap}
-          iconBgColor="bg-emerald-50 dark:bg-emerald-950/40"
-          iconColor="text-emerald-500"
-          trend={{ value: `${dsaProgressPercent}% Goal`, positive: dsaProgressPercent > 0 }}
-        />
-        <StatisticCard
-          title="Habits Completed"
-          value={`${habitCompletedToday}/${habits.length}`}
-          subtitle={habitSubtitle}
-          icon={Activity}
-          iconBgColor="bg-amber-50 dark:bg-amber-950/40"
-          iconColor="text-amber-500"
-          trend={{ value: `${habitCompletionRate}% Today`, positive: habitCompletionRate >= 50 }}
-        />
+        <Tooltip>
+          <TooltipTrigger>
+            <Link href="/clients">
+              <StatisticCard
+                title="Active Projects"
+                value={activeProjectsCount}
+                subtitle={activeProjectSubtitle}
+                icon={Briefcase}
+                iconBgColor="bg-purple-50 dark:bg-purple-950/40"
+                iconColor="text-purple-500"
+                trend={{ value: `${avgProjectProgress}% Avg`, positive: avgProjectProgress >= 50 }}
+              />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-gray-900 text-white font-medium text-xs px-3 py-1.5 rounded-xl shadow-xl">
+            Click to manage active client projects
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger>
+            <Link href="/research">
+              <StatisticCard
+                title="Research Progress"
+                value={`${realResearchProgress}%`}
+                subtitle={researchSubtitle}
+                icon={BookOpen}
+                iconBgColor="bg-blue-50 dark:bg-blue-950/40"
+                iconColor="text-blue-500"
+                trend={{ value: `${totalPapers} Paper${totalPapers === 1 ? '' : 's'}`, positive: totalPapers > 0 }}
+              />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-gray-900 text-white font-medium text-xs px-3 py-1.5 rounded-xl shadow-xl">
+            Click to explore research reading list
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger>
+            <Link href="/career">
+              <StatisticCard
+                title="DSA Solved"
+                value={dsaTotalSolved}
+                subtitle={dsaSubtitle}
+                icon={GraduationCap}
+                iconBgColor="bg-emerald-50 dark:bg-emerald-950/40"
+                iconColor="text-emerald-500"
+                trend={{ value: `${dsaProgressPercent}% Goal`, positive: dsaProgressPercent > 0 }}
+              />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-gray-900 text-white font-medium text-xs px-3 py-1.5 rounded-xl shadow-xl">
+            Click to open career prep & problem tracker
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Link href="/habits">
+              <StatisticCard
+                title="Habits Completed"
+                value={`${habitCompletedToday}/${habits.length}`}
+                subtitle={habitSubtitle}
+                icon={Activity}
+                iconBgColor="bg-amber-50 dark:bg-amber-950/40"
+                iconColor="text-amber-500"
+                trend={{ value: `${habitCompletionRate}% Today`, positive: habitCompletionRate >= 50 }}
+              />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-gray-900 text-white font-medium text-xs px-3 py-1.5 rounded-xl shadow-xl">
+            Click to view and check off daily habits
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Main Grid: Focus + Quick Action & Analytics */}

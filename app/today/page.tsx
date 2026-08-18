@@ -87,6 +87,7 @@ export default function TodayPage() {
     todayTasks,
     habitsCount: habits.length,
     completedHabitsCount: habitCompletedToday,
+    habitsList: habits.map((h) => ({ id: h.id, name: h.name, isCompleted: !!h.history[todayStr] })),
     projectsCount: projects.length,
     goalsCount: goals.length,
     completedGoalsCount: goals.filter((g) => g.progress >= 100).length,

@@ -20,6 +20,27 @@ export interface ScoreBreakdownItem {
   details: string;
   percentage: number;
   color: string;
+  itemList?: {
+    id: string;
+    title: string;
+    isCompleted: boolean;
+    isMit?: boolean;
+    category?: string;
+    pointsEarned: number;
+    maxPoints: number;
+  }[];
+}
+
+export interface DailyScoreParams {
+  todayTasks: Task[];
+  habitsCount: number;
+  completedHabitsCount: number;
+  habitsList?: { id: string; name: string; isCompleted: boolean }[];
+  projectsCount?: number;
+  goalsCount?: number;
+  completedGoalsCount?: number;
+  researchCount?: number;
+  dsaCount?: number;
 }
 
 /**
@@ -36,6 +57,7 @@ export function calculateDailyScore(params: DailyScoreParams): {
     todayTasks,
     habitsCount,
     completedHabitsCount,
+    habitsList,
     projectsCount = 0,
     goalsCount = 0,
     completedGoalsCount = 0,
@@ -79,6 +101,26 @@ export function calculateDailyScore(params: DailyScoreParams): {
     taskScore = Math.round(taskCompletionRate * 0.6 + mitCompletionRate * 0.4);
     taskPointsEarned = Math.round((taskScore / 100) * 40);
 
+    // Calculate individual task point values out of 40 max points
+    const totalTaskWeight = todayTasks.reduce((acc, t) => acc + (t.mit ? 2 : 1), 0);
+    const ptsPerWeightUnit = totalTaskWeight > 0 ? 40 / totalTaskWeight : 0;
+
+    const taskItemList = todayTasks.map((t) => {
+      const isCompleted = t.status === 'completed';
+      const itemMaxPoints = Math.max(1, Math.round((t.mit ? 2 : 1) * ptsPerWeightUnit));
+      const itemPointsEarned = isCompleted ? itemMaxPoints : 0;
+
+      return {
+        id: t.id,
+        title: t.title,
+        isCompleted,
+        isMit: t.mit,
+        category: t.category,
+        pointsEarned: itemPointsEarned,
+        maxPoints: itemMaxPoints,
+      };
+    });
+
     breakdownItems.push({
       id: 'tasks_mits',
       label: 'Tasks & Key Priorities (MITs)',
@@ -88,6 +130,7 @@ export function calculateDailyScore(params: DailyScoreParams): {
       details: `${completedTasks} of ${totalTasks} tasks done (${completedTodayMits}/${todayMits.length} MITs)`,
       percentage: taskScore,
       color: '#3B82F6', // Blue
+      itemList: taskItemList,
     });
   }
 
@@ -99,6 +142,7 @@ export function calculateDailyScore(params: DailyScoreParams): {
     rate: number;
     details: string;
     color: string;
+    itemList?: { id: string; title: string; isCompleted: boolean; isMit?: boolean; category?: string; pointsEarned: number; maxPoints: number }[];
   }[] = [];
 
   if (habitsCount > 0) {
@@ -180,15 +224,30 @@ export function calculateDailyScore(params: DailyScoreParams): {
 
   activeModules.forEach((mod) => {
     const pts = Math.round((mod.rate / 100) * maxPointsPerModule);
+    const modMaxPts = Math.round(maxPointsPerModule);
+
+    let finalItemList = mod.itemList;
+    if (mod.category === 'habits' && habitsList && habitsList.length > 0) {
+      const habitPtsPerItem = Math.max(1, Math.round(modMaxPts / habitsList.length));
+      finalItemList = habitsList.map((h) => ({
+        id: h.id,
+        title: h.name,
+        isCompleted: h.isCompleted,
+        pointsEarned: h.isCompleted ? habitPtsPerItem : 0,
+        maxPoints: habitPtsPerItem,
+      }));
+    }
+
     breakdownItems.push({
       id: mod.id,
       label: mod.label,
       category: mod.category,
       pointsEarned: pts,
-      maxPoints: Math.round(maxPointsPerModule),
+      maxPoints: modMaxPts,
       details: mod.details,
       percentage: mod.rate,
       color: mod.color,
+      itemList: finalItemList,
     });
   });
 

@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Award,
   CheckSquare,
@@ -12,8 +12,14 @@ import {
   GraduationCap,
   Sparkles,
   Zap,
-  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Calculator,
   TrendingUp,
+  Info,
+  CheckCircle2,
+  Circle,
+  Star,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { ScoreBreakdownItem } from '../../lib/productivityCalculator';
@@ -34,7 +40,14 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
   breakdownItems,
   dateTitle = 'Today',
 }) => {
+  const [showDetails, setShowDetails] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
   if (!isOpen) return null;
+
+  const toggleCategory = (id: string) => {
+    setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Friendly human rank, message, and guidance based on daily score
   const getHumanMotivation = (score: number) => {
@@ -79,6 +92,7 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
   };
 
   const motivation = getHumanMotivation(dailyScore);
+  const totalPointsEarned = breakdownItems.reduce((acc, item) => acc + item.pointsEarned, 0);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -92,7 +106,6 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
     }
   };
 
-  // Simplify category titles for everyday users
   const getFriendlyTitle = (label: string, category: string) => {
     switch (category) {
       case 'tasks': return 'Daily Tasks & Priorities';
@@ -107,7 +120,7 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Productivity Summary (${dateTitle})`} maxWidth="lg">
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Top Hero Banner: Friendly Score & Human Encouragement */}
         <div className="relative p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-white overflow-hidden shadow-xl border border-indigo-500/20 flex flex-col sm:flex-row items-center justify-between gap-5">
           {/* Ambient Glow */}
@@ -152,7 +165,7 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-indigo-500" />
             <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
-              Activity Progress Breakdown
+              Activity Overview
             </h4>
           </div>
           <span className="text-xs text-gray-400 font-medium">
@@ -160,7 +173,7 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
           </span>
         </div>
 
-        {/* Breakdown Items List */}
+        {/* Activity Cards List */}
         {breakdownItems.length === 0 ? (
           <div className="p-6 text-center text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
             No tasks or habits scheduled for this date.
@@ -170,13 +183,14 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
             {breakdownItems.map((item) => {
               const Icon = getCategoryIcon(item.category);
               const friendlyTitle = getFriendlyTitle(item.label, item.category);
+              const isCategoryExpanded = !!expandedCategories[item.id];
+              const hasItems = item.itemList && item.itemList.length > 0;
 
               return (
                 <div
                   key={item.id}
-                  className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-800 space-y-2.5 transition-all"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-800 space-y-2.5 transition-all"
                 >
-                  {/* Category Header */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div
@@ -195,18 +209,32 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
                       </div>
                     </div>
 
-                    {/* Completion Badge */}
-                    <div className="text-right shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black shadow-2xs"
                         style={{ backgroundColor: `${item.color}18`, color: item.color }}
                       >
                         {item.percentage}% Done
                       </span>
+
+                      {hasItems && (
+                        <button
+                          type="button"
+                          onClick={() => toggleCategory(item.id)}
+                          className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 transition-colors"
+                          title="View exact tasks"
+                        >
+                          {isCategoryExpanded ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  {/* Clean Visual Progress Bar */}
+                  {/* Progress Bar */}
                   <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700/60 overflow-hidden">
                     <motion.div
                       className="h-full rounded-full"
@@ -216,11 +244,174 @@ export const DailyScoreBreakdownModal: React.FC<DailyScoreBreakdownModalProps> =
                       transition={{ duration: 0.5, ease: 'easeOut' }}
                     />
                   </div>
+
+                  {/* Collapsible Exact Items List (Task / Habit Titles) */}
+                  {hasItems && isCategoryExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 space-y-1.5"
+                    >
+                      <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">
+                        Exact Items ({item.itemList!.length}):
+                      </span>
+                      <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
+                        {item.itemList!.map((subItem) => (
+                          <div
+                            key={subItem.id}
+                            className={`p-2 rounded-xl text-xs flex items-center justify-between gap-2 border ${
+                              subItem.isCompleted
+                                ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200/60 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-300'
+                                : 'bg-white dark:bg-gray-900 border-gray-200/60 dark:border-gray-800 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              {subItem.isCompleted ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                              ) : (
+                                <Circle className="w-4 h-4 text-gray-400 shrink-0" />
+                              )}
+                              <span className={`font-semibold truncate ${subItem.isCompleted ? 'line-through opacity-80' : ''}`}>
+                                {subItem.title}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {subItem.isMit && (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-extrabold text-[10px] flex items-center gap-0.5">
+                                  <Star className="w-3 h-3 fill-current" /> MIT
+                                </span>
+                              )}
+                              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                                subItem.isCompleted
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
+                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                              }`}>
+                                {subItem.isCompleted ? `+${subItem.pointsEarned} pts` : `0 / ${subItem.maxPoints} pts`}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
+
+        {/* Accordion Toggle for Technical / Power Users */}
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => setShowDetails((prev) => !prev)}
+            className="w-full p-3 rounded-2xl bg-slate-100 dark:bg-gray-800/80 hover:bg-slate-200 dark:hover:bg-gray-800 transition-colors flex items-center justify-between gap-2 text-xs font-bold text-gray-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700"
+          >
+            <div className="flex items-center gap-2">
+              <Calculator className="w-4 h-4 text-indigo-500" />
+              <span>Detailed Points & Exact Calculation Formula</span>
+            </div>
+            <div className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 text-[11px] font-extrabold">
+              <span>{showDetails ? 'Hide Details' : 'Show Points & Math'}</span>
+              {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </button>
+
+          {/* Accordion Content */}
+          <AnimatePresence>
+            {showDetails && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <div className="mt-3 p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 space-y-4 text-xs">
+                  {/* Total Points Header */}
+                  <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
+                    <span className="font-extrabold text-gray-900 dark:text-white">
+                      Itemized Point Breakdown ({totalPointsEarned} total pts)
+                    </span>
+                    <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold">
+                      Calculated dynamically
+                    </span>
+                  </div>
+
+                  {/* Itemized List with Exact Points, Max Points & Tasks List */}
+                  <div className="space-y-3">
+                    {breakdownItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-200/60 dark:border-gray-800 space-y-2"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <span className="font-bold text-gray-900 dark:text-white block truncate">
+                              {item.label}
+                            </span>
+                            <span className="text-[11px] text-gray-500 truncate block">
+                              {item.details}
+                            </span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="font-black text-sm text-gray-900 dark:text-white block">
+                              +{item.pointsEarned} <span className="text-[10px] text-gray-400 font-normal">/ {item.maxPoints} pts</span>
+                            </span>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">
+                              {item.percentage}% completion
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* List of actual tasks/activities inside detailed math accordion */}
+                        {item.itemList && item.itemList.length > 0 && (
+                          <div className="pt-2 border-t border-gray-200 dark:border-gray-700/60 space-y-1">
+                            {item.itemList.map((sub) => (
+                              <div key={sub.id} className="flex items-center justify-between text-[11px] py-0.5">
+                                <div className="flex items-center gap-1.5 truncate">
+                                  {sub.isCompleted ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                  ) : (
+                                    <Circle className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                  )}
+                                  <span className={sub.isCompleted ? 'line-through text-gray-400' : 'text-gray-700 dark:text-gray-300 font-medium'}>
+                                    {sub.title}
+                                  </span>
+                                  {sub.isMit && <span className="text-[9px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-950 px-1 rounded">MIT</span>}
+                                </div>
+                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                                  sub.isCompleted
+                                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                                }`}>
+                                  {sub.isCompleted ? `+${sub.pointsEarned} pts` : `0 / ${sub.maxPoints} pts`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Mathematical Formula Explanation Box */}
+                  <div className="p-3 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 flex items-start gap-2.5 text-indigo-900 dark:text-indigo-300">
+                    <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1 text-[11px] leading-relaxed">
+                      <span className="font-bold block">Calculation Formula:</span>
+                      <p>
+                        Daily Score = <strong>40% Core Tasks & MITs</strong> + <strong>60% Active Routines</strong> (Habit streaks, goal progress, client work, research & career problems).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* How to Boost Your Score - Simple Guidance Box */}
         <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 space-y-2 text-xs text-indigo-950 dark:text-indigo-200">
