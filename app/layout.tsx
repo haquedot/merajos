@@ -10,6 +10,7 @@ import { PWAInstallPrompt } from '../components/pwa/PWAInstallPrompt';
 import { BRAND } from '../lib/branding';
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from 'react-hot-toast';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -115,6 +116,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <TooltipProvider>
                 <MainLayout>{children}</MainLayout>
                 <PWAInstallPrompt />
+                <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
               </TooltipProvider>
             </GoogleAuthProvider>
           </ThemeProvider>

@@ -17,6 +17,7 @@ import {
   Target,
   BarChart3,
   FileText,
+  Link2,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -48,6 +49,7 @@ export const sidebarItems = [
   { name: 'Goals', href: '/goals', icon: Target, moduleKey: 'goals', alwaysShow: false },
   { name: 'Analytics', href: '/analytics', icon: BarChart3, moduleKey: 'analytics', alwaysShow: false },
   { name: 'Notes & Brain Dump', href: '/notes', icon: FileText, moduleKey: 'notes', alwaysShow: false },
+  { name: 'Saved Links', href: '/links', icon: Link2, moduleKey: 'links', alwaysShow: true },
   { name: 'Settings', href: '/settings', icon: Settings, moduleKey: null, alwaysShow: true },
 ];
 
@@ -64,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
   const collapsed = settings.sidebarCollapsed;
 
   // Modules shown to unauthenticated (guest) users
-  const GUEST_MODULES = ['tasks', 'calendar', 'notes'];
+  const GUEST_MODULES = ['tasks', 'calendar', 'notes', 'links'];
 
   // Determine which modules to show:
   // - Guest (no session): only GUEST_MODULES

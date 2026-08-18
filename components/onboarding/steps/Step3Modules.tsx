@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import {
   CheckSquare, CalendarDays, Activity, Target, FileText,
-  BarChart3, Briefcase, BookOpen, GraduationCap, Check,
+  BarChart3, Briefcase, BookOpen, GraduationCap, Link2, Check,
 } from 'lucide-react';
 import { ModuleKey } from '../../../types';
 
@@ -23,6 +23,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
   { key: 'habits',         label: 'Habits',          description: 'Daily habits & streak tracking',       icon: <Activity className="w-5 h-5" />,     color: 'amber' },
   { key: 'goals',          label: 'Goals',           description: 'Long & short term goal setting',       icon: <Target className="w-5 h-5" />,        color: 'green' },
   { key: 'notes',          label: 'Notes',           description: 'Notes, ideas & brain dump',            icon: <FileText className="w-5 h-5" />,      color: 'yellow' },
+  { key: 'links',          label: 'Saved Links',     description: 'Bookmark vault & link manager',        icon: <Link2 className="w-5 h-5" />,         color: 'blue' },
   { key: 'weekly_planner', label: 'Weekly Planner',  description: 'Week planning & reviews',              icon: <CalendarDays className="w-5 h-5" />,  color: 'purple' },
   { key: 'analytics',      label: 'Analytics',       description: 'Productivity charts & insights',       icon: <BarChart3 className="w-5 h-5" />,     color: 'sky' },
   { key: 'clients',        label: 'Client Projects', description: 'Manage clients, bugs & features',     icon: <Briefcase className="w-5 h-5" />,     color: 'rose' },
