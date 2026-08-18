@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '../../../lib/mongodb';
 import Task from '../../../models/Task';
-import { initNodeCron } from '../../../lib/cron';
 
 export async function GET() {
   try {
-    initNodeCron();
     await connectToDatabase();
     const tasks = await Task.find({}).sort({ createdAt: -1 }).lean();
     const formattedTasks = tasks.map((t: any) => ({ ...t, id: t._id }));

@@ -19,7 +19,17 @@ export class GoogleCalendarService {
 
     try {
       const res = await fetch(`${BASE_URL}/users/me/calendarList`, { headers });
-      if (!res.ok) return [];
+      if (!res.ok) {
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          console.error(
+            '⚠️ [Google Calendar API Disabled in GCP] Enable Google Calendar API for project 521278307538 at:',
+            'https://console.developers.google.com/apis/api/calendar-json.googleapis.com/overview?project=521278307538',
+            errData
+          );
+        }
+        return [];
+      }
       const data = await res.json();
       return data.items || [];
     } catch (err) {

@@ -59,6 +59,12 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
       if (sess) {
         setSession(sess);
         if (sess.email) {
+          const userKey = `orbit_onboarding_${sess.email}_completed`;
+          const isLocalOnboarded = typeof window !== 'undefined' && (
+            localStorage.getItem(userKey) === 'true' ||
+            localStorage.getItem('orbit_onboarding_completed') === 'true'
+          );
+
           fetch('/api/user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -66,8 +72,19 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
               email: sess.email,
               name: sess.name,
               picture: sess.picture,
+              ...(isLocalOnboarded && { onboardingCompleted: true }),
             }),
-          }).catch((err) => console.warn('Failed to sync user session to MongoDB', err));
+          })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              if (data?.user?.onboardingCompleted) {
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('orbit_onboarding_completed', 'true');
+                  localStorage.setItem(`orbit_onboarding_${sess.email}_completed`, 'true');
+                }
+              }
+            })
+            .catch((err) => console.warn('Failed to sync user session to MongoDB', err));
         }
         // Trigger full sync with Google Calendar & Google Tasks on initial load
         syncService.syncAll();

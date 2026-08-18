@@ -20,11 +20,23 @@ export class GoogleTasksService {
 
     try {
       const res = await fetch(`${BASE_URL}/users/@me/lists`, { headers });
-      if (!res.ok) return [];
+      if (!res.ok) {
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          console.error(
+            '⚠️ [Google Tasks API Disabled in GCP] Enable Google Tasks API for project 521278307538 at:',
+            'https://console.developers.google.com/apis/api/tasks.googleapis.com/overview?project=521278307538',
+            errData
+          );
+        } else {
+          console.warn(`[GoogleTasksService] fetchTaskLists HTTP ${res.status}: ${res.statusText}`);
+        }
+        return [];
+      }
       const data = await res.json();
       return data.items || [];
     } catch (err) {
-      console.warn('[TasksService] Error fetching task lists:', err);
+      console.warn('[GoogleTasksService] Error fetching task lists:', err);
       return [];
     }
   }
@@ -34,13 +46,31 @@ export class GoogleTasksService {
     if (!headers) return [];
 
     try {
-      const res = await fetch(`${BASE_URL}/lists/${encodeURIComponent(listId)}/tasks?showCompleted=true&showHidden=true`, { headers });
-      if (!res.ok) return [];
+      const res = await fetch(
+        `${BASE_URL}/lists/${encodeURIComponent(listId)}/tasks?showCompleted=true&showHidden=true`,
+        { headers }
+      );
+      if (!res.ok) {
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          console.error(
+            '⚠️ [Google Tasks API Disabled in GCP] Enable Google Tasks API for project 521278307538 at:',
+            'https://console.developers.google.com/apis/api/tasks.googleapis.com/overview?project=521278307538',
+            errData
+          );
+        } else {
+          console.warn(`[GoogleTasksService] fetchTasksForList(${listId}) HTTP ${res.status}: ${res.statusText}`);
+        }
+        return [];
+      }
       const data = await res.json();
 
-      return (data.items || []).map((item: any) => this.mapGoogleTaskToMeraj(item, listId));
+      const items = data.items || [];
+      return items
+        .filter((item: any) => !item.deleted)
+        .map((item: any) => this.mapGoogleTaskToMeraj(item, listId));
     } catch (err) {
-      console.warn('[TasksService] Error fetching tasks:', err);
+      console.warn('[GoogleTasksService] Error fetching tasks:', err);
       return [];
     }
   }

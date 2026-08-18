@@ -3,10 +3,15 @@ import { calculateDailyTasksAndLogAnalytics } from '../../../../lib/cronCalculat
 
 export async function GET(req: Request) {
   try {
+    const authHeader = req.headers.get('authorization');
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized cron request' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const targetDate = searchParams.get('date') || searchParams.get('targetDate') || undefined;
 
-    const result = await calculateDailyTasksAndLogAnalytics(undefined, undefined, targetDate);
+    const result = await calculateDailyTasksAndLogAnalytics(undefined, { sendEmail: true }, targetDate);
     return NextResponse.json({
       message: 'Daily tasks and analytics successfully calculated and persisted to MongoDB',
       snapshot: result.snapshot,

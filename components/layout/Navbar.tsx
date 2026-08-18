@@ -114,42 +114,37 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right section: Sync Status, Run Cron, Theme Toggle, Profile Menu */}
       <div className="flex items-center gap-1.5 sm:gap-2.5">
-        {/* Offline / Online Sync Badge */}
-        <div className="hidden sm:block">
-          <SyncStatusBadge />
-        </div>
-        {/* Run Daily Summary Button (Shown when RUN_CRON_JOB is true) */}
-        {process.env.NEXT_PUBLIC_RUN_CRON_JOB === 'true' && (
-          <button
-            onClick={handleRunCronJob}
-            disabled={isCronRunning}
-            className="hidden sm:flex btn-secondary px-3 py-1.5 rounded-xl text-xs items-center gap-1.5 disabled:opacity-50"
-            title="Calculate and log daily task performance summary"
-          >
-            <Zap className={`w-3.5 h-3.5 ${isCronRunning ? 'animate-spin' : ''}`} />
-            <span>{isCronRunning ? 'Calculating...' : 'Run Daily Summary'}</span>
-          </button>
-        )}
-
-        {/* Google Sync Status Pill */}
+        {/* Single Unified Google & Local Sync Status Pill */}
         <button
           id="tour-google-sync"
           onClick={syncNow}
-          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-[#E2E8F0] dark:border-[#243244] transition-all"
+          className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+            syncState === 'offline'
+              ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+              : syncState === 'error'
+              ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+              : syncState === 'syncing'
+              ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border-[#E2E8F0] dark:border-[#243244]'
+          }`}
           title={syncMessage || 'Click to synchronize with Google'}
         >
           {syncState === 'syncing' ? (
-            <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#3B82F6]" />
+            <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-500" />
           ) : syncState === 'offline' ? (
-            <CloudOff className="w-3.5 h-3.5 text-[#F59E0B]" />
+            <CloudOff className="w-3.5 h-3.5 text-amber-500" />
+          ) : syncState === 'error' ? (
+            <CloudOff className="w-3.5 h-3.5 text-rose-500" />
           ) : (
-            <Cloud className="w-3.5 h-3.5 text-[#22C55E]" />
+            <Cloud className="w-3.5 h-3.5 text-emerald-500" />
           )}
           <span>
             {syncState === 'syncing'
               ? 'Syncing...'
               : syncState === 'offline'
               ? 'Offline'
+              : syncState === 'error'
+              ? 'Re-connect Google'
               : session
               ? 'Google Synced'
               : 'Local Mode'}
