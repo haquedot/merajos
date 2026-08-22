@@ -43,9 +43,9 @@ export class GoogleCalendarService {
     if (!headers) return [];
 
     try {
-      // 1 Year in the past to 1 Year in the future
-      const timeMin = new Date(Date.now() - 365 * 86400000).toISOString();
-      const timeMax = new Date(Date.now() + 365 * 86400000).toISOString();
+      // 30 Days in the past to 90 Days in the future (Optimized for productivity planning)
+      const timeMin = new Date(Date.now() - 30 * 86400000).toISOString();
+      const timeMax = new Date(Date.now() + 90 * 86400000).toISOString();
       
       let allItems: any[] = [];
       let pageToken: string | undefined = undefined;
@@ -57,7 +57,12 @@ export class GoogleCalendarService {
         }
 
         const res = await fetch(url, { headers });
-        if (!res.ok) break;
+        if (!res.ok) {
+          if (res.status === 401) {
+            console.warn('[CalendarService] OAuth token expired or unauthorized (401). Skipping remote event fetch.');
+          }
+          break;
+        }
         
         const data = await res.json();
         if (data.items) {

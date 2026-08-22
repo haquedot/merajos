@@ -14,6 +14,7 @@ class SyncService {
   private syncState: SyncState = 'idle';
   private listeners: Set<SyncListener> = new Set();
   private autoSyncInterval: any = null;
+  private isSyncInProgress = false;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -26,13 +27,13 @@ class SyncService {
   private async init() {
     await seedDexieDatabaseIfEmpty();
 
-    // Start auto sync every 2 minutes
+    // Background auto-sync every 10 minutes
     if (!this.autoSyncInterval) {
       this.autoSyncInterval = setInterval(() => {
         if (navigator.onLine) {
-          this.syncAll();
+          this.syncAll(false);
         }
-      }, 120000);
+      }, 600000);
     }
   }
 
@@ -50,33 +51,58 @@ class SyncService {
   private async handleOnline() {
     this.notify('syncing', 'Back online. Synchronizing with Google...');
     await this.processOfflineQueue();
-    await this.syncAll();
+    await this.syncAll(false);
   }
 
   private handleOffline() {
     this.notify('offline', 'Working in offline mode. Changes saved locally.');
   }
 
-  public async syncAll(): Promise<void> {
+  public async syncAll(isInteractive = false): Promise<void> {
+    if (this.isSyncInProgress) {
+      console.log('[SyncService] Sync already in progress, skipping concurrent run.');
+      return;
+    }
+
     if (!navigator.onLine) {
       this.notify('offline', 'Offline. Changes will sync when connected.');
       return;
     }
 
+    const session = await authService.getSession();
+    if (!session) {
+      this.notify('idle', 'Not connected to Google Account.');
+      return;
+    }
+
+    let token = await authService.getAccessToken();
+
+    if (!token) {
+      if (isInteractive) {
+        try {
+          this.notify('syncing', 'Re-authenticating with Google...');
+          const newSession = await authService.signIn();
+          token = newSession?.accessToken || null;
+          if (!token) {
+            this.notify('error', 'Google session expired. Click to re-authenticate.');
+            return;
+          }
+        } catch (e) {
+          this.notify('error', 'Google re-authentication failed.');
+          return;
+        }
+      } else {
+        // Background auto-sync: token expired, pause remote sync gracefully without error banner
+        console.warn('[SyncService] Background sync skipped: Google OAuth access token expired.');
+        this.notify('idle', 'Local DB Synced (Google sync paused).');
+        return;
+      }
+    }
+
+    this.isSyncInProgress = true;
     this.notify('syncing', 'Syncing Google Calendar & Tasks...');
 
     try {
-      const session = await authService.getSession();
-      if (!session) {
-        this.notify('idle', 'Not connected to Google Account.');
-        return;
-      }
-
-      const token = await authService.getAccessToken();
-      if (!token) {
-        this.notify('error', 'Google session expired. Click to re-authenticate.');
-        return;
-      }
 
       // 1. Process Offline Queue first
       await this.processOfflineQueue();
@@ -167,6 +193,8 @@ class SyncService {
     } catch (err: any) {
       console.error('[SyncService] Sync failed:', err);
       this.notify('error', 'Sync failed. Will retry automatically.');
+    } finally {
+      this.isSyncInProgress = false;
     }
   }
 

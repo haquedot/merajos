@@ -84,8 +84,8 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
             })
             .catch((err) => console.warn('Failed to sync user session to MongoDB', err));
         }
-        // Trigger full sync with Google Calendar & Google Tasks on initial load
-        syncService.syncAll();
+        // Trigger background sync on initial load
+        syncService.syncAll(false);
       }
     });
 
@@ -102,7 +102,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     try {
       const sess = await authService.signIn();
       setSession(sess);
-      await syncService.syncAll();
+      await syncService.syncAll(true);
     } catch (err: any) {
       console.error('Google Sign In result:', err);
       // Only show access request modal if Google explicitly returned access_denied
@@ -133,7 +133,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   };
 
   const handleSyncNow = async () => {
-    await syncService.syncAll();
+    await syncService.syncAll(true);
   };
 
   const handleOpenAccessModal = (email?: string) => {
