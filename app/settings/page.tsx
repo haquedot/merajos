@@ -565,6 +565,8 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      <PersonalizationInspectionPanel />
+
       {/* Re-run Setup modal trigger from Settings */}
       {showOnboarding && (
         <OnboardingModal onComplete={() => setShowOnboarding(false)} />
