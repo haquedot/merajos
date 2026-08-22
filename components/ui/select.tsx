@@ -48,8 +48,8 @@ export const Select: React.FC<SelectProps> = ({
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/70 px-3 py-2 text-xs font-semibold text-gray-900 dark:text-white shadow-2xs hover:bg-gray-100/80 dark:hover:bg-gray-800/80 focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
-          isOpen && "ring-2 ring-[#1F3B99] dark:ring-[#6D5BFF]"
+          "flex h-10 w-full items-center justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/70 px-3 py-2 text-xs font-semibold text-gray-900 dark:text-white shadow-2xs hover:bg-gray-100/80 dark:hover:bg-gray-800/80 focus:outline-none focus:ring-2 focus:ring-orbit-blue transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
+          isOpen && "ring-2 ring-orbit-blue"
         )}
       >
         <span className="truncate">
@@ -64,7 +64,7 @@ export const Select: React.FC<SelectProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1.5 max-h-60 w-full overflow-auto rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1.5 shadow-xl animate-in fade-in-0 zoom-in-95 no-scrollbar">
+        <div className="absolute z-50 mt-1.5 max-h-60 w-full min-w-[220px] left-0 overflow-auto rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1.5 shadow-xl animate-in fade-in-0 zoom-in-95 no-scrollbar">
           {options.map((option) => {
             const isSelected = option.value === value
             return (
@@ -78,12 +78,12 @@ export const Select: React.FC<SelectProps> = ({
                 className={cn(
                   "relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold outline-none transition-colors",
                   isSelected
-                    ? "bg-[#1F3B99]/10 dark:bg-[#6D5BFF]/20 text-[#1F3B99] dark:text-[#6D5BFF]"
+                    ? "bg-orbit-blue/10 text-orbit-blue"
                     : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
               >
                 <span className="truncate">{option.label}</span>
-                {isSelected && <Check className="h-3.5 w-3.5 text-[#1F3B99] dark:text-[#6D5BFF] shrink-0" />}
+                {isSelected && <Check className="h-3.5 w-3.5 text-orbit-blue shrink-0" />}
               </button>
             )
           })}

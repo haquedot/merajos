@@ -1,24 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --color-orbit-primary: #1F3B99;
-  --color-orbit-primary-hover: #2C4EC2;
-  --color-orbit-primary-active: #162C75;
-  --color-orbit-purple: #6D5BFF;
-  --color-orbit-purple-hover: #7F70FF;
-  --color-orbit-purple-active: #5B49F0;
-  --color-orbit-accent: #3B82F6;
+  --color-orbit-blue: #0066FF;
+  --color-orbit-blue-hover: #0052CC;
+  --color-orbit-blue-dark: #003DB3;
+  --color-orbit-orange: #FF6B00;
+  --color-orbit-orange-hover: #E05D00;
+  --color-orbit-orange-light: #FF8800;
+  --color-orbit-purple: #0066FF;
+  --color-orbit-purple-hover: #0052CC;
+  --color-orbit-purple-active: #003DB3;
+  --color-orbit-accent: #0066FF;
 
   --color-orbit-bg-light: #F8FAFC;
   --color-orbit-bg-light-sec: #F1F5F9;
   --color-orbit-card-light: #FFFFFF;
   --color-orbit-border-light: #E2E8F0;
 
-  --color-orbit-bg-dark: #0B1120;
-  --color-orbit-bg-dark-sec: #111827;
-  --color-orbit-card-dark: #172033;
-  --color-orbit-nav-dark: #101827;
-  --color-orbit-border-dark: #243244;
+  --color-orbit-bg-dark: #0A0F1D;
+  --color-orbit-bg-dark-sec: #10172A;
+  --color-orbit-card-dark: #131B2E;
+  --color-orbit-nav-dark: #0E1626;
+  --color-orbit-border-dark: #1E2A42;
 }
 
 @variant dark (&:where(.dark, .dark *));
@@ -33,21 +36,23 @@
     --card: #FFFFFF;
     --card-foreground: #0F172A;
     --border: #E2E8F0;
-    --brand-primary: #1F3B99;
-    --brand-purple: #6D5BFF;
+    --brand-primary: #0066FF;
+    --brand-purple: #0066FF;
+    --brand-orange: #FF6B00;
   }
 
   html.dark, .dark {
-    --background: #0B1120;
-    --background-sec: #111827;
+    --background: #0A0F1D;
+    --background-sec: #10172A;
     --foreground: #F8FAFC;
     --foreground-sec: #CBD5E1;
     --foreground-muted: #94A3B8;
-    --card: #172033;
+    --card: #131B2E;
     --card-foreground: #F8FAFC;
-    --border: #243244;
-    --brand-primary: #1F3B99;
-    --brand-purple: #6D5BFF;
+    --border: #1E2A42;
+    --brand-primary: #0066FF;
+    --brand-purple: #0066FF;
+    --brand-orange: #FF6B00;
   }
   * {
     @apply border-border outline-ring/50;
@@ -76,76 +81,76 @@ html:not(.dark) body {
 
 /* Dark Mode Global Background Override */
 html.dark body {
-  background-color: #0B1120 !important;
+  background-color: #0A0F1D !important;
   color: #F8FAFC !important;
 }
 
 /* Custom Orbit-style cards in dark mode */
 html.dark .bg-white {
-  background-color: #172033 !important;
+  background-color: #131B2E !important;
 }
 
 html.dark .bg-gray-900 {
-  background-color: #101827 !important;
+  background-color: #0E1626 !important;
 }
 
 html.dark .border-gray-100,
 html.dark .border-gray-200,
 html.dark .border-gray-800 {
-  border-color: #243244 !important;
+  border-color: #1E2A42 !important;
 }
 
 html.dark .bg-gray-50,
 html.dark .bg-gray-100 {
-  background-color: #111827 !important;
+  background-color: #10172A !important;
 }
 
 html.dark .hover\:bg-gray-100:hover,
 html.dark .hover\:bg-gray-200:hover {
-  background-color: #1E293B !important;
+  background-color: #19243B !important;
 }
 
 /* Utility button & card classes for Orbit Theme */
 .btn-primary {
-  background-color: #1F3B99 !important;
+  background-color: #0066FF !important;
   color: #FFFFFF !important;
   font-weight: 700;
   transition: all 0.15s ease;
 }
 
 .btn-primary:hover {
-  background-color: #2C4EC2 !important;
+  background-color: #0052CC !important;
 }
 
 .btn-primary:active {
-  background-color: #162C75 !important;
+  background-color: #003DB3 !important;
 }
 
 .btn-secondary {
-  background-color: #6D5BFF !important;
+  background-color: #FF6B00 !important;
   color: #FFFFFF !important;
   font-weight: 700;
   transition: all 0.15s ease;
 }
 
 .btn-secondary:hover {
-  background-color: #7F70FF !important;
+  background-color: #E05D00 !important;
 }
 
 .btn-secondary:active {
-  background-color: #5B49F0 !important;
+  background-color: #C75200 !important;
 }
 
 .btn-outline {
-  border: 1px solid #1F3B99 !important;
-  color: #1F3B99 !important;
+  border: 1px solid #0066FF !important;
+  color: #0066FF !important;
   background-color: transparent;
   font-weight: 600;
   transition: all 0.15s ease;
 }
 
 .btn-outline:hover {
-  background-color: #1F3B99 !important;
+  background-color: #0066FF !important;
   color: #FFFFFF !important;
 }
 

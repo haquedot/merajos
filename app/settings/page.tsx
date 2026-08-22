@@ -485,7 +485,7 @@ export default function SettingsPage() {
           <button
             onClick={() => setTheme('light')}
             className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${theme === 'light'
-                ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 font-bold'
+                ? 'border-orbit-blue bg-orbit-blue/10 text-orbit-blue font-bold'
                 : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400'
               }`}
           >
@@ -496,11 +496,11 @@ export default function SettingsPage() {
           <button
             onClick={() => setTheme('dark')}
             className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${theme === 'dark'
-                ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 font-bold'
+                ? 'border-orbit-blue bg-orbit-blue/10 text-orbit-blue font-bold'
                 : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400'
               }`}
           >
-            <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+            <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-orbit-blue" />
             <span className="text-xs">Dark Mode</span>
           </button>
         </div>

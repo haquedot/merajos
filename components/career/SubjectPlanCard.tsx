@@ -92,10 +92,10 @@ export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({ plan, onAddTop
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <Sparkles className="w-3.5 h-3.5 text-orbit-orange" />
                 <span>Overall Plan Mastery</span>
               </span>
-              <span className="font-black text-[#1F3B99] dark:text-[#6D5BFF]">
+              <span className="font-black text-orbit-blue">
                 {completedItems}/{totalItems} Items ({progressPerc}%)
               </span>
             </div>
@@ -104,7 +104,7 @@ export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({ plan, onAddTop
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${progressPerc}%`,
-                  backgroundColor: plan.colorTheme || '#1F3B99',
+                  backgroundColor: plan.colorTheme || '#0066FF',
                 }}
               />
             </div>
@@ -135,7 +135,7 @@ export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({ plan, onAddTop
                         {perc === 100 ? (
                           <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                         ) : (
-                          <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                          <Clock className="w-4 h-4 text-orbit-orange shrink-0" />
                         )}
                         <span className="font-bold text-gray-800 dark:text-gray-200 truncate">
                           {topic.title}
@@ -163,7 +163,7 @@ export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({ plan, onAddTop
         <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
           <Link
             href={`/career/${plan.id}`}
-            className="w-full py-2.5 px-4 rounded-2xl bg-[#1F3B99] hover:bg-[#162A6B] dark:bg-[#6D5BFF] dark:hover:bg-[#5846E0] text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-xs transition-all"
+            className="w-full py-2.5 px-4 rounded-2xl bg-orbit-blue hover:bg-orbit-blue-hover text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-xs transition-all"
           >
             <span>Open Study Reader</span>
             <ArrowRight className="w-4 h-4" />

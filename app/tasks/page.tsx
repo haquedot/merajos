@@ -228,7 +228,7 @@ export default function TasksPage() {
                 onClick={() => setViewMode('board')}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-xs ${
                   viewMode === 'board'
-                    ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
+                    ? 'bg-white dark:bg-gray-900 text-orbit-blue shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -239,7 +239,7 @@ export default function TasksPage() {
                 onClick={() => setViewMode('list')}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-xs ${
                   viewMode === 'list'
-                    ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
+                    ? 'bg-white dark:bg-gray-900 text-orbit-blue shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -314,7 +314,7 @@ export default function TasksPage() {
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   dateFilter === 'today'
-                    ? 'bg-[#1F3B99] dark:bg-[#6D5BFF] text-white shadow-xs'
+                    ? 'bg-orbit-blue text-white shadow-xs'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
@@ -642,7 +642,7 @@ export default function TasksPage() {
                         </button>
                         <button
                           onClick={() => openEditModal(t)}
-                          className="p-1.5 text-gray-400 hover:text-[#1F3B99] dark:hover:text-[#6D5BFF] rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-orbit-blue rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                           title="Edit Task"
                         >
                           <Edit className="w-3.5 h-3.5" />

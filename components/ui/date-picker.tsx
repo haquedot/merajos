@@ -58,8 +58,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/70 px-3 py-2 text-xs font-semibold text-gray-900 dark:text-white shadow-2xs hover:bg-gray-100/80 dark:hover:bg-gray-800/80 focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
-          isOpen && "ring-2 ring-[#1F3B99] dark:ring-[#6D5BFF]"
+          "flex h-10 w-full items-center justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/70 px-3 py-2 text-xs font-semibold text-gray-900 dark:text-white shadow-2xs hover:bg-gray-100/80 dark:hover:bg-gray-800/80 focus:outline-none focus:ring-2 focus:ring-orbit-blue transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
+          isOpen && "ring-2 ring-orbit-blue"
         )}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -133,9 +133,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   className={cn(
                     "h-8 w-8 rounded-xl text-xs font-bold transition-all flex items-center justify-center mx-auto cursor-pointer",
                     isSelected
-                      ? "bg-[#1F3B99] dark:bg-[#6D5BFF] text-white shadow-xs"
+                      ? "bg-orbit-blue text-white shadow-xs"
                       : isTodayDate
-                      ? "border border-[#1F3B99] dark:border-[#6D5BFF] text-[#1F3B99] dark:text-[#6D5BFF]"
+                      ? "border border-orbit-blue text-orbit-blue"
                       : "text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                   )}
                 >
@@ -150,7 +150,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             <button
               type="button"
               onClick={() => handleDaySelect(new Date())}
-              className="text-[11px] font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline"
+              className="text-[11px] font-bold text-orbit-blue hover:underline"
             >
               Today
             </button>

@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { Task, TimeSlot, Priority } from '../../types';
 import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { parseTimeAndSlotFromText } from '../../lib/taskUtils';
 
 interface TodayTimelineViewProps {
@@ -71,8 +73,17 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
   // Build combined timeline items
   const timelineItems: TimelineItem[] = [];
 
+  // Deduplicate tasks prop as safety guard
+  const seenKeys = new Set<string>();
+  const deduplicatedPropTasks = tasks.filter((t) => {
+    const key = `${(t.title || '').trim().toLowerCase()}___${t.dueDate || ''}___${t.time || t.timeSlot || ''}`;
+    if (seenKeys.has(key)) return false;
+    seenKeys.add(key);
+    return true;
+  });
+
   // Add tasks
-  tasks.forEach((t) => {
+  deduplicatedPropTasks.forEach((t) => {
     const parsed = parseTimeAndSlotFromText(`${t.title} ${t.description || ''}`, t.dueDate);
     const effectiveSlot = t.timeSlot && t.timeSlot !== 'afternoon' ? t.timeSlot : parsed.timeSlot;
     const timeStr = t.time || parsed.time;
@@ -144,66 +155,39 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
     <div className="space-y-6">
       {/* Controls & Filter Header */}
       <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        {/* Time Slot Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto no-scrollbar">
-          <button
-            onClick={() => setSlotFilter('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              slotFilter === 'all'
-                ? 'btn-primary text-white shadow-xs'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            All Day
-          </button>
-          {slotHeaders.map((sec) => {
-            const Icon = sec.icon;
-            const isActive = slotFilter === sec.key;
-            return (
-              <button
-                key={sec.key}
-                onClick={() => setSlotFilter(sec.key)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shrink-0 ${
-                  isActive
-                    ? 'btn-primary text-white shadow-xs'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : sec.color}`} />
-                <span className="capitalize">{sec.key}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Time Slot Filter Tabs */}
+        <Tabs value={slotFilter} onValueChange={(v) => setSlotFilter(v as any)} className="w-full sm:w-auto max-w-full">
+          <TabsList className="h-9 w-max max-w-full shrink-0">
+            <TabsTrigger value="all" className="h-7 text-xs shrink-0">
+              All Day
+            </TabsTrigger>
+            {slotHeaders.map((sec) => {
+              const Icon = sec.icon;
+              return (
+                <TabsTrigger key={sec.key} value={sec.key} className="h-7 text-xs shrink-0 whitespace-nowrap">
+                  <Icon className={`w-3.5 h-3.5 ${sec.color} shrink-0`} />
+                  <span className="capitalize">{sec.key}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
 
-        {/* Status Filter */}
+        {/* Status Filter Tabs */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-100 dark:border-gray-800">
-          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-xl text-xs font-bold">
-            <button
-              onClick={() => setStatusFilter('all')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                statusFilter === 'all' ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs' : 'text-gray-500'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setStatusFilter('pending')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                statusFilter === 'pending' ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs' : 'text-gray-500'
-              }`}
-            >
-              Pending
-            </button>
-            <button
-              onClick={() => setStatusFilter('completed')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                statusFilter === 'completed' ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs' : 'text-gray-500'
-              }`}
-            >
-              Done
-            </button>
-          </div>
+          <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+            <TabsList className="h-8">
+              <TabsTrigger value="all" className="h-6 text-xs px-2.5">
+                All
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="h-6 text-xs px-2.5">
+                Pending
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="h-6 text-xs px-2.5">
+                Done
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
 
@@ -213,7 +197,7 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#6D5BFF] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 btn-primary"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#1F3B99] dark:bg-[#6D5BFF]"></span>
             </span>
             <span className="font-bold text-gray-800 dark:text-gray-200">Current Local Time:</span>
             <span className="font-extrabold font-mono text-[#1F3B99] dark:text-[#6D5BFF]">{nowTimeStr}</span>
@@ -247,17 +231,19 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-gray-500 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-xl">
+                    <Badge variant="secondary" size="sm">
                       {slotItems.filter((i) => i.status === 'completed').length}/{slotItems.length} Items
-                    </span>
-                    <button
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => onOpenAddModal(header.key)}
-                      className="p-1.5 rounded-xl bg-[#1F3B99]/10 dark:bg-[#6D5BFF]/20 text-[#1F3B99] dark:text-[#6D5BFF] hover:bg-[#1F3B99]/20 text-xs font-bold flex items-center gap-1 transition-colors"
+                      className="h-8 text-xs font-bold flex items-center gap-1"
                       title={`Add task to ${header.key}`}
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">Add Task</span>
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -266,15 +252,17 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
                   <div className="p-6 text-center rounded-2xl bg-gray-50/50 dark:bg-gray-900/40 border border-dashed border-gray-200 dark:border-gray-800 space-y-2">
                     <Clock className="w-6 h-6 text-gray-400 mx-auto" />
                     <p className="text-xs text-gray-500">No tasks scheduled for this time slot.</p>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => onOpenAddModal(header.key)}
-                      className="text-xs font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline"
+                      className="text-xs font-bold text-orbit-blue"
                     >
                       + Schedule task in {header.key}
-                    </button>
+                    </Button>
                   </div>
                 ) : (
-                  <div className="relative pl-6 sm:pl-8 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gradient-to-b before:from-[#1F3B99]/40 dark:before:from-[#6D5BFF]/40 before:via-[#6D5BFF]/40 before:to-gray-200 dark:before:to-gray-800">
+                  <div className="relative pl-6 sm:pl-8 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gradient-to-b before:from-orbit-blue/40 before:via-orbit-blue/40 before:to-gray-200 dark:before:to-gray-800">
                     <AnimatePresence>
                       {slotItems.map((item) => (
                         <motion.div
@@ -290,10 +278,10 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
                               item.status === 'completed'
                                 ? 'border-emerald-500 text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40'
                                 : item.isFocus
-                                ? 'border-[#1F3B99] dark:border-[#6D5BFF] text-[#1F3B99] dark:text-[#6D5BFF] ring-4 ring-[#1F3B99]/20 dark:ring-[#6D5BFF]/20 scale-110'
+                                ? 'border-orbit-blue text-orbit-blue ring-4 ring-orbit-blue/20 scale-110'
                                 : item.isMit
-                                ? 'border-rose-500 text-rose-500'
-                                : 'border-[#1F3B99]/30 dark:border-[#6D5BFF]/40 text-[#1F3B99] dark:text-[#6D5BFF]'
+                                ? 'border-orbit-orange text-orbit-orange'
+                                : 'border-orbit-blue/30 text-orbit-blue'
                             }`}
                           >
                             {item.status === 'completed' ? (
@@ -301,7 +289,7 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
                             ) : item.isFocus ? (
                               <Target className="w-3 h-3 animate-spin" />
                             ) : (
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#1F3B99] dark:bg-[#6D5BFF]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-orbit-blue" />
                             )}
                           </div>
 
@@ -311,8 +299,8 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
                               item.status === 'completed'
                                 ? 'bg-gray-50/60 dark:bg-gray-900/40 border-gray-200 dark:border-gray-800/80 opacity-75'
                                 : item.isFocus
-                                ? 'bg-[#1F3B99]/5 dark:bg-[#6D5BFF]/10 border-[#1F3B99]/30 dark:border-[#6D5BFF]/30 shadow-xs'
-                                : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 shadow-xs hover:border-[#1F3B99]/40 dark:hover:border-[#6D5BFF]/40'
+                                ? 'bg-orbit-blue/5 border-orbit-blue/30 shadow-xs'
+                                : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 shadow-xs hover:border-orbit-blue/40'
                             }`}
                           >
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -323,7 +311,7 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
                                   className={`w-5 h-5 rounded-lg flex items-center justify-center transition-colors shrink-0 mt-0.5 ${
                                     item.status === 'completed'
                                       ? 'bg-emerald-500 text-white'
-                                      : 'border border-gray-300 dark:border-gray-600 hover:border-[#1F3B99] dark:hover:border-[#6D5BFF]'
+                                      : 'border border-gray-300 dark:border-gray-600 hover:border-orbit-blue'
                                   }`}
                                 >
                                   {item.status === 'completed' && '✓'}
@@ -331,7 +319,7 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
 
                                 <div className="space-y-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-[#1F3B99] dark:text-[#6D5BFF]">
+                                    <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-orbit-blue">
                                       {item.timeDisplay}
                                     </span>
                                     <span
@@ -379,29 +367,27 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
                                 </div>
 
                                 <div className="flex items-center gap-1.5">
-                                  <button
+                                  <Button
+                                    size="sm"
+                                    variant={item.isFocus ? 'default' : 'secondary'}
                                     onClick={() => onSetFocusTask(item.id)}
-                                    className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 ${
-                                      item.isFocus
-                                        ? 'btn-primary text-white shadow-xs'
-                                        : 'bg-[#1F3B99]/10 text-[#1F3B99] dark:bg-[#6D5BFF]/20 dark:text-[#6D5BFF]'
-                                    }`}
+                                    className="h-7 px-2.5 text-[10px] font-bold flex items-center gap-1"
                                     title="Set focus task"
                                   >
                                     <Target className="w-3 h-3" />
                                     <span>{item.isFocus ? 'Focused' : 'Set Focus'}</span>
-                                  </button>
+                                  </Button>
 
-                                  <button
+                                  <Button
+                                    size="sm"
+                                    variant={item.isMit ? 'outline' : 'secondary'}
                                     onClick={() => onToggleMIT(item.id)}
-                                    className={`px-2 py-1 rounded-xl text-[10px] font-bold transition-all ${
-                                      item.isMit
-                                        ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
-                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
+                                    className={`h-7 px-2 text-[10px] font-bold ${
+                                      item.isMit ? 'border-rose-300 text-rose-600 bg-rose-50 dark:bg-rose-950/60 dark:text-rose-400' : ''
                                     }`}
                                   >
                                     {item.isMit ? '★ MIT' : 'Set MIT'}
-                                  </button>
+                                  </Button>
                                 </div>
                               </div>
                             </div>

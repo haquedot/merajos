@@ -28,8 +28,8 @@ import { Button } from '../../components/ui/button';
 // ─── New Project Modal ────────────────────────────────────────────────────────
 
 const ACCENT_COLORS = [
-  '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b',
-  '#ef4444', '#06b6d4', '#f97316', '#ec4899',
+  '#0066FF', '#FF6B00', '#10b981', '#f59e0b',
+  '#ef4444', '#06b6d4', '#8b5cf6', '#ec4899',
 ];
 
 function NewProjectModal({
@@ -123,7 +123,7 @@ function NewProjectModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief description of this research project..."
-            className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] resize-none"
+            className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orbit-blue resize-none"
           />
         </div>
 

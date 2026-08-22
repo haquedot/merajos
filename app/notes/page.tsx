@@ -260,7 +260,7 @@ export default function NotesPage() {
                       setConversionToast(`✓ "${activeNote.title.slice(0, 20)}" converted to Task!`);
                       setTimeout(() => setConversionToast(null), 2500);
                     }}
-                    className="px-2.5 py-1.5 rounded-xl border border-[#1F3B99]/30 dark:border-[#6D5BFF]/30 text-[#1F3B99] dark:text-[#6D5BFF] hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                    className="px-2.5 py-1.5 rounded-xl border border-orbit-blue/30 text-orbit-blue hover:bg-orbit-blue/10 text-xs font-bold flex items-center gap-1.5 transition-colors"
                     title="Convert Note title & content to actionable Task"
                   >
                     <CheckSquare className="w-3.5 h-3.5" />
@@ -293,7 +293,7 @@ export default function NotesPage() {
                   value={activeNote.content}
                   onChange={(e) => updateNote(activeNote.id, { content: e.target.value })}
                   placeholder="Type your notes in Markdown..."
-                  className="w-full flex-1 min-h-[300px] sm:min-h-[400px] bg-gray-50/50 dark:bg-gray-800/40 p-3.5 sm:p-4 rounded-2xl border border-gray-100 dark:border-gray-800 text-xs sm:text-sm text-gray-800 dark:text-gray-200 font-mono focus:outline-hidden focus:ring-2 focus:ring-amber-500/40 resize-none leading-relaxed"
+                  className="w-full flex-1 min-h-[300px] sm:min-h-[400px] bg-gray-50/50 dark:bg-gray-800/40 p-3.5 sm:p-4 rounded-2xl border border-gray-100 dark:border-gray-800 text-xs sm:text-sm text-gray-800 dark:text-gray-200 font-mono focus:outline-hidden focus:ring-2 focus:ring-orbit-blue/40 resize-none leading-relaxed"
                 />
               </div>
             </>
