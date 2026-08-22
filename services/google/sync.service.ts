@@ -109,28 +109,47 @@ class SyncService {
 
       // 2. Sync Google Tasks
       const remoteTaskLists = await googleTasksService.fetchTaskLists();
-      let allRemoteTasks: Task[] = [];
+      let rawRemoteTasks: Task[] = [];
 
       if (remoteTaskLists.length > 0) {
         for (const list of remoteTaskLists) {
           const listTasks = await googleTasksService.fetchTasksForList(list.id);
-          allRemoteTasks.push(...listTasks);
+          rawRemoteTasks.push(...listTasks);
         }
       }
       
       // Fallback to default list if no tasks found
-      if (allRemoteTasks.length === 0) {
+      if (rawRemoteTasks.length === 0) {
         const defaultTasks = await googleTasksService.fetchTasksForList('@default');
-        allRemoteTasks.push(...defaultTasks);
+        rawRemoteTasks.push(...defaultTasks);
       }
 
+      // Deduplicate rawRemoteTasks in memory by googleTaskId / id
+      const uniqueRemoteMap = new Map<string, Task>();
+      for (const t of rawRemoteTasks) {
+        const key = t.googleTaskId || t.id;
+        if (!uniqueRemoteMap.has(key)) {
+          uniqueRemoteMap.set(key, t);
+        }
+      }
+      const allRemoteTasks = Array.from(uniqueRemoteMap.values());
+
       if (allRemoteTasks.length > 0) {
+        const allLocalTasks = await db.tasks.toArray();
+
         for (const rTask of allRemoteTasks) {
-          const existingById = await db.tasks.get(rTask.id);
-          const existingByGoogleId = rTask.googleTaskId
-            ? await db.tasks.where('googleTaskId').equals(rTask.googleTaskId).first()
-            : null;
-          const existing = existingById || existingByGoogleId;
+          // Match by id, googleTaskId, or title + dueDate
+          let existing = allLocalTasks.find((t) => t.id === rTask.id);
+          if (!existing && rTask.googleTaskId) {
+            existing = allLocalTasks.find((t) => t.googleTaskId === rTask.googleTaskId);
+          }
+          if (!existing) {
+            existing = allLocalTasks.find(
+              (t) =>
+                t.title.trim().toLowerCase() === rTask.title.trim().toLowerCase() &&
+                t.dueDate === rTask.dueDate
+            );
+          }
 
           if (!existing) {
             await db.tasks.put({ ...rTask, syncStatus: 'synced' });
@@ -155,6 +174,28 @@ class SyncService {
         } catch (err) {
           console.warn('Failed to post synced tasks batch to MongoDB API', err);
         }
+      }
+
+      // Clean up any remaining duplicate local tasks in Dexie DB
+      const currentTasks = await db.tasks.toArray();
+      const seenTaskKeys = new Map<string, string>();
+      const duplicateTaskIdsToRemove: string[] = [];
+
+      for (const t of currentTasks) {
+        const key = t.googleTaskId
+          ? `g_${t.googleTaskId}`
+          : `t_${t.title.trim().toLowerCase()}_${t.dueDate || ''}`;
+        
+        if (seenTaskKeys.has(key)) {
+          duplicateTaskIdsToRemove.push(t.id);
+        } else {
+          seenTaskKeys.set(key, t.id);
+        }
+      }
+
+      if (duplicateTaskIdsToRemove.length > 0) {
+        console.log(`[SyncService] Removing ${duplicateTaskIdsToRemove.length} duplicate task records from Dexie DB.`);
+        await db.tasks.bulkDelete(duplicateTaskIdsToRemove);
       }
 
       await useTaskStore.getState().loadFromDB();

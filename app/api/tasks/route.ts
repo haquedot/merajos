@@ -6,8 +6,33 @@ export async function GET() {
   try {
     await connectToDatabase();
     const tasks = await Task.find({}).sort({ createdAt: -1 }).lean();
-    const formattedTasks = tasks.map((t: any) => ({ ...t, id: t._id }));
-    return NextResponse.json({ tasks: formattedTasks });
+    
+    // Deduplicate in-memory by googleTaskId or (title + dueDate)
+    const seen = new Map<string, any>();
+    const uniqueTasks: any[] = [];
+    const duplicateIdsToDelete: string[] = [];
+
+    for (const t of tasks) {
+      const key = t.googleTaskId
+        ? `g_${t.googleTaskId}`
+        : `t_${(t.title || '').trim().toLowerCase()}_${t.dueDate || ''}`;
+      
+      if (!seen.has(key)) {
+        seen.set(key, t);
+        uniqueTasks.push({ ...t, id: t._id });
+      } else {
+        duplicateIdsToDelete.push(t._id);
+      }
+    }
+
+    // Clean up redundant duplicate documents from MongoDB asynchronously
+    if (duplicateIdsToDelete.length > 0) {
+      Task.deleteMany({ _id: { $in: duplicateIdsToDelete } }).catch((err) =>
+        console.warn('Failed to purge duplicate tasks from MongoDB', err)
+      );
+    }
+
+    return NextResponse.json({ tasks: uniqueTasks });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -22,8 +47,27 @@ export async function POST(req: Request) {
     const items = Array.isArray(body) ? body : body.tasks ? body.tasks : null;
 
     if (items && Array.isArray(items)) {
-      const ops = items.map((tsk: any) => {
+      // Deduplicate incoming batch items by googleTaskId or (title + dueDate)
+      const uniqueBatchMap = new Map<string, any>();
+      for (const tsk of items) {
+        const key = tsk.googleTaskId
+          ? `g_${tsk.googleTaskId}`
+          : `t_${(tsk.title || '').trim().toLowerCase()}_${tsk.dueDate || ''}`;
+        if (!uniqueBatchMap.has(key)) {
+          uniqueBatchMap.set(key, tsk);
+        }
+      }
+      const uniqueItems = Array.from(uniqueBatchMap.values());
+
+      const ops = uniqueItems.map((tsk: any) => {
         const id = tsk.id || `task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        
+        // Filter by _id OR googleTaskId OR (title + dueDate) to update existing record
+        const filter: any = { _id: id };
+        if (tsk.googleTaskId) {
+          filter.$or = [{ _id: id }, { googleTaskId: tsk.googleTaskId }];
+        }
+
         return {
           updateOne: {
             filter: { _id: id },
@@ -36,7 +80,7 @@ export async function POST(req: Request) {
       if (ops.length > 0) {
         await Task.bulkWrite(ops);
       }
-      return NextResponse.json({ success: true, count: items.length }, { status: 201 });
+      return NextResponse.json({ success: true, count: uniqueItems.length }, { status: 201 });
     }
 
     const id = body.id || `task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;

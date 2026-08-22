@@ -27,11 +27,36 @@ interface TaskState {
   resetTasks: () => Promise<void>;
 }
 
+function deduplicateTasksList(tasks: Task[]): { uniqueTasks: Task[]; duplicateIds: string[] } {
+  const seen = new Map<string, Task>();
+  const uniqueTasks: Task[] = [];
+  const duplicateIds: string[] = [];
+
+  for (const t of tasks) {
+    const key = t.googleTaskId
+      ? `g_${t.googleTaskId}`
+      : `t_${(t.title || '').trim().toLowerCase()}_${t.dueDate || ''}`;
+
+    if (!seen.has(key)) {
+      seen.set(key, t);
+      uniqueTasks.push(t);
+    } else {
+      duplicateIds.push(t.id);
+    }
+  }
+
+  return { uniqueTasks, duplicateIds };
+}
+
 export const useTaskStore = create<TaskState>((set, get) => {
   // Load real data from Dexie DB & MongoDB API (if authenticated)
   if (typeof window !== 'undefined') {
-    db.tasks.toArray().then((items) => {
-      set({ tasks: items || [], isLoading: false });
+    db.tasks.toArray().then(async (items) => {
+      const { uniqueTasks, duplicateIds } = deduplicateTasksList(items || []);
+      set({ tasks: uniqueTasks, isLoading: false });
+      if (duplicateIds.length > 0) {
+        await db.tasks.bulkDelete(duplicateIds);
+      }
     });
 
     isUserAuthenticated().then((authenticated) => {
@@ -41,10 +66,11 @@ export const useTaskStore = create<TaskState>((set, get) => {
       }
       fetch('/api/tasks')
         .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
+        .then(async (data) => {
           if (data && data.tasks && data.tasks.length > 0) {
-            set({ tasks: data.tasks, isLoading: false });
-            db.tasks.bulkPut(data.tasks);
+            const { uniqueTasks } = deduplicateTasksList(data.tasks);
+            set({ tasks: uniqueTasks, isLoading: false });
+            await db.tasks.bulkPut(uniqueTasks);
           } else {
             set({ isLoading: false });
           }
@@ -67,7 +93,11 @@ export const useTaskStore = create<TaskState>((set, get) => {
     loadFromDB: async () => {
       set({ isLoading: true });
       const items = await db.tasks.toArray();
-      set({ tasks: items || [], isLoading: false });
+      const { uniqueTasks, duplicateIds } = deduplicateTasksList(items || []);
+      set({ tasks: uniqueTasks, isLoading: false });
+      if (duplicateIds.length > 0) {
+        await db.tasks.bulkDelete(duplicateIds);
+      }
     },
 
     setSearchQuery: (query) => set({ searchQuery: query }),
