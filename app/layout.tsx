@@ -32,6 +32,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://orbit.merajulhaque.com'),
   title: `${BRAND.name} — ${BRAND.tagline}`,
   description: BRAND.description,
   manifest: '/manifest.json',

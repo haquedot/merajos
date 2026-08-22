@@ -19,10 +19,14 @@ const CalendarEventSchema: Schema = new Schema(
     color: { type: String, default: '#3b82f6' },
     category: { type: String, default: 'Personal' },
     taskId: { type: String },
+    userId: { type: String, index: true },
+    userEmail: { type: String, index: true },
     lastSyncedAt: { type: String },
     syncStatus: { type: String, enum: ['synced', 'pending', 'error'], default: 'synced' },
   },
   { timestamps: true, _id: false }
 );
+
+CalendarEventSchema.index({ userId: 1, startDate: 1 });
 
 export default mongoose.models.CalendarEvent || mongoose.model<CalendarEventDocument>('CalendarEvent', CalendarEventSchema);

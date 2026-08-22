@@ -5,6 +5,7 @@ import { authService } from './auth.service';
 import { Task, CalendarEvent } from '../../types';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { useTaskStore, deduplicateTasksList } from '../../store/useTaskStore';
+import { getAuthHeaders } from '../../lib/authCheck';
 
 export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'success';
 
@@ -166,9 +167,10 @@ class SyncService {
 
         // Persist to MongoDB API in a single batch request
         try {
+          const headers = await getAuthHeaders();
           await fetch('/api/tasks', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ tasks: allRemoteTasks }),
           });
         } catch (err) {
@@ -201,9 +203,10 @@ class SyncService {
 
         // Persist to MongoDB API in a single batch request
         try {
+          const headers = await getAuthHeaders();
           await fetch('/api/events', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ events: remoteEvents }),
           });
         } catch (err) {

@@ -24,6 +24,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const authHeader = req.headers.get('authorization');
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized cron request' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     let targetDate = searchParams.get('date') || searchParams.get('targetDate') || undefined;
     let clientTasks: any[] = [];

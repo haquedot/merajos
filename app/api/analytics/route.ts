@@ -5,30 +5,37 @@ import Project from '../../../models/Project';
 import Habit from '../../../models/Habit';
 import DailyAnalyticsSnapshot from '../../../models/DailyAnalyticsSnapshot';
 import { calculateDailyTasksAndLogAnalytics } from '../../../lib/cronCalculation';
+import { verifyAuth } from '../../../lib/middleware/auth';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
 
     // Check if yesterday's snapshot is missing and auto-backfill it
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-    const yesterdaySnapshot = await DailyAnalyticsSnapshot.findOne({ date: yesterdayStr });
+    const userFilter = { $or: [{ userId }, { userEmail }, { userId: { $exists: false } }] };
+
+    const yesterdaySnapshot = await DailyAnalyticsSnapshot.findOne({ date: yesterdayStr, ...userFilter });
     if (!yesterdaySnapshot) {
-      console.log(`[Analytics API] Auto-generating missing snapshot for yesterday (${yesterdayStr})...`);
       try {
         await calculateDailyTasksAndLogAnalytics(undefined, { sendEmail: false }, yesterdayStr);
       } catch (err) {
-        console.error(`[Analytics API] Failed to auto-backfill yesterday snapshot (${yesterdayStr}):`, err);
+        console.error(`[Analytics API] Failed to auto-backfill snapshot (${yesterdayStr}):`, err);
       }
     }
 
-    const tasks = await Task.find({}).lean();
-    const projects = await Project.find({}).lean();
-    const habits = await Habit.find({}).lean();
-    const snapshots = await DailyAnalyticsSnapshot.find({}).sort({ date: -1 }).limit(30).lean();
+    const tasks = await Task.find(userFilter).lean();
+    const projects = await Project.find(userFilter).lean();
+    const habits = await Habit.find(userFilter).lean();
+    const snapshots = await DailyAnalyticsSnapshot.find(userFilter).sort({ date: -1 }).limit(30).lean();
 
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter((t: any) => t.status === 'completed').length;

@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '../../../lib/mongodb';
 import Habit from '../../../models/Habit';
+import { verifyAuth } from '../../../lib/middleware/auth';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
-    const habits = await Habit.find({}).lean();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
+
+    const habits = await Habit.find({
+      $or: [{ userId }, { userEmail }, { userId: { $exists: false } }],
+    }).lean();
+
     const formatted = habits.map((h: any) => ({ ...h, id: h._id }));
     return NextResponse.json({ habits: formatted });
   } catch (error: any) {
@@ -15,28 +25,22 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
     const body = await req.json();
     const id = body.id || `h-${Date.now()}`;
-    
-    const habitData = {
-      _id: id,
-      name: body.name || 'Untitled Habit',
-      category: body.category || 'Personal',
-      icon: body.icon || 'Activity',
-      targetDaysPerWeek: body.targetDaysPerWeek ?? 7,
-      currentStreak: body.currentStreak ?? 0,
-      longestStreak: body.longestStreak ?? 0,
-      history: body.history || {},
-    };
 
     const newHabit = await Habit.findOneAndUpdate(
       { _id: id },
-      { $set: habitData },
+      { ...body, _id: id, userId, userEmail },
       { upsert: true, returnDocument: 'after' }
     ).lean();
 
-    return NextResponse.json({ habit: { ...(newHabit as any), id: (newHabit as any)._id } }, { status: 201 });
+    return NextResponse.json({ habit: { ...newHabit, id: (newHabit as any)._id } }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -44,7 +48,12 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
     const body = await req.json();
     const { id, ...updates } = body;
 
@@ -53,12 +62,16 @@ export async function PUT(req: Request) {
     }
 
     const updatedHabit = await Habit.findOneAndUpdate(
-      { _id: id },
-      { $set: updates },
-      { upsert: true, returnDocument: 'after' }
+      { _id: id, $or: [{ userId }, { userEmail }, { userId: { $exists: false } }] },
+      { $set: { ...updates, userId, userEmail } },
+      { returnDocument: 'after' }
     ).lean();
 
-    return NextResponse.json({ habit: { ...(updatedHabit as any), id: (updatedHabit as any)._id } });
+    if (!updatedHabit) {
+      return NextResponse.json({ error: 'Habit not found or access denied' }, { status: 404 });
+    }
+
+    return NextResponse.json({ habit: { ...updatedHabit, id: (updatedHabit as any)._id } });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -66,7 +79,12 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -74,10 +92,13 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Habit id is required' }, { status: 400 });
     }
 
-    await Habit.deleteOne({ _id: id });
+    await Habit.findOneAndDelete({
+      _id: id,
+      $or: [{ userId }, { userEmail }, { userId: { $exists: false } }],
+    });
+
     return NextResponse.json({ success: true, id });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-

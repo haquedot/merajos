@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '../../../lib/mongodb';
 import User from '../../../models/User';
+import { verifyAuth } from '../../../lib/middleware/auth';
+import { UserUpdateSchema } from '../../../lib/validations/schemas';
 
 export async function GET(req: Request) {
   try {
-    await connectToDatabase();
-    const { searchParams } = new URL(req.url);
-    const email = searchParams.get('email');
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email parameter is required' }, { status: 400 });
-    }
+    await connectToDatabase();
+    const email = auth.user.userEmail;
 
     const user = await User.findOne({ email }).lean();
     if (!user) {
@@ -25,19 +25,16 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
     const body = await req.json();
-    const { email, name, picture, googleId, role, onboardingCompleted, enabledModules, workStartTime, workEndTime } = body;
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
-    }
+    const email = auth.user.userEmail;
+    const { name, picture, googleId } = body;
 
     const existingUser = await User.findOne({ email }).lean();
     const isAlreadyOnboarded = existingUser?.onboardingCompleted === true;
-    const finalOnboardingCompleted = onboardingCompleted !== undefined
-      ? Boolean(onboardingCompleted)
-      : isAlreadyOnboarded;
 
     const user = await User.findOneAndUpdate(
       { email },
@@ -48,11 +45,7 @@ export async function POST(req: Request) {
           picture: picture || (existingUser as any)?.picture,
           googleId: googleId || (existingUser as any)?.googleId,
           lastLoginAt: new Date(),
-          onboardingCompleted: finalOnboardingCompleted,
-          ...(role && { role }),
-          ...(enabledModules && { enabledModules }),
-          ...(workStartTime && { workStartTime }),
-          ...(workEndTime && { workEndTime }),
+          onboardingCompleted: isAlreadyOnboarded,
         },
       },
       { upsert: true, returnDocument: 'after' }
@@ -66,13 +59,23 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    await connectToDatabase();
-    const body = await req.json();
-    const { email, ...updates } = body;
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    await connectToDatabase();
+    const email = auth.user.userEmail;
+    const body = await req.json();
+
+    // Whitelist payload using UserUpdateSchema
+    const parseResult = UserUpdateSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid user update payload', details: parseResult.error.flatten() },
+        { status: 400 }
+      );
     }
+
+    const updates = parseResult.data;
 
     const updatedUser = await User.findOneAndUpdate(
       { email },

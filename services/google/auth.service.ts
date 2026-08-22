@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '847306520518-3raubtg9ajcg8ebsjr91mkgjm9j2vqqt.apps.googleusercontent.com';
+const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/calendar.events',
@@ -114,7 +114,12 @@ class AuthService {
             if (profile.email) {
               fetch('/api/user', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-user-email': profile.email,
+                  'x-user-id': profile.email,
+                },
                 body: JSON.stringify({
                   email: profile.email,
                   name: profile.name,

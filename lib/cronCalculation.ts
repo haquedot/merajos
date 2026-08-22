@@ -7,6 +7,8 @@ import DailyAnalyticsSnapshot from '../models/DailyAnalyticsSnapshot';
 import { sendDailyTaskLogEmail } from './emailService';
 import { calculateDailyScore } from './productivityCalculator';
 
+import { Task as ITask } from '../types';
+
 const matchesCategory = (taskCat: string | undefined, targetCat: string) => {
   if (!taskCat) return targetCat === 'Personal';
   const c = taskCat.toLowerCase();
@@ -16,7 +18,7 @@ const matchesCategory = (taskCat: string | undefined, targetCat: string) => {
 };
 
 export async function calculateDailyTasksAndLogAnalytics(
-  clientTasks?: any[],
+  clientTasks?: Partial<ITask>[],
   emailOptions?: { enabled?: boolean; recipientEmail?: string; sendEmail?: boolean },
   targetDateStr?: string
 ) {
@@ -28,7 +30,7 @@ export async function calculateDailyTasksAndLogAnalytics(
   // If client tasks are passed, bulk upsert them into MongoDB first by String _id query
   if (clientTasks && Array.isArray(clientTasks) && clientTasks.length > 0) {
     for (const task of clientTasks) {
-      const taskId = task.id || task._id;
+      const taskId = task.id || (task as any)._id;
       if (taskId) {
         await Task.findOneAndUpdate(
           { _id: taskId },
@@ -54,9 +56,9 @@ export async function calculateDailyTasksAndLogAnalytics(
   }
 
   // Fetch all tasks from MongoDB
-  const allTasks = await Task.find({}).lean();
-  const completedTasksList = allTasks.filter((t: any) => t.status === 'completed');
-  const pendingTasksList = allTasks.filter((t: any) => t.status !== 'completed');
+  const allTasks = (await Task.find({}).lean()) as unknown as ITask[];
+  const completedTasksList = allTasks.filter((t) => t.status === 'completed');
+  const pendingTasksList = allTasks.filter((t) => t.status !== 'completed');
 
   const totalTasks = allTasks.length;
   const completedTasks = completedTasksList.length;

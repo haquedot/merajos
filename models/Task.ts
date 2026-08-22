@@ -34,4 +34,7 @@ const TaskSchema: Schema = new Schema(
   { timestamps: true, _id: false }
 );
 
+TaskSchema.index({ userId: 1, dueDate: 1 });
+TaskSchema.index({ userId: 1, status: 1 });
+
 export default mongoose.models.Task || mongoose.model<TaskDocument>('Task', TaskSchema);
