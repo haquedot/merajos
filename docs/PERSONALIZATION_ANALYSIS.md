@@ -524,20 +524,20 @@ Every decision generated includes structured debug context:
 ## 20. Implementation Roadmap & Priority Matrix
 
 ```text
-Phase 0: Architecture Foundations & Types (P0)
+Phase 0: Architecture Foundations & Types (P0) [✅ Implemented]
    ↳ lib/personalization/types/, UserPreferences model, settings UI
-Phase 1: Deterministic Today Task Scoring (P0)
+Phase 1: Deterministic Today Task Scoring (P0) [✅ Implemented]
    ↳ taskScorer.ts, Today view MIT recommendation cards
-Phase 2: Event Logging & Confidence Engine (P1)
+Phase 2: Event Logging & Confidence Engine (P1) [✅ Implemented]
    ↳ BehaviorEvent logger in Dexie, sample-size confidence calculator
-Phase 3: Adaptive Today & Focus (P1)
-   ↳ Slot affinity learning, focus duration auto-prefill
-Phase 4: Transparency & Controls (P1)
-   ↳ "What Orbit Knows About Me" panel in /settings, reset button
-Phase 5: Cross-Module Intelligence (P2)
-   ↳ Goal momentum -> Career/Research task prioritization
-Phase 6: Optional AI Layer (P3)
-   ↳ Natural language daily summaries & weekly reviews
+Phase 3: Adaptive Today & Focus (P1) [✅ Implemented]
+   ↳ Slot affinity learning, focus duration auto-prefill, workload warnings
+Phase 4: Transparency & Controls (P1) [✅ Implemented]
+   ↳ "What Orbit Knows About Me" panel in /settings, reset button, seed button
+Phase 5: Cross-Module Intelligence (P2) [✅ Implemented]
+   ↳ Goal momentum -> Career/Research task prioritization & stagnation alerts
+Phase 6: Optional AI Layer (P3) [✅ Implemented]
+   ↳ Natural language daily summaries & weekly reviews prompt generators
 ```
 
 ---
