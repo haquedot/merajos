@@ -163,7 +163,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               value={taskDesc}
               onChange={(e) => setTaskDesc(e.target.value)}
               placeholder="Add additional details or subtasks..."
-              className="w-full px-3 py-2 rounded-xl bg-gray-50/70 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 text-xs font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] resize-none transition-all shadow-2xs"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50/70 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 text-xs font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orbit-blue resize-none transition-all shadow-2xs"
             />
           </div>
 
@@ -395,7 +395,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
               value={noteContent}
               onChange={(e) => setNoteContent(e.target.value)}
               placeholder="Write your note content here..."
-              className="w-full px-3 py-2 rounded-xl bg-gray-50/70 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 text-xs font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] resize-none transition-all shadow-2xs"
+              className="w-full px-3 py-2 rounded-xl bg-gray-50/70 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 text-xs font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orbit-blue resize-none transition-all shadow-2xs"
             />
           </div>
 

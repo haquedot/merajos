@@ -35,6 +35,7 @@ import { CircularProgress } from '../components/ui/CircularProgress';
 import { StatisticCard } from '../components/ui/StatisticCard';
 import { Badge } from '../components/ui/Badge';
 import { calculateDailyScore } from '../lib/productivityCalculator';
+import { getSmartFocusTask, sortTasksChronologically } from '../lib/taskUtils';
 import { HighchartsLine } from '../components/ui/HighchartsComponents';
 
 import { isUserAuthenticated } from '../lib/authCheck';
@@ -56,7 +57,13 @@ export default function DashboardHome() {
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
-  const { tasks, toggleTaskStatus, isLoading: isLoadingTasks } = useTaskStore();
+  const {
+    tasks,
+    toggleTaskStatus,
+    isLoading: isLoadingTasks,
+    customFocusTaskId,
+    setCustomFocusTaskId,
+  } = useTaskStore();
   const { projects } = useProjectStore();
   const { projects: researchProjects } = useResearchStore();
   const { dsaTopics } = useCareerStore();
@@ -161,99 +168,88 @@ export default function DashboardHome() {
     ? `${scoreDiff >= 0 ? '+' : ''}${scoreDiff}% vs prev snapshot`
     : `${dailyScore}% Score Today`;
 
-  // Time-aware focus task selection algorithm
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-  const getTaskMinutes = (t: Task) => {
-    if (t.time) {
-      const [h, m] = t.time.split(':').map(Number);
-      if (!isNaN(h) && !isNaN(m)) return h * 60 + m;
-    }
-    if (t.timeSlot === 'morning') return 9 * 60;
-    if (t.timeSlot === 'afternoon') return 14 * 60;
-    if (t.timeSlot === 'evening') return 18 * 60;
-    if (t.timeSlot === 'night') return 22 * 60;
-    return 12 * 60;
-  };
-
-  const uncompletedToday = todayTasks.filter((t) => t.status !== 'completed');
-
-  // Sort today's uncompleted tasks by: 1) MIT, 2) proximity to current time, 3) priority
-  const sortedFocusCandidates = [...uncompletedToday].sort((a, b) => {
-    if (a.mit !== b.mit) return a.mit ? -1 : 1;
-    const diffA = Math.abs(getTaskMinutes(a) - currentMinutes);
-    const diffB = Math.abs(getTaskMinutes(b) - currentMinutes);
-    if (diffA !== diffB) return diffA - diffB;
-    const priorityWeight = { urgent: 4, high: 3, medium: 2, low: 1 };
-    return priorityWeight[b.priority] - priorityWeight[a.priority];
-  });
-
-  const currentFocusTask = sortedFocusCandidates[0] || mits.find((t) => t.status !== 'completed') || upcomingTasks[0];
+  // Shared unified Focus Task calculation (matches Today Page)
+  const sortedTodayTasks = sortTasksChronologically(todayTasks);
+  const smartFocusTask = getSmartFocusTask(sortedTodayTasks);
+  const customFocusTask = sortedTodayTasks.find(
+    (t) => t.id === customFocusTaskId && t.status !== 'completed'
+  );
+  const currentFocusTask = customFocusTask || smartFocusTask || upcomingTasks[0] || null;
+  const isCustomFocus = !!customFocusTask;
 
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Public App Overview & Hero Banner (Google OAuth Verification Compliance) */}
       {/* <PublicAppOverviewBanner /> */}
 
-      {/* Top Banner Greeting */}
+      {/* Top Banner Greeting with Animated Shining Border */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-white border border-indigo-500/20 dark:border-[#243244] relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 shadow-md"
+        className="relative rounded-2xl sm:rounded-3xl p-[1.5px] overflow-hidden group shadow-lg"
       >
-        <div className="relative z-10 space-y-1.5 sm:space-y-2">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
-            {greeting} 👋
-          </h1>
-          <p className="text-blue-100/90 text-xs sm:text-sm max-w-xl leading-relaxed">
-            Plan. Focus. Execute. Grow. — You have
-            <Link href="/today" className="mx-1 font-bold text-white hover:underline hover:cursor-pointer">{todayTasks.length - completedToday} tasks</Link>
-            remaining today.
-          </p>
-        </div>
+        {/* Continuous Rotating Conic Gradient Beam */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+          className="absolute -inset-[200%] bg-[conic-gradient(from_0deg_at_50%_50%,#0066FF_0deg,#38bdf8_90deg,transparent_180deg,#FF6B00_270deg,#0066FF_360deg)] opacity-80 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        />
 
-        {/* Progress Ring Widget (Clickable to view Score Breakdown) */}
-        <div
-          onClick={() => {
-            hasRecordedItems ? setIsScoreModalOpen(true) : setQuickAddOpen(true);
-          }}
-          className="relative z-10 flex items-center gap-3.5 sm:gap-6 bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white/20 w-full sm:w-auto justify-between sm:justify-start shrink-0 cursor-pointer transition-all duration-200 group"
-        >
-          <CircularProgress
-            percentage={hasRecordedItems ? dailyScore : 0}
-            size={76}
-            strokeWidth={7}
-            color="#ffffff"
-            trailColor="rgba(255, 255, 255, 0.2)"
-            showText={true}
-          />
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-blue-100">Daily Score</span>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="w-3 h-3 text-blue-200 opacity-60 group-hover:opacity-100 transition-opacity" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="bg-gray-900 text-white font-medium text-xs px-3 py-1.5 rounded-xl shadow-xl">
-                  {hasRecordedItems ? 'Click for details' : 'Click to start'}
-                </TooltipContent>
-              </Tooltip>
+        {/* Inner Banner Content */}
+        <div className="relative z-10 p-4 sm:p-6 md:p-8 rounded-[calc(1rem-1.5px)] sm:rounded-[calc(1.5rem-1.5px)] bg-gradient-to-br from-orbit-bg-dark via-[#0d162b] to-[#141f38] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+          <div className="relative z-10 space-y-1.5 sm:space-y-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
+              {greeting} 👋
+            </h1>
+            <p className="text-blue-100/90 text-xs sm:text-sm max-w-xl leading-relaxed">
+              Plan. Focus. Execute. Grow. — You have
+              <Link href="/today" className="mx-1 font-bold text-white hover:underline hover:cursor-pointer">{todayTasks.length - completedToday} tasks</Link>
+              remaining today.
+            </p>
+          </div>
+
+          {/* Progress Ring Widget (Clickable to view Score Breakdown) */}
+          <div
+            onClick={() => {
+              hasRecordedItems ? setIsScoreModalOpen(true) : setQuickAddOpen(true);
+            }}
+            className="relative z-10 flex items-center gap-3.5 sm:gap-6 bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white/20 w-full sm:w-auto justify-between sm:justify-start shrink-0 cursor-pointer transition-all duration-200 group/widget"
+          >
+            <CircularProgress
+              percentage={hasRecordedItems ? dailyScore : 0}
+              size={76}
+              strokeWidth={7}
+              color="#ffffff"
+              trailColor="rgba(255, 255, 255, 0.2)"
+              showText={true}
+            />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-blue-100">Daily Score</span>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="w-3 h-3 text-blue-200 opacity-60 group-hover/widget:opacity-100 transition-opacity" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-gray-900 text-white font-medium text-xs px-3 py-1.5 rounded-xl shadow-xl">
+                    {hasRecordedItems ? 'Click for details' : 'Click to start'}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <span className="text-xl sm:text-2xl font-black text-white">
+                {hasRecordedItems ? `${dailyScore} / 100` : 'Not Started'}
+              </span>
+              <span className="text-[10px] sm:text-xs text-emerald-300 font-bold flex items-center gap-1 mt-0.5">
+                <Button
+                  variant={'link'}
+                  className='text-emerald-300 hover:underline p-0 h-auto text-[10px] sm:text-xs'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    hasRecordedItems ? setIsScoreModalOpen(true) : setQuickAddOpen(true);
+                  }}>
+                  {hasRecordedItems ? `Click for details` : `Add tasks to start`}
+                </Button>
+              </span>
             </div>
-            <span className="text-xl sm:text-2xl font-black text-white">
-              {hasRecordedItems ? `${dailyScore} / 100` : 'Not Started'}
-            </span>
-            <span className="text-[10px] sm:text-xs text-emerald-300 font-bold flex items-center gap-1 mt-0.5">
-              <Button
-                variant={'link'}
-                className='text-emerald-300 hover:underline p-0 h-auto text-[10px] sm:text-xs'
-                onClick={(e) => {
-                  e.stopPropagation();
-                  hasRecordedItems ? setIsScoreModalOpen(true) : setQuickAddOpen(true);
-                }}>
-                {hasRecordedItems ? `Click for details` : `Add tasks to start`}
-              </Button>
-            </span>
           </div>
         </div>
       </motion.div>
@@ -269,6 +265,9 @@ export default function DashboardHome() {
       {/* NOW / Current Focus Card */}
       <NowFocusCard
         currentTask={currentFocusTask}
+        allTodayTasks={sortedTodayTasks}
+        isCustomFocus={isCustomFocus}
+        onSelectFocusTask={(task) => setCustomFocusTaskId(task?.id || null)}
         onStartFocus={(task) => {
           setActiveFocusTask(task || currentFocusTask);
           setIsFocusModalOpen(true);

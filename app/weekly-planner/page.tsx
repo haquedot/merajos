@@ -115,7 +115,7 @@ export default function WeeklyPlannerPage() {
                 key={idx}
                 className="p-2.5 sm:p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex items-center gap-3"
               >
-                <span className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0">
+                <span className="w-6 h-6 rounded-full bg-orbit-blue text-white font-bold flex items-center justify-center text-xs shrink-0">
                   {idx + 1}
                 </span>
                 <Input
@@ -438,7 +438,7 @@ export default function WeeklyPlannerPage() {
               max="100"
               value={score}
               onChange={(e) => setScore(Number(e.target.value))}
-              className="w-full xs:w-32 sm:w-40 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              className="w-full xs:w-32 sm:w-40 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orbit-blue"
             />
             <Input
               type="number"

@@ -90,7 +90,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({ isOpen, on
           {/* Top Bar */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800/80 bg-gray-50/50 dark:bg-gray-900/40">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#1F3B99] dark:text-[#6D5BFF]" />
+              <Sparkles className="w-4 h-4 text-orbit-blue" />
               <span className="text-xs font-black uppercase tracking-wider text-gray-800 dark:text-gray-200">
                 Universal Quick Capture
               </span>
@@ -115,7 +115,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({ isOpen, on
                 onClick={() => setCaptureType('task')}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
                   captureType === 'task'
-                    ? 'bg-[#1F3B99] dark:bg-[#6D5BFF] text-white shadow-xs'
+                    ? 'bg-orbit-blue text-white shadow-xs'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
@@ -128,7 +128,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({ isOpen, on
                 onClick={() => setCaptureType('note')}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
                   captureType === 'note'
-                    ? 'bg-[#1F3B99] dark:bg-[#6D5BFF] text-white shadow-xs'
+                    ? 'bg-orbit-blue text-white shadow-xs'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
@@ -141,7 +141,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({ isOpen, on
                 onClick={() => setCaptureType('idea')}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
                   captureType === 'idea'
-                    ? 'bg-[#1F3B99] dark:bg-[#6D5BFF] text-white shadow-xs'
+                    ? 'bg-orbit-blue text-white shadow-xs'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
@@ -164,7 +164,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({ isOpen, on
                     ? 'Jot down quick thoughts or notes...'
                     : 'Record a novel idea or feature concept...'
                 }
-                className="w-full p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] resize-none"
+                className="w-full p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orbit-blue resize-none"
               />
             </div>
 

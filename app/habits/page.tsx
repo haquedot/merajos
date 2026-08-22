@@ -106,7 +106,7 @@ export default function HabitsPage() {
                   </div>
 
                   <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                    <span className="font-bold text-amber-500 flex items-center gap-1 shrink-0">
+                    <span className="font-bold text-orbit-orange flex items-center gap-1 shrink-0">
                       <Flame className="w-3.5 h-3.5 fill-current" />
                       {habit.currentStreak} Day Streak
                     </span>
@@ -134,8 +134,8 @@ export default function HabitsPage() {
                   onClick={() => toggleHabitForDate(habit.id, todayStr)}
                   className={`w-full xs:w-auto px-4 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 ${
                     isCompletedToday
-                      ? 'bg-amber-500 text-white shadow-amber-500/20'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-white'
+                      ? 'bg-orbit-orange text-white shadow-orbit-orange/20'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-orbit-orange hover:text-white dark:hover:bg-orbit-orange dark:hover:text-white'
                   }`}
                 >
                   <CheckCircle2 className="w-4 h-4 shrink-0" />

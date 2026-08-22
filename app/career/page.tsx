@@ -443,7 +443,7 @@ export default function CareerPage() {
                         seedSoftwareEngineerData();
                         showToast('Loaded Software Engineer Starter Kit!');
                       }}
-                      className="px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-[#1F3B99] dark:text-[#6D5BFF] text-xs font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-colors"
+                      className="px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-orbit-blue text-xs font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-colors"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
                       <span>Load Software Engineer Starter Kit</span>
@@ -481,7 +481,7 @@ export default function CareerPage() {
                         seedSoftwareEngineerData();
                         showToast('Loaded Software Engineer Starter Kit!');
                       }}
-                      className="px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-[#1F3B99] dark:text-[#6D5BFF] text-xs font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-colors"
+                      className="px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-orbit-blue text-xs font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-colors"
                     >
                       <Sparkles className="w-4 h-4 text-indigo-500" />
                       <span>Load Software Engineer Starter Kit</span>
@@ -655,7 +655,7 @@ export default function CareerPage() {
 
                           <button
                             onClick={() => handleCopyDSAToTask(dsa.name)}
-                            className="px-2 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-[#1F3B99] dark:text-[#6D5BFF] hover:bg-indigo-100 text-xs font-bold flex items-center gap-1 transition-colors"
+                            className="px-2 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-orbit-blue hover:bg-indigo-100 text-xs font-bold flex items-center gap-1 transition-colors"
                             title="Copy to Today Module as Task"
                           >
                             <Copy className="w-3.5 h-3.5" />
@@ -663,7 +663,7 @@ export default function CareerPage() {
 
                           <button
                             onClick={() => handleOpenEditDSA(dsa)}
-                            className="p-1 text-gray-400 hover:text-[#1F3B99] dark:hover:text-[#6D5BFF] transition-colors"
+                            className="p-1 text-gray-400 hover:text-orbit-blue transition-colors"
                             title="Edit DSA Topic"
                           >
                             <Edit2 className="w-4 h-4" />

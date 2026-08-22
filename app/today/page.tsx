@@ -19,7 +19,7 @@ import {
   LayoutList,
   CalendarDays,
 } from 'lucide-react';
-import { useTaskStore } from '../../store/useTaskStore';
+import { useTaskStore, deduplicateTasksList } from '../../store/useTaskStore';
 import { Task, TimeSlot, Priority, Category } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
@@ -27,6 +27,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';
 import { Button } from '../../components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
 import { NowFocusCard } from '../../components/dashboard/NowFocusCard';
 import { FocusOverlayModal } from '../../components/modals/FocusOverlayModal';
 import { PersonalRoutineOverlay } from '../../components/today/PersonalRoutineOverlay';
@@ -43,7 +44,7 @@ import { calculateDailyScore } from '../../lib/productivityCalculator';
 import { DailyScoreBreakdownModal } from '../../components/modals/DailyScoreBreakdownModal';
 
 export default function TodayPage() {
-  const [viewMode, setViewMode] = useState<'timeline' | 'checklist'>('checklist');
+  const [viewMode, setViewMode] = useState<'timeline' | 'checklist'>('timeline');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
   const [activeFocusTask, setActiveFocusTask] = useState<any>(null);
@@ -55,9 +56,16 @@ export default function TodayPage() {
   const [slot, setSlot] = useState<TimeSlot>('morning');
   const [priority, setPriority] = useState<Priority>('medium');
   const [category, setCategory] = useState<Category>('Personal');
-  const [customFocusTaskId, setCustomFocusTaskId] = useState<string | null>(null);
 
-  const { tasks, isLoading: isLoadingTasks, toggleTaskStatus, toggleMIT, addTask } = useTaskStore();
+  const {
+    tasks,
+    isLoading: isLoadingTasks,
+    customFocusTaskId,
+    setCustomFocusTaskId,
+    toggleTaskStatus,
+    toggleMIT,
+    addTask,
+  } = useTaskStore();
   const { habits } = useHabitStore();
   const { goals } = useGoalStore();
   const { projects } = useProjectStore();
@@ -72,7 +80,8 @@ export default function TodayPage() {
   const rawTodayTasks = tasks.filter(
     (t) => t.dueDate === todayStr || (t.dueDate < todayStr && t.status !== 'completed')
   );
-  const todayTasks = sortTasksChronologically(rawTodayTasks);
+  const { uniqueTasks: deduplicatedTodayTasks } = deduplicateTasksList(rawTodayTasks);
+  const todayTasks = sortTasksChronologically(deduplicatedTodayTasks);
 
   const completedCount = todayTasks.filter((t) => t.status === 'completed').length;
   const progressPercent = todayTasks.length > 0 ? Math.round((completedCount / todayTasks.length) * 100) : 100;
@@ -136,7 +145,7 @@ export default function TodayPage() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <Tabs value={viewMode} onValueChange={(val) => setViewMode(val as 'timeline' | 'checklist')} className="space-y-4 sm:space-y-6">
       {/* Today Header Banner */}
       <PageHeader
         icon={Sun}
@@ -146,48 +155,37 @@ export default function TodayPage() {
         actions={
           <>
             {/* Daily Score Breakdown Button */}
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setIsScoreModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 transition-all cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1.5 text-xs font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 shrink-0 cursor-pointer"
               title="Click to view detailed Daily Score breakdown pointers"
             >
               <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               <span>Score: {dailyScore}/100</span>
-            </button>
+            </Button>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold shrink-0">
-              <button
-                onClick={() => setViewMode('checklist')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-xs ${
-                  viewMode === 'checklist'
-                    ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
-                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <LayoutList className="w-3.5 h-3.5" />
-                <span className="inline">Checklist</span>
-              </button>
-              <button
-                onClick={() => setViewMode('timeline')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-xs ${
-                  viewMode === 'timeline'
-                    ? 'bg-white dark:bg-gray-900 text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs'
-                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
+            {/* View Mode Toggle Tabs */}
+            <TabsList className="h-9">
+              <TabsTrigger value="timeline" className="h-7 text-xs">
                 <Clock className="w-3.5 h-3.5" />
-                <span className="inline">Timeline</span>
-              </button>
-            </div>
+                <span>Timeline</span>
+              </TabsTrigger>
+              <TabsTrigger value="checklist" className="h-7 text-xs">
+                <LayoutList className="w-3.5 h-3.5" />
+                <span>Checklist</span>
+              </TabsTrigger>
+            </TabsList>
 
-            <button
+            <Button
+            size={'sm'}
               onClick={() => handleOpenAddModalWithSlot()}
-              className="btn-primary px-3 sm:px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0"
+              className="text-xs flex items-center gap-1.5 shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Add Task</span>
-            </button>
+            </Button>
           </>
         }
       >
@@ -205,14 +203,14 @@ export default function TodayPage() {
             <span className="text-gray-600 dark:text-gray-400 truncate">
               Today's Completion ({completedCount}/{todayTasks.length} Completed)
             </span>
-            <span className="text-[#1F3B99] dark:text-[#6D5BFF] font-bold shrink-0">{progressPercent}%</span>
+            <span className="text-orbit-blue font-bold shrink-0">{progressPercent}%</span>
           </div>
           <div className="w-full h-2.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="h-full bg-[#1F3B99] dark:bg-[#6D5BFF] rounded-full"
+              className="h-full bg-orbit-blue rounded-full"
             />
           </div>
         </div>
@@ -243,8 +241,8 @@ export default function TodayPage() {
         }
       />
 
-      {/* RENDER BASED ON VIEW MODE */}
-      {viewMode === 'timeline' ? (
+      {/* RENDER BASED ON VIEW MODE TABS */}
+      <TabsContent value="timeline" className="mt-0">
         <TodayTimelineView
           tasks={todayTasks}
           effectiveFocusTaskId={effectiveFocusTask?.id}
@@ -253,12 +251,13 @@ export default function TodayPage() {
           onSetFocusTask={(id) => setCustomFocusTaskId(id)}
           onOpenAddModal={handleOpenAddModalWithSlot}
         />
-      ) : (
-        <>
-          {/* Top 3 MIT Section */}
+      </TabsContent>
+      
+      <TabsContent value="checklist" className="space-y-4 sm:space-y-6 mt-0">
+        {/* Top 3 MIT Section */}
           <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-3.5 sm:space-y-4">
             <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 shrink-0" />
+              <Target className="w-4 h-4 sm:w-5 sm:h-5 text-orbit-orange shrink-0" />
               <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">
                 Top 3 Most Important Tasks (MITs)
               </h2>
@@ -275,7 +274,7 @@ export default function TodayPage() {
                     className={`p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all ${
                       isDone
                         ? 'bg-gray-50/60 dark:bg-gray-800/30 border-gray-200 dark:border-gray-800'
-                        : 'bg-blue-50/30 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50'
+                        : 'bg-orbit-blue/5 border-orbit-blue/20'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -299,21 +298,19 @@ export default function TodayPage() {
                       <Badge variant={task.category === 'Client' ? 'purple' : 'info'} size="sm">
                         {task.category}
                       </Badge>
-                      <button
+                      <Button
                         type="button"
+                        size="sm"
+                        variant={effectiveFocusTask?.id === task.id ? 'default' : 'secondary'}
                         onClick={(e) => {
                           e.stopPropagation();
                           setCustomFocusTaskId(task.id);
                         }}
-                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors ${
-                          effectiveFocusTask?.id === task.id
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300'
-                        }`}
+                        className="h-6 px-2 text-[10px] font-bold flex items-center gap-1"
                       >
                         <Target className="w-3 h-3" />
                         <span>{effectiveFocusTask?.id === task.id ? 'Focused' : 'Set Focus'}</span>
-                      </button>
+                      </Button>
                     </div>
                   </motion.div>
                 );
@@ -328,7 +325,7 @@ export default function TodayPage() {
           </div>
 
           {/* Personal Routine Timeline Anchors */}
-          <PersonalRoutineOverlay />
+          {/* <PersonalRoutineOverlay /> */}
 
           {/* 4 Time Slots Sections */}
           <div className="space-y-4 sm:space-y-6">
@@ -403,28 +400,26 @@ export default function TodayPage() {
                                 </Badge>
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <button
+                                <Button
+                                  size="sm"
+                                  variant={effectiveFocusTask?.id === task.id ? 'default' : 'secondary'}
                                   onClick={() => setCustomFocusTaskId(task.id)}
-                                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors flex items-center gap-1 ${
-                                    effectiveFocusTask?.id === task.id
-                                      ? 'bg-blue-600 text-white shadow-xs'
-                                      : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-400'
-                                  }`}
+                                  className="h-7 px-2.5 text-[10px] font-bold flex items-center gap-1"
                                   title="Set as Current Focus Task"
                                 >
                                   <Target className="w-3 h-3" />
                                   <span>{effectiveFocusTask?.id === task.id ? 'Focused' : 'Set Focus'}</span>
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={task.mit ? 'outline' : 'secondary'}
                                   onClick={() => toggleMIT(task.id)}
-                                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors ${
-                                    task.mit
-                                      ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
-                                      : 'bg-gray-200/70 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
+                                  className={`h-7 px-2.5 text-[10px] font-bold ${
+                                    task.mit ? 'border-rose-300 text-rose-600 bg-rose-50 dark:bg-rose-950/60 dark:text-rose-400' : ''
                                   }`}
                                 >
                                   {task.mit ? '★ MIT' : 'Set MIT'}
-                                </button>
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -436,8 +431,7 @@ export default function TodayPage() {
               );
             })}
           </div>
-        </>
-      )}
+        </TabsContent>
 
       {/* Add Task Modal */}
       <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add Task for Today">
@@ -503,6 +497,6 @@ export default function TodayPage() {
           </div>
         </form>
       </Modal>
-    </div>
+    </Tabs>
   );
 }

@@ -11,6 +11,7 @@ interface TaskState {
   selectedCategory: string;
   selectedPriority: string;
   selectedStatus: string;
+  customFocusTaskId: string | null;
 
   // Actions
   loadFromDB: () => Promise<void>;
@@ -18,6 +19,7 @@ interface TaskState {
   setFilterCategory: (category: string) => void;
   setFilterPriority: (priority: string) => void;
   setFilterStatus: (status: string) => void;
+  setCustomFocusTaskId: (id: string | null) => void;
 
   addTask: (task: Omit<Task, 'id'>) => Promise<string>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
@@ -27,21 +29,43 @@ interface TaskState {
   resetTasks: () => Promise<void>;
 }
 
-function deduplicateTasksList(tasks: Task[]): { uniqueTasks: Task[]; duplicateIds: string[] } {
+function getTaskDedupeKey(t: Task): string {
+  const cleanTitle = (t.title || '').trim().toLowerCase();
+  const dateStr = t.dueDate || '';
+  const timeStr = t.time || t.timeSlot || '';
+  return `${cleanTitle}___${dateStr}___${timeStr}`;
+}
+
+export function deduplicateTasksList(tasks: Task[]): { uniqueTasks: Task[]; duplicateIds: string[] } {
   const seen = new Map<string, Task>();
   const uniqueTasks: Task[] = [];
   const duplicateIds: string[] = [];
 
   for (const t of tasks) {
-    const key = t.googleTaskId
-      ? `g_${t.googleTaskId}`
-      : `t_${(t.title || '').trim().toLowerCase()}_${t.dueDate || ''}`;
+    const contentKey = getTaskDedupeKey(t);
+    const gKey = t.googleTaskId ? `g_${t.googleTaskId}` : null;
 
-    if (!seen.has(key)) {
-      seen.set(key, t);
+    let existing: Task | undefined;
+    if (gKey && seen.has(gKey)) {
+      existing = seen.get(gKey);
+    } else if (seen.has(contentKey)) {
+      existing = seen.get(contentKey);
+    }
+
+    if (!existing) {
+      seen.set(contentKey, t);
+      if (gKey) seen.set(gKey, t);
       uniqueTasks.push(t);
     } else {
-      duplicateIds.push(t.id);
+      if (t.status === 'completed' && existing.status !== 'completed') {
+        const idx = uniqueTasks.findIndex((ut) => ut.id === existing!.id);
+        if (idx !== -1) uniqueTasks[idx] = t;
+        duplicateIds.push(existing.id);
+        seen.set(contentKey, t);
+        if (gKey) seen.set(gKey, t);
+      } else {
+        duplicateIds.push(t.id);
+      }
     }
   }
 
@@ -89,6 +113,7 @@ export const useTaskStore = create<TaskState>((set, get) => {
     selectedCategory: 'all',
     selectedPriority: 'all',
     selectedStatus: 'all',
+    customFocusTaskId: typeof window !== 'undefined' ? localStorage.getItem('meraj_os_custom_focus_task_id') : null,
 
     loadFromDB: async () => {
       set({ isLoading: true });
@@ -104,6 +129,16 @@ export const useTaskStore = create<TaskState>((set, get) => {
     setFilterCategory: (category) => set({ selectedCategory: category }),
     setFilterPriority: (priority) => set({ selectedPriority: priority }),
     setFilterStatus: (status) => set({ selectedStatus: status }),
+    setCustomFocusTaskId: (id: string | null) => {
+      if (typeof window !== 'undefined') {
+        if (id) {
+          localStorage.setItem('meraj_os_custom_focus_task_id', id);
+        } else {
+          localStorage.removeItem('meraj_os_custom_focus_task_id');
+        }
+      }
+      set({ customFocusTaskId: id });
+    },
 
     addTask: async (taskData) => {
       const id = `task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;

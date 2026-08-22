@@ -4,7 +4,7 @@ import { googleTasksService } from './tasks.service';
 import { authService } from './auth.service';
 import { Task, CalendarEvent } from '../../types';
 import { useCalendarStore } from '../../store/useCalendarStore';
-import { useTaskStore } from '../../store/useTaskStore';
+import { useTaskStore, deduplicateTasksList } from '../../store/useTaskStore';
 
 export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'success';
 
@@ -178,20 +178,7 @@ class SyncService {
 
       // Clean up any remaining duplicate local tasks in Dexie DB
       const currentTasks = await db.tasks.toArray();
-      const seenTaskKeys = new Map<string, string>();
-      const duplicateTaskIdsToRemove: string[] = [];
-
-      for (const t of currentTasks) {
-        const key = t.googleTaskId
-          ? `g_${t.googleTaskId}`
-          : `t_${t.title.trim().toLowerCase()}_${t.dueDate || ''}`;
-        
-        if (seenTaskKeys.has(key)) {
-          duplicateTaskIdsToRemove.push(t.id);
-        } else {
-          seenTaskKeys.set(key, t.id);
-        }
-      }
+      const { duplicateIds: duplicateTaskIdsToRemove } = deduplicateTasksList(currentTasks);
 
       if (duplicateTaskIdsToRemove.length > 0) {
         console.log(`[SyncService] Removing ${duplicateTaskIdsToRemove.length} duplicate task records from Dexie DB.`);

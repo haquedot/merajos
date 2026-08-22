@@ -33,7 +33,7 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
     <Modal isOpen={isOpen} onClose={onClose} title="Keyboard Shortcuts" maxWidth="md">
       <div className="space-y-5 py-1">
         <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40 text-xs">
-          <Keyboard className="w-4 h-4 text-[#1F3B99] dark:text-[#6D5BFF] shrink-0" />
+          <Keyboard className="w-4 h-4 text-orbit-blue shrink-0" />
           <span>Press these keys anytime from any page to navigate quickly.</span>
         </div>
 
@@ -52,7 +52,7 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       {item.description}
                     </span>
-                    <kbd className="px-2 py-1 rounded bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-[11px] font-mono font-bold text-[#1F3B99] dark:text-[#6D5BFF] shadow-xs">
+                    <kbd className="px-2 py-1 rounded bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-[11px] font-mono font-bold text-orbit-blue shadow-xs">
                       {item.key}
                     </kbd>
                   </div>

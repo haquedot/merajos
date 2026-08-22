@@ -147,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                 {isActive && (
                   <motion.div
                     layoutId="activeSidebarPill"
-                    className="absolute inset-0 bg-[#1F3B99] rounded-xl shadow-xs shadow-indigo-900/20 z-0"
+                    className="absolute inset-0 bg-orbit-blue rounded-xl shadow-md shadow-orbit-blue/30 z-0"
                     transition={{
                       type: 'spring',
                       stiffness: 380,
@@ -197,9 +197,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                   className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800/80 flex items-center justify-center transition-all duration-200 ease-out group cursor-pointer active:scale-98"
                 >
                   {theme === 'dark' ? (
-                    <Moon className="w-4 h-4 text-indigo-400 shrink-0 transition-transform duration-200 group-hover:rotate-12" />
+                    <Moon className="w-4 h-4 text-orbit-blue shrink-0 transition-transform duration-200 group-hover:rotate-12" />
                   ) : (
-                    <Sun className="w-4 h-4 text-amber-500 shrink-0 transition-transform duration-200 group-hover:rotate-45" />
+                    <Sun className="w-4 h-4 text-orbit-orange shrink-0 transition-transform duration-200 group-hover:rotate-45" />
                   )}
                 </button>
               </TooltipTrigger>
@@ -219,9 +219,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 {theme === 'dark' ? (
-                  <Moon className="w-4 h-4 text-indigo-400 shrink-0 transition-transform duration-200 group-hover:rotate-12" />
+                  <Moon className="w-4 h-4 text-orbit-blue shrink-0 transition-transform duration-200 group-hover:rotate-12" />
                 ) : (
-                  <Sun className="w-4 h-4 text-amber-500 shrink-0 transition-transform duration-200 group-hover:rotate-45" />
+                  <Sun className="w-4 h-4 text-orbit-orange shrink-0 transition-transform duration-200 group-hover:rotate-45" />
                 )}
                 <span className="truncate">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
               </div>
@@ -229,7 +229,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
               <div
                 className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0 relative flex items-center ${
                   theme === 'dark'
-                    ? 'bg-indigo-600 dark:bg-indigo-600'
+                    ? 'bg-orbit-blue'
                     : 'bg-gray-300 dark:bg-gray-700'
                 }`}
               >
@@ -239,9 +239,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                   }`}
                 >
                   {theme === 'dark' ? (
-                    <Moon className="w-2.5 h-2.5 text-indigo-600" />
+                    <Moon className="w-2.5 h-2.5 text-orbit-blue" />
                   ) : (
-                    <Sun className="w-2.5 h-2.5 text-amber-500" />
+                    <Sun className="w-2.5 h-2.5 text-orbit-orange" />
                   )}
                 </div>
               </div>

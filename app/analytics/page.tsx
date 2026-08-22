@@ -181,10 +181,10 @@ export default function AnalyticsPage() {
   const personalTaskCount = mongoStats?.personalTasksCount ?? tasks.filter((t) => t.category === 'Personal' || t.category === 'Habit').length;
 
   const realCategoryDonutData = [
-    { name: 'Client Projects', y: clientTaskCount, color: '#8b5cf6' },
-    { name: 'Research & Thesis', y: researchTaskCount, color: '#3b82f6' },
-    { name: 'Career & DSA', y: careerTaskCount, color: '#10b981' },
-    { name: 'Personal & Habits', y: personalTaskCount, color: '#f59e0b' },
+    { name: 'Client Projects', y: clientTaskCount, color: '#0066FF' },
+    { name: 'Research & Thesis', y: researchTaskCount, color: '#FF6B00' },
+    { name: 'Career & DSA', y: careerTaskCount, color: '#10B981' },
+    { name: 'Personal & Habits', y: personalTaskCount, color: '#8B5CF6' },
   ].filter((d) => d.y > 0);
 
   // Real Job status counts
@@ -194,10 +194,10 @@ export default function AnalyticsPage() {
   const jobOfferCount = jobs.filter((j) => j.status === 'Offer').length;
 
   const realJobDonutData = [
-    { name: 'Applied', y: jobAppliedCount, color: '#3b82f6' },
-    { name: 'OA Assessment', y: jobOACount, color: '#f59e0b' },
-    { name: 'Interview', y: jobInterviewCount, color: '#10b981' },
-    { name: 'Offer', y: jobOfferCount, color: '#8b5cf6' },
+    { name: 'Applied', y: jobAppliedCount, color: '#0066FF' },
+    { name: 'OA Assessment', y: jobOACount, color: '#FF6B00' },
+    { name: 'Interview', y: jobInterviewCount, color: '#10B981' },
+    { name: 'Offer', y: jobOfferCount, color: '#8B5CF6' },
   ].filter((d) => d.y > 0);
 
   // Highcharts series data mapped chronologically
@@ -256,7 +256,7 @@ export default function AnalyticsPage() {
           subtitle={`Target: ${totalEstHours}h estimated`}
           icon={Clock}
           iconBgColor="bg-blue-50 dark:bg-blue-950/40"
-          iconColor="text-blue-500"
+          iconColor="text-orbit-blue"
           trend={{ value: `${totalTasks} Active Tasks`, positive: true }}
         />
         <StatisticCard
@@ -274,7 +274,7 @@ export default function AnalyticsPage() {
           subtitle={`${jobInterviewCount} interviewing, ${jobOACount} OA`}
           icon={GraduationCap}
           iconBgColor="bg-amber-50 dark:bg-amber-950/40"
-          iconColor="text-amber-500"
+          iconColor="text-orbit-orange"
           trend={{ value: 'Job Applications', positive: true }}
         />
       </div>
@@ -285,7 +285,7 @@ export default function AnalyticsPage() {
         <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-500 shrink-0" />
+              <TrendingUp className="w-5 h-5 text-orbit-blue shrink-0" />
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-white truncate">
                 Daily Completion Trend
               </h3>
@@ -295,7 +295,7 @@ export default function AnalyticsPage() {
           <HighchartsLine
             categories={snapshotDates}
             seriesData={[
-              { name: 'Completion Rate %', data: snapshotRates, color: '#3b82f6' },
+              { name: 'Completion Rate %', data: snapshotRates, color: '#0066FF' },
             ]}
             height={260}
           />
@@ -305,7 +305,7 @@ export default function AnalyticsPage() {
         <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-purple-500 shrink-0" />
+              <BarChart3 className="w-5 h-5 text-orbit-orange shrink-0" />
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-white truncate">
                 Work Hours Breakdown by Category
               </h3>
@@ -323,7 +323,7 @@ export default function AnalyticsPage() {
                   tasks.filter((t) => t.category === 'Career').reduce((a, b) => a + (b.estimatedHours || 0), 0),
                   tasks.filter((t) => t.category === 'Personal').reduce((a, b) => a + (b.estimatedHours || 0), 0),
                 ],
-                color: '#8b5cf6',
+                color: '#0066FF',
               },
               {
                 name: 'Actual Logged Hours',
@@ -333,7 +333,7 @@ export default function AnalyticsPage() {
                   tasks.filter((t) => t.category === 'Career').reduce((a, b) => a + (b.actualHours || 0), 0),
                   tasks.filter((t) => t.category === 'Personal').reduce((a, b) => a + (b.actualHours || 0), 0),
                 ],
-                color: '#10b981',
+                color: '#FF6B00',
               },
             ]}
             height={260}
