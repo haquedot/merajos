@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
+import { BottomNav } from './BottomNav';
+import { MobileMoreSheet } from './MobileMoreSheet';
 import { RightProductivityPanel } from './RightProductivityPanel';
 import { QuickAddModal } from '../modals/QuickAddModal';
 import { QuickCaptureModal } from '../modals/QuickCaptureModal';
@@ -26,6 +28,7 @@ interface MainLayoutProps {
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const router = useRouter();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [mobileMoreSheetOpen, setMobileMoreSheetOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
@@ -142,11 +145,24 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           onOpenTour={() => setShowTour(true)}
         />
 
-        <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6 overflow-x-hidden">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6 overflow-x-hidden pb-24 md:pb-6">
           {children}
         </main>
         <Footer/>
       </div>
+
+      {/* Mobile Fixed Bottom Navigation Dock */}
+      <BottomNav
+        onOpenQuickAdd={() => setQuickAddOpen(true)}
+        onOpenMoreSheet={() => setMobileMoreSheetOpen(true)}
+      />
+
+      {/* Mobile Slide-Up More Sheet Drawer */}
+      <MobileMoreSheet
+        isOpen={mobileMoreSheetOpen}
+        onClose={() => setMobileMoreSheetOpen(false)}
+        onOpenTour={() => setShowTour(true)}
+      />
 
       {/* Right Productivity Panel */}
       <RightProductivityPanel

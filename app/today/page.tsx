@@ -170,11 +170,11 @@ export default function TodayPage() {
             <TabsList className="h-9">
               <TabsTrigger value="timeline" className="h-7 text-xs">
                 <Clock className="w-3.5 h-3.5" />
-                <span>Timeline</span>
+                <span className='hidden sm:inline'>Timeline</span>
               </TabsTrigger>
               <TabsTrigger value="checklist" className="h-7 text-xs">
                 <LayoutList className="w-3.5 h-3.5" />
-                <span>Checklist</span>
+                <span className='hidden sm:inline'>Checklist</span>
               </TabsTrigger>
             </TabsList>
 

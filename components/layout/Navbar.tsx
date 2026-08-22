@@ -20,9 +20,11 @@ import {
 import { useTaskStore } from '../../store/useTaskStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { Tagline } from '../common/Tagline';
+import { Logo } from '../common/Logo';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { useTheme } from '../../providers/ThemeProvider';
 import { SyncStatusBadge } from '../common/SyncStatusBadge';
+import Link from 'next/link';
 
 interface NavbarProps {
   onOpenMobileSidebar: () => void;
@@ -82,26 +84,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   const completionRate = todayTasks.length > 0 ? Math.round((completedToday / todayTasks.length) * 100) : 100;
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white dark:bg-[#101827] border-b border-[#E2E8F0] dark:border-[#243244] px-4 md:px-6 flex items-center justify-between transition-colors">
-      {/* Left section: Mobile menu & Quick search */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onOpenMobileSidebar}
-          className="md:hidden p-2 rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          aria-label="Open Mobile Navigation"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+    <header className="sticky top-0 z-30 h-14 md:h-16 bg-white/95 dark:bg-[#101827]/95 backdrop-blur-md border-b border-[#E2E8F0] dark:border-[#243244] px-3.5 md:px-6 flex items-center justify-between transition-colors">
+      {/* Left section: Mobile Logo & Quick search */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Compact Mobile Brand Logo */}
+        <Link
+          href="/"
+          className="md:hidden flex items-center">
+          <Logo variant="horizontal" size={28} showTagline={true} />
+        </Link>
 
         {/* Global Search trigger */}
         <button
           id="tour-search"
           onClick={onOpenSearch}
-          className="flex items-center gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 border border-[#E2E8F0] dark:border-[#243244] transition-all w-10 sm:w-44 md:w-56"
+          className="hidden md:flex items-center justify-center sm:justify-start gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 border border-[#E2E8F0] dark:border-[#243244] transition-all w-9 h-9 sm:w-44 md:w-56"
         >
-          <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-          <span className="flex-1 text-left truncate">Search...</span>
-          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 rounded border border-[#E2E8F0] dark:border-[#243244]">
+          <Search className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
+          <span className="inline-block flex-1 text-left truncate">Search...</span>
+          <kbd className="inline-block px-1.5 py-0.5 text-[10px] font-mono font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 rounded border border-[#E2E8F0] dark:border-[#243244]">
             ⌘K
           </kbd>
         </button>
@@ -114,19 +115,26 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right section: Sync Status, Run Cron, Theme Toggle, Profile Menu */}
       <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <button
+          id="tour-search"
+          onClick={onOpenSearch}
+          className="flex md:hidden items-center justify-center sm:justify-start gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 border border-[#E2E8F0] dark:border-[#243244] transition-all w-9 h-9 sm:w-44 md:w-56"
+        >
+          <Search className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
+        </button>
+        
         {/* Single Unified Google & Local Sync Status Pill */}
         <button
           id="tour-google-sync"
           onClick={syncNow}
-          className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-            syncState === 'offline'
+          className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${syncState === 'offline'
               ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
               : syncState === 'error'
-              ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-              : syncState === 'syncing'
-              ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border-[#E2E8F0] dark:border-[#243244]'
-          }`}
+                ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                : syncState === 'syncing'
+                  ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border-[#E2E8F0] dark:border-[#243244]'
+            }`}
           title={syncMessage || 'Click to synchronize with Google'}
         >
           {syncState === 'syncing' ? (
@@ -142,12 +150,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             {syncState === 'syncing'
               ? 'Syncing...'
               : syncState === 'offline'
-              ? 'Offline'
-              : syncState === 'error'
-              ? 'Re-connect Google'
-              : session
-              ? 'Google Synced'
-              : 'Local Mode'}
+                ? 'Offline'
+                : syncState === 'error'
+                  ? 'Re-connect Google'
+                  : session
+                    ? 'Google Synced'
+                    : 'Local Mode'}
           </span>
         </button>
 
@@ -155,7 +163,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           id="tour-quick-add"
           onClick={onOpenQuickAdd}
-          className="btn-primary px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5"
+          className="hidden sm:flex items-center btn-primary px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs gap-1.5"
         >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Quick Add</span>
@@ -174,9 +182,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div
-            className={`w-5 h-5 rounded-full bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-transform duration-200 ease-in-out z-10 ${
-              mounted && theme === 'dark' ? 'translate-x-5.5' : 'translate-x-0'
-            }`}
+            className={`w-5 h-5 rounded-full bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-transform duration-200 ease-in-out z-10 ${mounted && theme === 'dark' ? 'translate-x-5.5' : 'translate-x-0'
+              }`}
           >
             {mounted && theme === 'dark' ? (
               <Moon className="w-3 h-3 text-indigo-400" />
@@ -200,17 +207,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
 
         {/* Right Panel Toggle */}
-        <button
+        {/* <button
           id="tour-focus-panel"
           onClick={onToggleRightPanel}
           className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
           aria-label="Toggle Focus Panel"
         >
           <PanelRight className="w-4 h-4" />
-        </button>
+        </button> */}
 
         {/* Google User Profile Menu */}
-        <div id="tour-user-profile" className="relative">
+        <div id="tour-user-profile" className="hidden sm:flex relative">
           {session ? (
             <button
               onClick={() => setProfileMenuOpen((prev) => !prev)}
