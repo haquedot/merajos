@@ -669,7 +669,7 @@ export default function DashboardHome() {
       </div>
 
       {/* Platform Purpose & Application Overview Section (Google OAuth Verification Compliance) */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-5">
+      {/* <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
@@ -745,7 +745,7 @@ export default function DashboardHome() {
             <span>Support & Inquiries: haquedot@gmail.com</span>
           </a>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -74,7 +74,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
     events: [],
     isLoading: true,
     selectedDate: new Date().toISOString().split('T')[0],
-    viewMode: 'week',
+    viewMode: 'day',
 
     loadFromDB: async () => {
       const localItems = await db.events.toArray();

@@ -128,7 +128,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#F8FAFC] dark:bg-[#0B1120] text-[#0F172A] dark:text-[#F8FAFC] transition-colors selection:bg-[#1F3B99] selection:text-white">
+    <div className="min-h-screen flex bg-[#F8FAFC] dark:bg-[#0D0D0D] text-[#0F172A] dark:text-[#F8FAFC] transition-colors selection:bg-[#1F3B99] selection:text-white">
       {/* Sidebar */}
       <Sidebar
         mobileOpen={mobileSidebarOpen}
