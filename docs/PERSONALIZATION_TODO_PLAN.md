@@ -109,10 +109,10 @@
 
 > **Goal:** Introduce optional natural language planning assistance on top of the deterministic foundation.
 
-- [ ] **6.1 Natural Language Daily Planning Assist**
-  - [ ] Optional AI prompt interface to parse text inputs into structured task schedules.
-- [ ] **6.2 AI Weekly Review Summarizer**
-  - [ ] Generate weekly productivity reflections using aggregated snapshot logs.
+- [x] **6.1 Natural Language Daily Planning Assist (`lib/personalization/ai/plannerAssist.ts`)**
+  - [x] Context-aware AI prompt builder to parse natural language inputs into structured task recommendations.
+- [x] **6.2 AI Weekly Review Summarizer (`lib/personalization/ai/weeklySummarizer.ts`)**
+  - [x] Generate weekly productivity reflections using aggregated snapshot logs.
 
 ---
 
@@ -126,4 +126,4 @@
 | **Phase 3** | Adaptive Today & Focus Mode | **P1** | ✅ Completed |
 | **Phase 4** | Transparency & User Control Panel | **P1** | ✅ Completed |
 | **Phase 5** | Cross-Module Intelligence | **P2** | ✅ Completed |
-| **Phase 6** | Optional AI Layer | **P3** | ⏳ Pending |
+| **Phase 6** | Optional AI Layer | **P3** | ✅ Completed |
