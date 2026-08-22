@@ -406,7 +406,7 @@ export default function CalendarPage() {
 
           {/* View Mode Switcher */}
           <div className="flex items-center justify-around sm:justify-end p-1 bg-gray-100 dark:bg-gray-800 rounded-xl text-xs font-bold border border-gray-200 dark:border-gray-700 w-full sm:w-auto">
-            {(['day', 'week', 'month', 'agenda'] as const).map((m) => (
+            {(['day', 'week', 'month'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => setViewMode(m)}
@@ -656,10 +656,10 @@ export default function CalendarPage() {
                       {format(currDate, 'EEEE, MMMM d, yyyy')}
                     </h3>
                     <p className="text-xs text-gray-500">
-                      24-Hour Schedule (12:00 AM – 11:59 PM)
+                      24-Hour (12:00 AM – 11:59 PM)
                     </p>
                   </div>
-                  <Badge variant="purple">{dayEvents.length} Events Today</Badge>
+                  <Badge variant="purple">{dayEvents.length} Events</Badge>
                 </div>
 
                 <div

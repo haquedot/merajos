@@ -37,6 +37,7 @@ import { Select } from '../../components/ui/select';
 import { DatePicker } from '../../components/ui/date-picker';
 import { Button } from '../../components/ui/button';
 import { getProjectTheme, PROJECT_COLOR_MAP, ProjectColorKey } from '../../lib/projectTheme';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const COLOR_OPTIONS = Object.values(PROJECT_COLOR_MAP);
 
@@ -278,7 +279,7 @@ export default function ClientsPage() {
           />
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto no-scrollbar">
+        {/* <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto no-scrollbar">
           {(['all', 'active', 'completed', 'on_hold', 'archived'] as const).map((st) => (
             <button
               key={st}
@@ -292,7 +293,21 @@ export default function ClientsPage() {
               {st.replace('_', ' ')}
             </button>
           ))}
-        </div>
+        </div> */}
+        <Tabs
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+          className="w-full sm:w-auto"
+
+        >
+          <TabsList className="h-9 ">
+            <TabsTrigger value="all" className=" text-xs">All</TabsTrigger>
+            <TabsTrigger value="active" className=" text-xs">Active</TabsTrigger>
+            <TabsTrigger value="completed" className=" text-xs">Completed</TabsTrigger>
+            <TabsTrigger value="on_hold" className=" text-xs">On Hold</TabsTrigger>
+            <TabsTrigger value="archived" className=" text-xs">Archived</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Client Projects Gallery Grid */}
@@ -347,10 +362,10 @@ export default function ClientsPage() {
                         project.status === 'completed'
                           ? 'success'
                           : project.status === 'on_hold'
-                          ? 'warning'
-                          : project.status === 'archived'
-                          ? 'outline'
-                          : theme.badgeVariant
+                            ? 'warning'
+                            : project.status === 'archived'
+                              ? 'outline'
+                              : theme.badgeVariant
                       }
                       size="sm"
                     >
@@ -585,9 +600,8 @@ export default function ClientsPage() {
                   key={t.name}
                   type="button"
                   onClick={() => setFormData({ ...formData, color: t.name })}
-                  className={`w-7 h-7 rounded-full transition-transform ${t.bg} ${
-                    formData.color === t.name ? 'scale-110 ring-2 ring-offset-2 ' + t.ring : 'hover:scale-105'
-                  }`}
+                  className={`w-7 h-7 rounded-full transition-transform ${t.bg} ${formData.color === t.name ? 'scale-110 ring-2 ring-offset-2 ' + t.ring : 'hover:scale-105'
+                    }`}
                   title={t.label}
                 />
               ))}

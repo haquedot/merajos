@@ -425,7 +425,7 @@ export default function CareerPage() {
                       className="btn-primary px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5"
                     >
                       <FolderPlus className="w-4 h-4" />
-                      <span>New Subject Plan</span>
+                      <span>New Plan</span>
                     </button>
                   </div>
                 </div>

@@ -123,7 +123,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose })
     <Modal isOpen={isOpen} onClose={onClose} title="Quick Capture & Create" maxWidth="lg">
       <div className="mb-4">
         <Tabs value={tab} onValueChange={(val) => setTab(val as any)}>
-          <TabsList className="w-full">
+          <TabsList className="h-9 w-full">
             <TabsTrigger value="task" className="flex-1">
               <CheckSquare className="w-3.5 h-3.5 mr-1" />
               Task
