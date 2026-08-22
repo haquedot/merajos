@@ -11,6 +11,8 @@ import {
   WeeklyPlan,
 } from '../types';
 
+import { UserPreferences, DerivedSignal, BehaviorEvent } from '../lib/personalization/types';
+
 export interface SyncQueueItem {
   id?: number;
   action: 'create' | 'update' | 'delete';
@@ -45,6 +47,9 @@ export class MerajOSDatabase extends Dexie {
   weeklyPlans!: Table<WeeklyPlan, string>;
   syncQueue!: Table<SyncQueueItem, number>;
   googleSession!: Table<GoogleAccountSession, string>;
+  userPreferences!: Table<UserPreferences, string>;
+  derivedSignals!: Table<DerivedSignal, string>;
+  behaviorEvents!: Table<BehaviorEvent, string>;
 
   constructor() {
     super('MerajOS_IndexedDB');
@@ -61,6 +66,23 @@ export class MerajOSDatabase extends Dexie {
       weeklyPlans: 'weekId',
       syncQueue: '++id, entityType, entityId, timestamp',
       googleSession: 'id',
+    });
+
+    this.version(2).stores({
+      tasks: 'id, googleTaskId, status, category, dueDate, mit, projectId, eventId',
+      events: 'id, googleEventId, startDate, category',
+      projects: 'id, status, clientName',
+      jobs: 'id, status, company',
+      habits: 'id, category',
+      goals: 'id, tier, priority',
+      notes: 'id, category, pinned, updatedAt',
+      settings: 'id',
+      weeklyPlans: 'weekId',
+      syncQueue: '++id, entityType, entityId, timestamp',
+      googleSession: 'id',
+      userPreferences: 'userId',
+      derivedSignals: 'signalKey, userId',
+      behaviorEvents: 'id, userId, eventType, timestamp',
     });
   }
 }

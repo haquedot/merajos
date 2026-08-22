@@ -17,6 +17,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { parseTimeAndSlotFromText } from '../../lib/taskUtils';
+import { SmartRecommendationCard } from './SmartRecommendationCard';
 
 interface TodayTimelineViewProps {
   tasks: Task[];
@@ -205,6 +206,13 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
           <span className="text-[11px] text-gray-500 hidden sm:inline">Timeline updates in real-time</span>
         </div>
       )}
+
+      {/* Smart Personalization Recommendation Card */}
+      <SmartRecommendationCard
+        tasks={tasks}
+        onToggleMIT={onToggleMIT}
+        onSetFocusTask={onSetFocusTask}
+      />
 
       {/* Timeline Stream */}
       <div className="space-y-8 relative">
