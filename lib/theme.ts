@@ -20,16 +20,16 @@ export const ORBIT_THEME = {
     background: {
       light: '#F8FAFC',
       lightSecondary: '#F1F5F9',
-      dark: '#0A0F1D',
-      darkSecondary: '#10172A',
+      dark: '#0D0D0D',
+      darkSecondary: '#141414',
     },
     card: {
       light: '#FFFFFF',
-      dark: '#131B2E',
+      dark: '#171717',
     },
     border: {
       light: '#E2E8F0',
-      dark: '#1E2A42',
+      dark: '#262626',
     },
     text: {
       light: {

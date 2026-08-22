@@ -33,7 +33,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/90 dark:bg-[#0A0F1D]/90 backdrop-blur-xl border-t border-gray-200/80 dark:border-gray-800/80 pb-[env(safe-area-inset-bottom)] shadow-2xl transition-colors">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/90 dark:bg-[#0D0D0D]/90 backdrop-blur-xl border-t border-gray-200/80 dark:border-gray-800/80 pb-[env(safe-area-inset-bottom)] shadow-2xl transition-colors">
       <div className="flex items-center justify-around h-16 px-2 relative">
         {/* Left Tabs (Today, Tasks) */}
         <div className="flex items-center justify-around flex-1">
@@ -71,7 +71,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <div className="relative flex items-center justify-center w-14 shrink-0">
           <button
             onClick={onOpenQuickAdd}
-            className="absolute flex items-center justify-center w-13 h-13 rounded-full bg-orbit-blue text-white shadow-lg shadow-orbit-blue/40 border-4 border-white dark:border-[#0A0F1D] active:scale-90 transition-all duration-200 cursor-pointer"
+            className="absolute flex items-center justify-center w-13 h-13 rounded-full bg-orbit-blue text-white shadow-lg shadow-orbit-blue/40 border-4 border-white dark:border-[#0D0D0D] active:scale-90 transition-all duration-200 cursor-pointer"
             aria-label="Quick Add Task"
             title="Quick Add Task"
           >

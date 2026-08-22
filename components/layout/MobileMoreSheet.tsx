@@ -75,7 +75,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 350, damping: 32 }}
-            className="relative w-full max-h-[95vh] overflow-y-auto bg-white dark:bg-[#0A0F1D] rounded-t-3xl border-t border-gray-200/80 dark:border-gray-800/80 p-5 shadow-2xl space-y-5 no-scrollbar"
+            className="relative w-full max-h-[95vh] overflow-y-auto bg-white dark:bg-[#0D0D0D] rounded-t-3xl border-t border-gray-200/80 dark:border-gray-800/80 p-5 shadow-2xl space-y-5 no-scrollbar"
           >
             {/* Top Swipe Handle & Header Bar */}
             <div className="flex flex-col items-center gap-3">

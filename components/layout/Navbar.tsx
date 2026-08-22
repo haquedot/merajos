@@ -84,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const completionRate = todayTasks.length > 0 ? Math.round((completedToday / todayTasks.length) * 100) : 100;
 
   return (
-    <header className="sticky top-0 z-30 h-14 md:h-16 bg-white/95 dark:bg-[#101827]/95 backdrop-blur-md border-b border-[#E2E8F0] dark:border-[#243244] px-3.5 md:px-6 flex items-center justify-between transition-colors">
+    <header className="sticky top-0 z-30 h-14 md:h-16 bg-white/95 dark:bg-[#121212]/95 backdrop-blur-md border-b border-[#E2E8F0] dark:border-[#262626] px-3.5 md:px-6 flex items-center justify-between transition-colors">
       {/* Left section: Mobile Logo & Quick search */}
       <div className="flex items-center gap-2.5 sm:gap-3">
         {/* Compact Mobile Brand Logo */}
