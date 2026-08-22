@@ -5,7 +5,7 @@ import { BRAND } from '../../lib/branding';
 // Footer component for dashboard
 export default function Footer() {
     return (
-        <footer className="p-4 bg-background">
+        <footer className="pb-16 md:pb-4 p-4 bg-background">
             
             <div className="p-3.5 border-t border-gray-100 dark:border-gray-800 text-[11px] text-gray-400 dark:text-gray-500 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">

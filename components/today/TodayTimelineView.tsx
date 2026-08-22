@@ -323,7 +323,7 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
                                       {item.timeDisplay}
                                     </span>
                                     <span
-                                      className={`text-xs sm:text-sm font-bold truncate ${
+                                      className={`text-xs sm:text-sm font-bold ${
                                         item.status === 'completed'
                                           ? 'line-through text-gray-400 dark:text-gray-500'
                                           : 'text-gray-900 dark:text-white'

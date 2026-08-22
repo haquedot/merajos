@@ -196,7 +196,7 @@ export default function DashboardHome() {
         />
 
         {/* Inner Banner Content */}
-        <div className="relative z-10 p-4 sm:p-6 md:p-8 rounded-[calc(1rem-1.5px)] sm:rounded-[calc(1.5rem-1.5px)] bg-gradient-to-br from-orbit-bg-dark via-[#0d162b] to-[#141f38] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+        <div className="relative z-10 p-4 sm:p-6 md:p-8 rounded-[calc(1rem-1.5px)] sm:rounded-[calc(1.5rem-1.5px)] bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-white flex items-center justify-between gap-4 sm:gap-6">
           <div className="relative z-10 space-y-1.5 sm:space-y-2">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
               {greeting} 👋
@@ -213,7 +213,7 @@ export default function DashboardHome() {
             onClick={() => {
               hasRecordedItems ? setIsScoreModalOpen(true) : setQuickAddOpen(true);
             }}
-            className="relative z-10 flex items-center gap-3.5 sm:gap-6 bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white/20 w-full sm:w-auto justify-between sm:justify-start shrink-0 cursor-pointer transition-all duration-200 group/widget"
+            className="relative z-10 flex items-center gap-3.5 sm:gap-6 sm:border sm:border-white/10 sm:p-3 sm:rounded-3xl sm:bg-white/10 sm:backdrop-blur-md justify-between sm:justify-start shrink-0 cursor-pointer transition-all duration-200 group/widget"
           >
             <CircularProgress
               percentage={hasRecordedItems ? dailyScore : 0}
@@ -223,7 +223,7 @@ export default function DashboardHome() {
               trailColor="rgba(255, 255, 255, 0.2)"
               showText={true}
             />
-            <div className="flex flex-col">
+            <div className="hidden sm:flex flex-col">
               <div className="flex items-center gap-1">
                 <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-blue-100">Daily Score</span>
                 <Tooltip>
