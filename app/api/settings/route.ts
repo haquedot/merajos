@@ -1,11 +1,22 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '../../../lib/mongodb';
 import Settings from '../../../models/Settings';
+import { verifyAuth } from '../../../lib/middleware/auth';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
-    const settings = await Settings.findById('user-settings').lean();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
+    const docId = `settings-${userId}`;
+
+    let settings = await Settings.findOne({
+      $or: [{ _id: docId }, { userId }, { userEmail }, { _id: 'user-settings' }],
+    }).lean();
+
     if (!settings) {
       return NextResponse.json({ settings: null });
     }
@@ -17,13 +28,18 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
     const body = await req.json();
-    const id = 'user-settings';
-    
-    const updatedSettings = await Settings.findByIdAndUpdate(
-      id,
-      { ...body, _id: id },
+    const docId = `settings-${userId}`;
+
+    const updatedSettings = await Settings.findOneAndUpdate(
+      { _id: docId },
+      { ...body, _id: docId, userId, userEmail },
       { upsert: true, returnDocument: 'after' }
     ).lean();
 

@@ -1,8 +1,12 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
+
+const HighchartsReact = dynamic(() => import('highcharts-react-official'), {
+  ssr: false,
+});
 
 interface LineChartProps {
   title?: string;

@@ -49,7 +49,9 @@ export interface DailyAnalyticsSnapshotDocument extends IDailyAnalyticsSnapshot,
 
 const DailyAnalyticsSnapshotSchema: Schema = new Schema(
   {
-    date: { type: String, required: true, unique: true },
+    date: { type: String, required: true },
+    userId: { type: String, index: true },
+    userEmail: { type: String, index: true },
     totalTasks: { type: Number, default: 0 },
     completedTasks: { type: Number, default: 0 },
     pendingTasks: { type: Number, default: 0 },
@@ -101,6 +103,8 @@ const DailyAnalyticsSnapshotSchema: Schema = new Schema(
   },
   { timestamps: true }
 );
+
+DailyAnalyticsSnapshotSchema.index({ userId: 1, date: -1 });
 
 export default mongoose.models.DailyAnalyticsSnapshot ||
   mongoose.model<DailyAnalyticsSnapshotDocument>('DailyAnalyticsSnapshot', DailyAnalyticsSnapshotSchema);

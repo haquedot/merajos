@@ -1,118 +1,188 @@
-import { Task, TimeSlot } from '../types';
+/**
+ * Centralized utility for task and event deduplication algorithms.
+ * Ensures consistent matching across Dexie (IndexedDB) and MongoDB.
+ */
 
-export function parseTimeAndSlotFromText(
-  text?: string,
-  dueStr?: string
-): { time?: string; timeSlot: TimeSlot } {
-  let extractedTime: string | undefined = undefined;
+export interface DeduplicatableTask {
+  id?: string;
+  _id?: string;
+  googleTaskId?: string;
+  title?: string;
+  dueDate?: string;
+  priority?: string;
+  status?: string;
+  mit?: boolean;
+  timeSlot?: string;
+  [key: string]: any;
+}
 
-  // 1. Check dueStr for ISO time component (e.g. 2026-08-09T14:30:00.000Z)
-  if (dueStr && dueStr.includes('T')) {
-    const timePart = dueStr.split('T')[1]?.substring(0, 5);
-    if (timePart && timePart !== '00:00') {
-      extractedTime = timePart;
-    }
+export interface DeduplicatableEvent {
+  id?: string;
+  _id?: string;
+  googleEventId?: string;
+  title?: string;
+  startDate?: string;
+  [key: string]: any;
+}
+
+/**
+ * Computes a standardized string key for task deduplication.
+ */
+export function getTaskDeduplicationKey(task: DeduplicatableTask): string {
+  if (task.googleTaskId && task.googleTaskId.trim()) {
+    return `g_${task.googleTaskId.trim()}`;
   }
+  const cleanTitle = (task.title || '').trim().toLowerCase();
+  const cleanDueDate = (task.dueDate || '').trim();
+  return `t_${cleanTitle}_${cleanDueDate}`;
+}
 
-  // 2. If no time from dueStr, check text (title or description) via regex
-  if (!extractedTime && text) {
-    // Regex for matching "8:00 PM", "04:30 PM", "12:30 PM", "4:45 AM", "20:00"
-    const time12Regex = /(\d{1,2}):(\d{2})\s*(AM|PM)/i;
-    const match12 = text.match(time12Regex);
+/**
+ * Pure deduplication utility for lists of tasks.
+ * Returns unique tasks and list of duplicate document IDs to purge.
+ */
+export function deduplicateTasks<T extends DeduplicatableTask>(
+  tasks: T[]
+): { uniqueTasks: T[]; duplicateIds: string[] } {
+  const seen = new Map<string, T>();
+  const uniqueTasks: T[] = [];
+  const duplicateIds: string[] = [];
 
-    if (match12) {
-      let hours = parseInt(match12[1], 10);
-      const minutes = parseInt(match12[2], 10);
-      const meridiem = match12[3].toUpperCase();
+  for (const task of tasks) {
+    const key = getTaskDeduplicationKey(task);
+    const taskId = task.id || task._id;
 
-      if (meridiem === 'PM' && hours < 12) hours += 12;
-      if (meridiem === 'AM' && hours === 12) hours = 0;
-
-      extractedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    if (!seen.has(key)) {
+      seen.set(key, task);
+      uniqueTasks.push(task);
     } else {
-      // Check 24-hour pattern e.g. "20:00"
-      const time24Regex = /\b([01]?\d|2[0-3]):([0-5]\d)\b/;
-      const match24 = text.match(time24Regex);
-      if (match24) {
-        extractedTime = `${String(match24[1]).padStart(2, '0')}:${String(match24[2]).padStart(2, '0')}`;
+      if (taskId) {
+        duplicateIds.push(taskId);
       }
     }
   }
 
-  // 3. Determine timeSlot from extractedTime
-  let timeSlot: TimeSlot = 'afternoon';
-  if (extractedTime) {
-    const hour = parseInt(extractedTime.split(':')[0], 10);
-    if (hour >= 4 && hour < 12) {
-      timeSlot = 'morning';
-    } else if (hour >= 12 && hour < 17) {
-      timeSlot = 'afternoon';
-    } else if (hour >= 17 && hour < 21) {
-      timeSlot = 'evening';
+  return { uniqueTasks, duplicateIds };
+}
+
+/**
+ * Computes a standardized string key for event deduplication.
+ */
+export function getEventDeduplicationKey(event: DeduplicatableEvent): string {
+  if (event.googleEventId && event.googleEventId.trim()) {
+    return `g_${event.googleEventId.trim()}`;
+  }
+  const cleanTitle = (event.title || '').trim().toLowerCase();
+  const cleanStartDate = (event.startDate || '').trim();
+  return `e_${cleanTitle}_${cleanStartDate}`;
+}
+
+/**
+ * Pure deduplication utility for lists of calendar events.
+ */
+export function deduplicateEvents<T extends DeduplicatableEvent>(
+  events: T[]
+): { uniqueEvents: T[]; duplicateIds: string[] } {
+  const seen = new Map<string, T>();
+  const uniqueEvents: T[] = [];
+  const duplicateIds: string[] = [];
+
+  for (const event of events) {
+    const key = getEventDeduplicationKey(event);
+    const eventId = event.id || event._id;
+
+    if (!seen.has(key)) {
+      seen.set(key, event);
+      uniqueEvents.push(event);
     } else {
-      timeSlot = 'night';
+      if (eventId) {
+        duplicateIds.push(eventId);
+      }
     }
   }
 
-  return { time: extractedTime, timeSlot };
+  return { uniqueEvents, duplicateIds };
 }
 
-export function sortTasksChronologically(tasks: Task[]): Task[] {
+/**
+ * Sorts tasks chronologically and by priority/MIT.
+ */
+export function sortTasksChronologically<T extends DeduplicatableTask>(tasks: T[]): T[] {
+  const priorityOrder: Record<string, number> = {
+    urgent: 4,
+    high: 3,
+    medium: 2,
+    low: 1,
+  };
+
   return [...tasks].sort((a, b) => {
-    const parsedA = parseTimeAndSlotFromText(`${a.title} ${a.description || ''}`);
-    const parsedB = parseTimeAndSlotFromText(`${b.title} ${b.description || ''}`);
+    // Uncompleted before completed
+    if (a.status === 'completed' && b.status !== 'completed') return 1;
+    if (a.status !== 'completed' && b.status === 'completed') return -1;
 
-    const timeA = a.time || parsedA.time;
-    const timeB = b.time || parsedB.time;
+    // MIT tasks first
+    if (a.mit && !b.mit) return -1;
+    if (!a.mit && b.mit) return 1;
 
-    if (timeA && timeB) {
-      return timeA.localeCompare(timeB);
-    }
-    if (timeA) return -1;
-    if (timeB) return 1;
+    // Priority comparison
+    const prioA = priorityOrder[a.priority || 'medium'] || 2;
+    const prioB = priorityOrder[b.priority || 'medium'] || 2;
+    if (prioA !== prioB) return prioB - prioA;
 
-    // Slot order
-    const slotOrder: Record<string, number> = { morning: 1, afternoon: 2, evening: 3, night: 4 };
-    const slotA = slotOrder[a.timeSlot || parsedA.timeSlot] || 2;
-    const slotB = slotOrder[b.timeSlot || parsedB.timeSlot] || 2;
-    if (slotA !== slotB) return slotA - slotB;
-
-    // Priority
-    const priorityOrder: Record<string, number> = { urgent: 1, high: 2, medium: 3, low: 4 };
-    const prioA = priorityOrder[a.priority] || 3;
-    const prioB = priorityOrder[b.priority] || 3;
-    return prioA - prioB;
+    return 0;
   });
 }
 
-export function getSmartFocusTask(tasks: Task[]): Task | null {
-  const sorted = sortTasksChronologically(tasks);
-  const uncompleted = sorted.filter((t) => t.status !== 'completed');
-  if (uncompleted.length === 0) return null;
+/**
+ * Selects the optimal current focus task based on MIT status and priority.
+ */
+export function getSmartFocusTask<T extends DeduplicatableTask>(tasks: T[]): T | null {
+  const pendingTasks = tasks.filter((t) => t.status !== 'completed');
+  if (pendingTasks.length === 0) return null;
 
-  // 1. If an uncompleted task is marked as MIT, pick the earliest MIT
-  const mitTask = uncompleted.find((t) => t.mit);
-  if (mitTask) return mitTask;
+  // 1. Pick top MIT pending task
+  const pendingMit = pendingTasks.find((t) => t.mit);
+  if (pendingMit) return pendingMit;
 
-  // 2. Current time slot
-  const now = new Date();
-  const currentHour = now.getHours();
+  // 2. Fall back to highest priority pending task
+  const sorted = sortTasksChronologically(pendingTasks);
+  return sorted[0] || null;
+}
 
-  let currentSlot: TimeSlot = 'afternoon';
-  if (currentHour >= 4 && currentHour < 12) currentSlot = 'morning';
-  else if (currentHour >= 12 && currentHour < 17) currentSlot = 'afternoon';
-  else if (currentHour >= 17 && currentHour < 21) currentSlot = 'evening';
-  else currentSlot = 'night';
+import { TimeSlot } from '../types';
 
-  // 3. Find uncompleted task in current slot
-  const currentSlotTask = uncompleted.find((t) => {
-    const parsed = parseTimeAndSlotFromText(`${t.title} ${t.description || ''}`);
-    const slot = t.timeSlot || parsed.timeSlot;
-    return slot === currentSlot;
-  });
+/**
+ * Parses time and slot recommendation from natural language task title or description.
+ */
+export function parseTimeAndSlotFromText(
+  text: string,
+  defaultDate?: string
+): { timeSlot: TimeSlot; time?: string } {
+  const lower = (text || '').toLowerCase();
 
-  if (currentSlotTask) return currentSlotTask;
+  // Match specific time formats (e.g., 9am, 10:30pm, 14:00)
+  const timeMatch = lower.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+  let parsedTime: string | undefined = undefined;
 
-  // 4. Fallback to earliest uncompleted task overall
-  return uncompleted[0];
+  if (timeMatch && (timeMatch[3] || lower.includes(':'))) {
+    let hours = parseInt(timeMatch[1], 10);
+    const minutes = timeMatch[2] || '00';
+    const ampm = timeMatch[3];
+
+    if (ampm === 'pm' && hours < 12) hours += 12;
+    if (ampm === 'am' && hours === 12) hours = 0;
+
+    parsedTime = `${hours.toString().padStart(2, '0')}:${minutes}`;
+  }
+
+  if (lower.includes('morning') || lower.includes('breakfast') || (parsedTime && parseInt(parsedTime.split(':')[0], 10) < 12)) {
+    return { timeSlot: 'morning', time: parsedTime };
+  }
+  if (lower.includes('evening') || lower.includes('dinner') || lower.includes('sunset')) {
+    return { timeSlot: 'evening', time: parsedTime };
+  }
+  if (lower.includes('night') || lower.includes('bedtime') || (parsedTime && parseInt(parsedTime.split(':')[0], 10) >= 21)) {
+    return { timeSlot: 'night', time: parsedTime };
+  }
+  return { timeSlot: 'afternoon', time: parsedTime };
 }

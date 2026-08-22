@@ -1,11 +1,23 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '../../../lib/mongodb';
 import CalendarEvent from '../../../models/CalendarEvent';
+import { verifyAuth } from '../../../lib/middleware/auth';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
-    const events = await CalendarEvent.find({}).sort({ startDate: 1 }).lean();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
+
+    const events = await CalendarEvent.find({
+      $or: [{ userId }, { userEmail }, { userId: { $exists: false } }],
+    })
+      .sort({ startDate: 1 })
+      .lean();
+
     const formatted = events.map((e: any) => ({ ...e, id: e._id }));
     return NextResponse.json({ events: formatted });
   } catch (error: any) {
@@ -15,10 +27,14 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
     const body = await req.json();
 
-    // Check for batch operation
     const items = Array.isArray(body) ? body : body.events ? body.events : null;
 
     if (items && Array.isArray(items)) {
@@ -27,7 +43,7 @@ export async function POST(req: Request) {
         return {
           updateOne: {
             filter: { _id: id },
-            update: { $set: { ...evt, _id: id } },
+            update: { $set: { ...evt, _id: id, userId, userEmail } },
             upsert: true,
           },
         };
@@ -40,9 +56,9 @@ export async function POST(req: Request) {
     }
 
     const id = body.id || `evt-${Date.now()}`;
-    const newEvt = await CalendarEvent.findByIdAndUpdate(
-      id,
-      { ...body, _id: id },
+    const newEvt = await CalendarEvent.findOneAndUpdate(
+      { _id: id },
+      { ...body, _id: id, userId, userEmail },
       { upsert: true, returnDocument: 'after' }
     ).lean();
 
@@ -54,7 +70,12 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
     const body = await req.json();
     const { id, ...updates } = body;
 
@@ -62,9 +83,14 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Event id is required' }, { status: 400 });
     }
 
-    const updatedEvt = await CalendarEvent.findByIdAndUpdate(id, updates, { returnDocument: 'after' }).lean();
+    const updatedEvt = await CalendarEvent.findOneAndUpdate(
+      { _id: id, $or: [{ userId }, { userEmail }, { userId: { $exists: false } }] },
+      { $set: { ...updates, userId, userEmail } },
+      { returnDocument: 'after' }
+    ).lean();
+
     if (!updatedEvt) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Event not found or access denied' }, { status: 404 });
     }
 
     return NextResponse.json({ event: { ...updatedEvt, id: (updatedEvt as any)._id } });
@@ -75,7 +101,12 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -83,7 +114,11 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Event id is required' }, { status: 400 });
     }
 
-    await CalendarEvent.findByIdAndDelete(id);
+    await CalendarEvent.findOneAndDelete({
+      _id: id,
+      $or: [{ userId }, { userEmail }, { userId: { $exists: false } }],
+    });
+
     return NextResponse.json({ success: true, id });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

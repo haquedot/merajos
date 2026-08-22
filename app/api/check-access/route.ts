@@ -15,8 +15,10 @@ export async function GET(req: Request) {
     const adminEmail = (process.env.ADMIN_EMAIL || 'haquedot@gmail.com').toLowerCase().trim();
     const smtpUser = (process.env.SMTP_USER || '').toLowerCase().trim();
 
-    // 1. Admin / Owner emails are always authorized
-    if (email === adminEmail || email === smtpUser || email === 'haquemeraj95@gmail.com' || email === 'merajulhaque.official@gmail.com') {
+    if (adminEmail && email === adminEmail) {
+      return NextResponse.json({ allowed: true, reason: 'Admin / Owner' });
+    }
+    if (smtpUser && email === smtpUser) {
       return NextResponse.json({ allowed: true, reason: 'Admin / Owner' });
     }
 
@@ -42,7 +44,7 @@ export async function GET(req: Request) {
     const adminEmail = (process.env.ADMIN_EMAIL || 'haquedot@gmail.com').toLowerCase().trim();
     const url = new URL(req.url);
     const email = url.searchParams.get('email')?.toLowerCase().trim();
-    if (email === adminEmail || email === 'haquemeraj95@gmail.com') {
+    if (adminEmail && email === adminEmail) {
       return NextResponse.json({ allowed: true });
     }
     return NextResponse.json({ allowed: false, error: err.message });

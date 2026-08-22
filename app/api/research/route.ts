@@ -1,13 +1,22 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '../../../lib/mongodb';
 import Research from '../../../models/Research';
+import { verifyAuth } from '../../../lib/middleware/auth';
 
-const DOC_ID = 'research-main';
-
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
+
     await connectToDatabase();
-    const doc = await Research.findById(DOC_ID).lean();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
+    const docId = `research-${userId}`;
+
+    let doc = await Research.findOne({
+      $or: [{ _id: docId }, { userId }, { userEmail }, { _id: 'research-main' }],
+    }).lean();
+
     if (!doc) {
       return NextResponse.json({ projects: [] });
     }
@@ -19,12 +28,19 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await connectToDatabase();
-    const { projects } = await req.json();
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) return auth.response;
 
-    const updated = await Research.findByIdAndUpdate(
-      DOC_ID,
-      { projects, _id: DOC_ID },
+    await connectToDatabase();
+    const userId = auth.user.userId;
+    const userEmail = auth.user.userEmail;
+    const body = await req.json();
+    const { projects } = body;
+    const docId = `research-${userId}`;
+
+    const updated = await Research.findOneAndUpdate(
+      { _id: docId },
+      { projects, _id: docId, userId, userEmail },
       { upsert: true, returnDocument: 'after' }
     ).lean();
 

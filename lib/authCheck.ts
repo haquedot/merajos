@@ -14,3 +14,23 @@ export async function isUserAuthenticated(): Promise<boolean> {
     return false;
   }
 }
+
+export async function getAuthHeaders(): Promise<Record<string, string>> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const session = await db.googleSession.get('me');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (session?.accessToken) {
+      headers['Authorization'] = `Bearer ${session.accessToken}`;
+    }
+    if (session?.email) {
+      headers['x-user-email'] = session.email;
+      headers['x-user-id'] = session.id || session.email;
+    }
+    return headers;
+  } catch (err) {
+    return { 'Content-Type': 'application/json' };
+  }
+}

@@ -1,8 +1,9 @@
 import { create } from 'zustand';
-import { Task, TaskStatus, Priority, Category } from '../types';
+import { Task, TaskStatus } from '../types';
 import { db } from '../database/dexie';
 import { syncService } from '../services/google/sync.service';
-import { isUserAuthenticated } from '../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../lib/authCheck';
+import { deduplicateTasks } from '../lib/taskUtils';
 
 interface TaskState {
   tasks: Task[];
@@ -29,51 +30,11 @@ interface TaskState {
   resetTasks: () => Promise<void>;
 }
 
-function getTaskDedupeKey(t: Task): string {
-  const cleanTitle = (t.title || '').trim().toLowerCase();
-  const dateStr = t.dueDate || '';
-  const timeStr = t.time || t.timeSlot || '';
-  return `${cleanTitle}___${dateStr}___${timeStr}`;
-}
-
 export function deduplicateTasksList(tasks: Task[]): { uniqueTasks: Task[]; duplicateIds: string[] } {
-  const seen = new Map<string, Task>();
-  const uniqueTasks: Task[] = [];
-  const duplicateIds: string[] = [];
-
-  for (const t of tasks) {
-    const contentKey = getTaskDedupeKey(t);
-    const gKey = t.googleTaskId ? `g_${t.googleTaskId}` : null;
-
-    let existing: Task | undefined;
-    if (gKey && seen.has(gKey)) {
-      existing = seen.get(gKey);
-    } else if (seen.has(contentKey)) {
-      existing = seen.get(contentKey);
-    }
-
-    if (!existing) {
-      seen.set(contentKey, t);
-      if (gKey) seen.set(gKey, t);
-      uniqueTasks.push(t);
-    } else {
-      if (t.status === 'completed' && existing.status !== 'completed') {
-        const idx = uniqueTasks.findIndex((ut) => ut.id === existing!.id);
-        if (idx !== -1) uniqueTasks[idx] = t;
-        duplicateIds.push(existing.id);
-        seen.set(contentKey, t);
-        if (gKey) seen.set(gKey, t);
-      } else {
-        duplicateIds.push(t.id);
-      }
-    }
-  }
-
-  return { uniqueTasks, duplicateIds };
+  return deduplicateTasks(tasks);
 }
 
 export const useTaskStore = create<TaskState>((set, get) => {
-  // Load real data from Dexie DB & MongoDB API (if authenticated)
   if (typeof window !== 'undefined') {
     db.tasks.toArray().then(async (items) => {
       const { uniqueTasks, duplicateIds } = deduplicateTasksList(items || []);
@@ -83,12 +44,13 @@ export const useTaskStore = create<TaskState>((set, get) => {
       }
     });
 
-    isUserAuthenticated().then((authenticated) => {
+    isUserAuthenticated().then(async (authenticated) => {
       if (!authenticated) {
         set({ isLoading: false });
         return;
       }
-      fetch('/api/tasks')
+      const headers = await getAuthHeaders();
+      fetch('/api/tasks', { headers })
         .then((res) => (res.ok ? res.json() : null))
         .then(async (data) => {
           if (data && data.tasks && data.tasks.length > 0) {
@@ -152,10 +114,11 @@ export const useTaskStore = create<TaskState>((set, get) => {
       await db.tasks.add(newTask);
       set((state) => ({ tasks: [newTask, ...state.tasks] }));
 
-      // Save to MongoDB API
+      // Save to MongoDB API with auth headers
+      const headers = await getAuthHeaders();
       fetch('/api/tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(newTask),
       }).catch((err) => console.warn('Failed to post task to MongoDB API', err));
 
@@ -175,10 +138,11 @@ export const useTaskStore = create<TaskState>((set, get) => {
         tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
       }));
 
-      // Update in MongoDB API
+      // Update in MongoDB API with auth headers
+      const headers = await getAuthHeaders();
       fetch('/api/tasks', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(updatedTask),
       }).catch((err) => console.warn('Failed to update task in MongoDB API', err));
 
@@ -193,9 +157,11 @@ export const useTaskStore = create<TaskState>((set, get) => {
         tasks: state.tasks.filter((t) => t.id !== id),
       }));
 
-      // Delete from MongoDB API
+      // Delete from MongoDB API with auth headers
+      const headers = await getAuthHeaders();
       fetch(`/api/tasks?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
+        headers,
       }).catch((err) => console.warn('Failed to delete task from MongoDB API', err));
 
       if (existing) {

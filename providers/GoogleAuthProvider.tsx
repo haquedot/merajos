@@ -47,9 +47,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   const [accessModalOpen, setAccessModalOpen] = useState(false);
   const [blockedEmail, setBlockedEmail] = useState('');
 
-  const clientId =
-    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
-    '847306520518-3raubtg9ajcg8ebsjr91mkgjm9j2vqqt.apps.googleusercontent.com';
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
   useEffect(() => {
     // Restore session on mount & sync user profile to MongoDB
