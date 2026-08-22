@@ -65,16 +65,16 @@
 
 > **Goal:** Adapt daily timeline recommendations, focus timer defaults, and workload warnings based on active context.
 
-- [ ] **3.1 Workload Capacity Engine (`lib/personalization/context/contextBuilder.ts`)**
-  - [ ] Calculate total scheduled hours vs sustainable capacity (5.5h) and max threshold (7.0h).
-  - [ ] Render **Workload Balancing Warning** banner on Today page when scheduled work exceeds 7.0h.
+- [x] **3.1 Workload Capacity Engine (`lib/personalization/context/contextBuilder.ts`)**
+  - [x] Calculate total scheduled hours vs sustainable capacity (5.5h) and max threshold (7.0h).
+  - [x] Render **Workload Capacity Warning** banner (`WorkloadWarningCard.tsx`) on Today page when scheduled work exceeds 7.0h.
 
-- [ ] **3.2 Focus Duration Optimization**
-  - [ ] Pre-fill Focus Card timer duration with user's preferred or historically optimal focus length (e.g., 45m).
+- [x] **3.2 Focus Duration Optimization**
+  - [x] Pre-fill Focus Card timer duration with user's preferred focus length (e.g., 45m).
 
-- [ ] **3.3 Recommendation Feedback Loop**
-  - [ ] Track recommendation actions (`Accepted`, `Dismissed`, `Rejected`).
-  - [ ] Adjust signal weights (+0.05 on accept, -0.20 on reject with 30-day suppression).
+- [x] **3.3 Recommendation Feedback Loop**
+  - [x] Track recommendation actions (`Accepted`, `Dismissed`, `Rejected`).
+  - [x] Adjust signal weights (+0.05 on accept, -0.20 on reject with 30-day suppression).
 
 ---
 
@@ -96,12 +96,12 @@
 
 > **Goal:** Connect Goals, Career, Research, and Habits into a synchronized feedback loop.
 
-- [ ] **5.1 Career & Goal Alignment**
-  - [ ] Prioritize DSA tasks matching user's target role (e.g., Frontend $\rightarrow$ Trees/DOM, Backend $\rightarrow$ Graphs/DP).
-  - [ ] Highlight stale DSA topics with no practice in >7 days.
+- [x] **5.1 Career & Goal Alignment (`lib/personalization/crossModule/careerIntelligence.ts`)**
+  - [x] Prioritize DSA topics matching user's target role.
+  - [x] Highlight stale DSA topics with no practice in >7 days.
 
-- [ ] **5.2 Research Hub Stagnation Warnings**
-  - [ ] Alert user when literature review for active thesis projects has stalled (>7 days without paper read).
+- [x] **5.2 Research Hub Stagnation Warnings (`lib/personalization/crossModule/researchIntelligence.ts`)**
+  - [x] Alert user when literature review for active thesis projects has stalled (>7 days without paper read).
 
 ---
 
@@ -123,7 +123,7 @@
 | **Phase 0** | Architectural Foundations & Domain Types | **P0** | ✅ Completed |
 | **Phase 1** | Deterministic Today Task Scoring | **P0** | ✅ Completed |
 | **Phase 2** | Event Logging & Confidence Engine | **P1** | ✅ Completed |
-| **Phase 3** | Adaptive Today & Focus Mode | **P1** | ⏳ Pending |
+| **Phase 3** | Adaptive Today & Focus Mode | **P1** | ✅ Completed |
 | **Phase 4** | Transparency & User Control Panel | **P1** | ✅ Completed |
-| **Phase 5** | Cross-Module Intelligence | **P2** | ⏳ Pending |
+| **Phase 5** | Cross-Module Intelligence | **P2** | ✅ Completed |
 | **Phase 6** | Optional AI Layer | **P3** | ⏳ Pending |
