@@ -17,6 +17,7 @@ import { FocusOverlayModal } from '../modals/FocusOverlayModal';
 import { DailyReflectionModal } from '../modals/DailyReflectionModal';
 import { useRouter } from 'next/navigation';
 import { GlobalSearchModal } from '../modals/GlobalSearchModal';
+import Footer from './Footer';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -144,6 +145,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6 overflow-x-hidden">
           {children}
         </main>
+        <Footer/>
       </div>
 
       {/* Right Productivity Panel */}

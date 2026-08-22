@@ -141,21 +141,22 @@ class AuthService {
 
   public async getAccessToken(): Promise<string | null> {
     const session = await this.getSession();
-    if (!session) return null;
+    if (!session || !session.accessToken) return null;
 
-    // If token is expired or expiring within 5 minutes, attempt silent refresh
-    if (session.expiresAt && Date.now() > session.expiresAt - 5 * 60 * 1000) {
-      console.log('[AuthService] Token expiring soon. Attempting silent refresh...');
-      const refreshedSession = await this.refreshAccessTokenSilently();
-      if (refreshedSession) {
-        return refreshedSession.accessToken;
-      } else {
-        console.warn('[AuthService] Silent token refresh failed. Token expired.');
-        return null;
-      }
+    // If token is valid (not expiring within 5 minutes), return immediately
+    if (session.expiresAt && Date.now() < session.expiresAt - 5 * 60 * 1000) {
+      return session.accessToken;
     }
 
-    return session.accessToken;
+    // Token expiring soon or expired, attempt silent refresh
+    console.log('[AuthService] Token expiring soon/expired. Attempting silent refresh...');
+    const refreshedSession = await this.refreshAccessTokenSilently();
+    if (refreshedSession && refreshedSession.accessToken) {
+      return refreshedSession.accessToken;
+    }
+
+    console.warn('[AuthService] Silent token refresh unavailable. Token expired.');
+    return null;
   }
 
   public async refreshAccessTokenSilently(): Promise<GoogleAccountSession | null> {
@@ -171,7 +172,7 @@ class AuthService {
           prompt: 'none',
           callback: async (tokenResponse: any) => {
             if (tokenResponse.error || !tokenResponse.access_token) {
-              console.warn('[AuthService] Silent token refresh suppressed interactive popup:', tokenResponse.error);
+              console.warn('[AuthService] Silent token refresh suppressed popup:', tokenResponse.error);
               return resolve(null);
             }
             const session = await db.googleSession.get('me');
@@ -189,7 +190,7 @@ class AuthService {
         });
         client.requestAccessToken({ prompt: 'none' });
       } catch (err) {
-        console.warn('[AuthService] Silent token refresh failed', err);
+        console.warn('[AuthService] Silent token refresh error', err);
         resolve(null);
       }
     });

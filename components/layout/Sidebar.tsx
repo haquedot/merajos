@@ -28,7 +28,6 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Logo } from '../common/Logo';
-import { BRAND } from '../../lib/branding';
 import { SyncStatusBadge } from '../common/SyncStatusBadge';
 import {
   Tooltip,
@@ -102,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           >
             {/* Logo shown by default (fades out & shrinks on hover) */}
             <span className="absolute flex items-center justify-center transition-all duration-250 ease-out opacity-100 scale-100 group-hover:opacity-0 group-hover:scale-75 pointer-events-none">
-              <Logo variant="icon" size={28} />
+              <Logo variant="icon" size={36} />
             </span>
             {/* Expand toggle icon (fades in & scales up on hover with subtle shift right) */}
             <span className="absolute flex items-center justify-center transition-all duration-250 ease-out opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 text-blue-600 dark:text-blue-400">
@@ -112,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
         ) : (
           <>
             <Link id="tour-sidebar-logo" href="/" className="flex items-center gap-3 overflow-hidden transition-transform duration-200 active:scale-98">
-              <Logo variant="horizontal" size={32} showTagline={true} />
+              <Logo variant="horizontal" size={40} showTagline={true} />
             </Link>
 
             {/* Desktop Collapse button */}
@@ -286,28 +285,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
             </button>
           )}
         </div>
-
-      {/* Footer Branding Info */}
-      {!collapsed && (
-        <div className="p-3.5 border-t border-gray-100 dark:border-gray-800 text-[11px] text-gray-400 dark:text-gray-500 space-y-1.5">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="font-semibold text-gray-700 dark:text-gray-300">{BRAND.name} v{BRAND.version}</p>
-              <p className="truncate text-[10px] text-gray-400">{BRAND.tagline}</p>
-            </div>
-            <SyncStatusBadge />
-          </div>
-          <div className="flex items-center gap-2 text-[10px] pt-1 border-t border-gray-100 dark:border-gray-800/60">
-            <Link href="/privacy" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-              Privacy Policy
-            </Link>
-            <span>•</span>
-            <Link href="/terms" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-              Terms of Service
-            </Link>
-          </div>
-        </div>
-      )}
     </div>
   );
 
