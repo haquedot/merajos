@@ -71,6 +71,9 @@ const SubjectPlanSchema = new Schema({
   topics: [SubjectTopicSchema],
   createdAt: { type: String },
   updatedAt: { type: String },
+  isPublic: { type: Boolean, default: false },
+  sharedWithEmails: [{ type: String }],
+  ownerEmail: { type: String, default: '' },
 });
 
 const CareerSchema: Schema = new Schema(

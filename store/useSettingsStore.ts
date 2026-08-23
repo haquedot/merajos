@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { UserSettings, OnboardingProfile } from '../types';
 import { INITIAL_SETTINGS } from './seedData';
-import { isUserAuthenticated } from '../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../lib/authCheck';
 import { authService } from '../services/google/auth.service';
 
 interface SettingsState {
@@ -23,57 +23,46 @@ interface SettingsState {
   enabledModules: () => string[];
 }
 
+const DEFAULT_ONBOARDING: OnboardingProfile = {
+  displayName: 'User',
+  role: 'custom',
+  enabledModules: [
+    'tasks',
+    'calendar',
+    'habits',
+    'research',
+    'goals',
+    'notes',
+    'weekly_planner',
+    'analytics',
+    'clients',
+    'career',
+  ],
+  workStartTime: '09:00',
+  workEndTime: '18:00',
+  primaryGoal: '',
+  onboardingCompleted: false,
+};
+
 export const useSettingsStore = create<SettingsState>((set, get) => {
   const localCompleted = typeof window !== 'undefined' && localStorage.getItem('orbit_onboarding_completed') === 'true';
+
+  const defaultOnboarding = INITIAL_SETTINGS.onboarding || DEFAULT_ONBOARDING;
 
   const initialSettings: UserSettings = {
     ...INITIAL_SETTINGS,
     onboarding: localCompleted
       ? {
-          displayName: 'User',
-          role: 'custom',
-          enabledModules: [],
-          workStartTime: '09:00',
-          workEndTime: '18:00',
-          primaryGoal: '',
+          ...defaultOnboarding,
           onboardingCompleted: true,
         }
-      : INITIAL_SETTINGS.onboarding,
+      : defaultOnboarding,
   };
 
   if (typeof window !== 'undefined') {
-    isUserAuthenticated().then((authenticated) => {
-      if (!authenticated) {
-        set({ isGuestMode: true, isLoadingSettings: false });
-        return;
-      }
-      fetch('/api/settings')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.settings) {
-            const isCompletedInDB = !!data.settings.onboarding?.onboardingCompleted;
-            if (isCompletedInDB) {
-              localStorage.setItem('orbit_onboarding_completed', 'true');
-            }
-            set((state) => ({
-              settings: {
-                ...data.settings,
-                onboarding: {
-                  ...data.settings.onboarding,
-                  onboardingCompleted: isCompletedInDB || localCompleted,
-                },
-              },
-              isLoadingSettings: false,
-              isGuestMode: false,
-            }));
-          } else {
-            set({ isLoadingSettings: false, isGuestMode: false });
-          }
-        })
-        .catch(() => {
-          set({ isLoadingSettings: false });
-        });
-    });
+    setTimeout(() => {
+      get().loadFromDB();
+    }, 0);
   }
 
   return {
@@ -90,31 +79,60 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       set({ isLoadingSettings: true });
       try {
         const isLocalDone = typeof window !== 'undefined' && localStorage.getItem('orbit_onboarding_completed') === 'true';
-        const res = await fetch('/api/settings');
-        if (!res.ok) {
-          set({ isLoadingSettings: false, isGuestMode: false });
-          return;
-        }
-        const data = await res.json();
-        if (data.settings) {
-          const isCompletedInDB = !!data.settings.onboarding?.onboardingCompleted;
-          if (isCompletedInDB && typeof window !== 'undefined') {
-            localStorage.setItem('orbit_onboarding_completed', 'true');
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/settings', { headers });
+        
+        let fetchedSettings: UserSettings | null = null;
+        if (res.ok) {
+          const data = await res.json();
+          if (data.settings) {
+            fetchedSettings = data.settings;
           }
-          set((state) => ({
-            settings: {
-              ...data.settings,
-              onboarding: {
-                ...data.settings.onboarding,
-                onboardingCompleted: isCompletedInDB || isLocalDone,
-              },
-            },
-            isLoadingSettings: false,
-            isGuestMode: false,
-          }));
-        } else {
-          set({ isLoadingSettings: false, isGuestMode: false });
         }
+
+        // Fetch User profile to ensure enabledModules and user details are synced
+        const userRes = await fetch('/api/user', { headers });
+        let dbUserModules: any[] | null = null;
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData?.user?.enabledModules && Array.isArray(userData.user.enabledModules) && userData.user.enabledModules.length > 0) {
+            dbUserModules = userData.user.enabledModules;
+          }
+        }
+
+        const baseOnboarding = fetchedSettings?.onboarding || initialSettings.onboarding || defaultOnboarding;
+        const isCompletedInDB = !!baseOnboarding?.onboardingCompleted;
+
+        if (isCompletedInDB && typeof window !== 'undefined') {
+          localStorage.setItem('orbit_onboarding_completed', 'true');
+        }
+
+        const finalModules = (baseOnboarding.enabledModules && baseOnboarding.enabledModules.length > 0)
+          ? baseOnboarding.enabledModules
+          : (dbUserModules || defaultOnboarding.enabledModules);
+
+        const mergedSettings: UserSettings = fetchedSettings ? {
+          ...fetchedSettings,
+          onboarding: {
+            ...defaultOnboarding,
+            ...fetchedSettings.onboarding,
+            enabledModules: finalModules,
+            onboardingCompleted: isCompletedInDB || isLocalDone,
+          },
+        } : {
+          ...initialSettings,
+          onboarding: {
+            ...defaultOnboarding,
+            enabledModules: finalModules,
+            onboardingCompleted: isLocalDone,
+          },
+        };
+
+        set({
+          settings: mergedSettings,
+          isLoadingSettings: false,
+          isGuestMode: false,
+        });
       } catch (err) {
         console.warn('Failed to load settings from MongoDB API', err);
         set({ isLoadingSettings: false });
@@ -127,11 +145,26 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       set({ settings: newSettings });
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
-      fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSettings),
-      }).catch((err) => console.warn('Failed to save settings to MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(newSettings),
+        });
+
+        if (newSettings.onboarding?.enabledModules) {
+          await fetch('/api/user', {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({
+              enabledModules: newSettings.onboarding.enabledModules,
+            }),
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to save settings to MongoDB API', err);
+      }
     },
 
     toggleSidebar: async () => {
@@ -143,11 +176,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       set({ settings: newSettings });
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
-      fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSettings),
-      }).catch((err) => console.warn('Failed to save sidebar state to MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(newSettings),
+        });
+      } catch (err) {
+        console.warn('Failed to save sidebar state to MongoDB API', err);
+      }
     },
 
     resetSettings: () => set({ settings: INITIAL_SETTINGS }),
@@ -167,9 +205,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
       try {
+        const headers = await getAuthHeaders();
         await fetch('/api/settings', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(newSettings),
         });
         const sess = await authService.getSession();
@@ -177,7 +216,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
           localStorage.setItem(`orbit_onboarding_${sess.email}_completed`, 'true');
           await fetch('/api/user', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({
               email: sess.email,
               onboardingCompleted: true,
@@ -201,7 +240,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
         onboarding: {
           displayName: existing?.displayName || 'User',
           role: existing?.role || 'custom',
-          enabledModules: existing?.enabledModules || [],
+          enabledModules: existing?.enabledModules || defaultOnboarding.enabledModules,
           workStartTime: existing?.workStartTime || '09:00',
           workEndTime: existing?.workEndTime || '18:00',
           primaryGoal: existing?.primaryGoal || '',
@@ -220,9 +259,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       const authenticated = await isUserAuthenticated();
       if (authenticated) {
         try {
+          const headers = await getAuthHeaders();
           await fetch('/api/settings', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(updatedSettings),
           });
           const sess = await authService.getSession();
@@ -230,12 +270,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
             localStorage.setItem(`orbit_onboarding_${sess.email}_completed`, 'true');
             await fetch('/api/user', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers,
               body: JSON.stringify({
                 email: sess.email,
                 onboardingCompleted: true,
                 role: existing?.role || 'custom',
-                enabledModules: existing?.enabledModules || [],
+                enabledModules: existing?.enabledModules || defaultOnboarding.enabledModules,
                 workStartTime: existing?.workStartTime || '09:00',
                 workEndTime: existing?.workEndTime || '18:00',
               }),
@@ -255,8 +295,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     },
 
     enabledModules: () => {
-      return get()?.settings?.onboarding?.enabledModules ?? [];
+      return get()?.settings?.onboarding?.enabledModules ?? defaultOnboarding.enabledModules;
     },
   };
 });
+
+
 

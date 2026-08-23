@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { CalendarEvent } from '../types';
 import { db } from '../database/dexie';
 import { syncService } from '../services/google/sync.service';
-import { isUserAuthenticated } from '../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../lib/authCheck';
 
 interface CalendarState {
   events: CalendarEvent[];
@@ -45,14 +45,16 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
     });
 
     // Fetch from MongoDB API
-    isUserAuthenticated().then((authenticated) => {
+    isUserAuthenticated().then(async (authenticated) => {
       if (!authenticated) {
         set({ isLoading: false });
         return;
       }
-      fetch('/api/events')
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/events', { headers });
+        if (res.ok) {
+          const data = await res.json();
           if (data && data.events && Array.isArray(data.events)) {
             set((state) => {
               const merged = mergeEvents(state.events, data.events);
@@ -62,11 +64,13 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
           } else {
             set({ isLoading: false });
           }
-        })
-        .catch((err) => {
-          console.warn('[MongoDB EventSync] Offline or API unreachable', err);
+        } else {
           set({ isLoading: false });
-        });
+        }
+      } catch (err) {
+        console.warn('[MongoDB EventSync] Offline or API unreachable', err);
+        set({ isLoading: false });
+      }
     });
   }
 
@@ -86,7 +90,8 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       if (!authenticated) return;
 
       try {
-        const res = await fetch('/api/events');
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/events', { headers });
         if (!res.ok) return;
         const data = await res.json();
         if (data.events && Array.isArray(data.events)) {
@@ -103,7 +108,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
               if (!remoteIds.has(item.id)) {
                 fetch('/api/events', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { ...headers, 'Content-Type': 'application/json' },
                   body: JSON.stringify(item),
                 }).catch(() => {});
               }
@@ -131,11 +136,16 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       set((state) => ({ events: [newEvent, ...state.events] }));
 
       // Save to MongoDB API
-      fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEvent),
-      }).catch((err) => console.warn('Failed to post event to MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/events', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify(newEvent),
+        });
+      } catch (err) {
+        console.warn('Failed to post event to MongoDB API', err);
+      }
 
       syncService.queueMutation('create', 'event', id, newEvent);
       return id;
@@ -153,11 +163,16 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       }));
 
       // Update in MongoDB API
-      fetch('/api/events', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...updates }),
-      }).catch((err) => console.warn('Failed to update event in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/events', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, ...updates }),
+        });
+      } catch (err) {
+        console.warn('Failed to update event in MongoDB API', err);
+      }
 
       syncService.queueMutation('update', 'event', id, updatedEvent);
     },
@@ -171,9 +186,15 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       }));
 
       // Delete from MongoDB API
-      fetch(`/api/events?id=${id}`, {
-        method: 'DELETE',
-      }).catch((err) => console.warn('Failed to delete event from MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch(`/api/events?id=${id}`, {
+          method: 'DELETE',
+          headers,
+        });
+      } catch (err) {
+        console.warn('Failed to delete event from MongoDB API', err);
+      }
 
       if (existing) {
         syncService.queueMutation('delete', 'event', id, existing);
@@ -186,3 +207,4 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
     },
   };
 });
+

@@ -11,6 +11,9 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
+  Share2,
+  Globe,
+  Mail,
 } from 'lucide-react';
 import { SubjectPlan } from '../../types';
 import { Badge } from '../ui/Badge';
@@ -20,9 +23,10 @@ import { ConfirmDeleteModal } from '../modals/ConfirmDeleteModal';
 interface SubjectPlanCardProps {
   plan: SubjectPlan;
   onAddTopic: (subjectId: string) => void;
+  onShare?: (plan: SubjectPlan) => void;
 }
 
-export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({ plan, onAddTopic }) => {
+export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({ plan, onAddTopic, onShare }) => {
   const { deleteSubjectPlan } = useCareerStore();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -61,6 +65,17 @@ export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({ plan, onAddTop
                 <Badge variant="info" size="sm">
                   {plan.category}
                 </Badge>
+                {plan.isPublic ? (
+                  <Badge variant="success" size="sm" className="flex items-center gap-1">
+                    <Globe className="w-3 h-3" />
+                    <span>Public</span>
+                  </Badge>
+                ) : plan.sharedWithEmails && plan.sharedWithEmails.length > 0 ? (
+                  <Badge variant="warning" size="sm" className="flex items-center gap-1">
+                    <Mail className="w-3 h-3" />
+                    <span>Shared ({plan.sharedWithEmails.length})</span>
+                  </Badge>
+                ) : null}
               </div>
               {plan.description && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
@@ -70,6 +85,16 @@ export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({ plan, onAddTop
             </div>
 
             <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+              {onShare && (
+                <button
+                  onClick={() => onShare(plan)}
+                  className="p-1.5 rounded-lg text-gray-500 hover:text-orbit-blue hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                  title="Share Subject Plan"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+              )}
+
               <button
                 onClick={() => onAddTopic(plan.id)}
                 className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 text-xs font-bold flex items-center gap-1.5 transition-colors"

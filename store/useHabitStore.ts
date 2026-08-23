@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Habit } from '../types';
 import { db } from '../database/dexie';
-import { isUserAuthenticated } from '../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../lib/authCheck';
 
 interface HabitState {
   habits: Habit[];
@@ -39,14 +39,16 @@ export const useHabitStore = create<HabitState>((set, get) => {
       }
     });
 
-    isUserAuthenticated().then((authenticated) => {
+    isUserAuthenticated().then(async (authenticated) => {
       if (!authenticated) {
         set({ isLoading: false });
         return;
       }
-      fetch('/api/habits')
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/habits', { headers });
+        if (res.ok) {
+          const data = await res.json();
           if (data && data.habits && Array.isArray(data.habits)) {
             set((state) => {
               const merged = mergeHabits(state.habits, data.habits);
@@ -56,11 +58,13 @@ export const useHabitStore = create<HabitState>((set, get) => {
           } else {
             set({ isLoading: false });
           }
-        })
-        .catch((err) => {
-          console.warn('[MongoDB HabitSync] Offline or API unreachable', err);
+        } else {
           set({ isLoading: false });
-        });
+        }
+      } catch (err) {
+        console.warn('[MongoDB HabitSync] Offline or API unreachable', err);
+        set({ isLoading: false });
+      }
     });
   }
 
@@ -79,7 +83,8 @@ export const useHabitStore = create<HabitState>((set, get) => {
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
       try {
-        const res = await fetch('/api/habits');
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/habits', { headers });
         if (!res.ok) return;
         const data = await res.json();
         if (data.habits && Array.isArray(data.habits)) {
@@ -108,11 +113,16 @@ export const useHabitStore = create<HabitState>((set, get) => {
       db.habits.put(newHabit).catch(() => {});
 
       // Save to MongoDB API
-      fetch('/api/habits', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newHabit),
-      }).catch((err) => console.warn('Failed to save habit to MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/habits', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify(newHabit),
+        });
+      } catch (err) {
+        console.warn('Failed to save habit to MongoDB API', err);
+      }
     },
 
     toggleHabitForDate: async (habitId, dateStr) => {
@@ -158,11 +168,16 @@ export const useHabitStore = create<HabitState>((set, get) => {
 
       if (updatedHabit) {
         db.habits.put(updatedHabit).catch(() => {});
-        fetch('/api/habits', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedHabit),
-        }).catch((err) => console.warn('Failed to update habit in MongoDB API', err));
+        try {
+          const headers = await getAuthHeaders();
+          await fetch('/api/habits', {
+            method: 'PUT',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedHabit),
+          });
+        } catch (err) {
+          console.warn('Failed to update habit in MongoDB API', err);
+        }
       }
     },
 
@@ -172,9 +187,15 @@ export const useHabitStore = create<HabitState>((set, get) => {
       }));
 
       db.habits.delete(id).catch(() => {});
-      fetch(`/api/habits?id=${id}`, {
-        method: 'DELETE',
-      }).catch((err) => console.warn('Failed to delete habit from MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch(`/api/habits?id=${id}`, {
+          method: 'DELETE',
+          headers,
+        });
+      } catch (err) {
+        console.warn('Failed to delete habit from MongoDB API', err);
+      }
     },
 
     resetHabits: () => {
@@ -183,4 +204,5 @@ export const useHabitStore = create<HabitState>((set, get) => {
     },
   };
 });
+
 

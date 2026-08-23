@@ -17,9 +17,22 @@ import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { KeyboardShortcutsModal } from '../modals/KeyboardShortcutsModal';
 import { FocusOverlayModal } from '../modals/FocusOverlayModal';
 import { DailyReflectionModal } from '../modals/DailyReflectionModal';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { GlobalSearchModal } from '../modals/GlobalSearchModal';
 import Footer from './Footer';
+import { ModuleGuard } from './ModuleGuard';
+import { ModuleKey } from '../../types';
+
+const MODULE_ROUTES: Record<string, { key: ModuleKey; name: string }> = {
+  '/career': { key: 'career', name: 'Career' },
+  '/clients': { key: 'clients', name: 'Client Projects' },
+  '/goals': { key: 'goals', name: 'Goals' },
+  '/habits': { key: 'habits', name: 'Habits' },
+  '/research': { key: 'research', name: 'Research' },
+  '/weekly-planner': { key: 'weekly_planner', name: 'Weekly Planner' },
+  // '/notes': { key: 'notes', name: 'Notes' },
+  '/analytics': { key: 'analytics', name: 'Analytics' },
+};
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -27,6 +40,11 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const router = useRouter();
+  const pathname = usePathname();
+
+  const activeModule = Object.entries(MODULE_ROUTES).find(
+    ([route]) => pathname === route || pathname.startsWith(`${route}/`)
+  )?.[1];
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [mobileMoreSheetOpen, setMobileMoreSheetOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
@@ -146,7 +164,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         />
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6 overflow-x-hidden pb-24 md:pb-6">
-          {children}
+          {activeModule ? (
+            <ModuleGuard moduleKey={activeModule.key} moduleName={activeModule.name}>
+              {children}
+            </ModuleGuard>
+          ) : (
+            children
+          )}
         </main>
         <Footer/>
       </div>
