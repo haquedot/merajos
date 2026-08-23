@@ -13,6 +13,9 @@ import { useHabitStore } from '../store/useHabitStore';
 import { useGoalStore } from '../store/useGoalStore';
 import { useNotesStore } from '../store/useNotesStore';
 import { useCalendarStore } from '../store/useCalendarStore';
+import { useSettingsStore } from '../store/useSettingsStore';
+import { useLinkStore } from '../store/useLinkStore';
+import { useWeeklyStore } from '../store/useWeeklyStore';
 
 import { RequestAccessModal } from '../components/modals/RequestAccessModal';
 
@@ -49,6 +52,26 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
+  const hydrateStores = async () => {
+    try {
+      await Promise.allSettled([
+        useSettingsStore.getState().loadFromDB(),
+        useTaskStore.getState().loadFromDB(),
+        useProjectStore.getState().loadFromDB(),
+        useGoalStore.getState().loadFromDB(),
+        useHabitStore.getState().loadFromDB(),
+        useNotesStore.getState().loadFromDB(),
+        useCalendarStore.getState().loadFromDB(),
+        useLinkStore.getState().loadFromDB(),
+        useWeeklyStore.getState().loadFromDB(),
+        useResearchStore.getState().fetchProjects(),
+        useCareerStore.getState().loadFromDB(),
+      ]);
+    } catch (e) {
+      console.warn('Failed to hydrate stores from DB:', e);
+    }
+  };
+
   useEffect(() => {
     // Restore session on mount & sync user profile to MongoDB
     authService.getSession().then((sess) => {
@@ -82,6 +105,10 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
             })
             .catch((err) => console.warn('Failed to sync user session to MongoDB', err));
         }
+
+        // Hydrate stores with MongoDB user data
+        hydrateStores();
+
         // Trigger background sync on initial load
         syncService.syncAll(false);
       }
@@ -100,6 +127,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     try {
       const sess = await authService.signIn();
       setSession(sess);
+      await hydrateStores();
       await syncService.syncAll(true);
     } catch (err: any) {
       console.error('Google Sign In result:', err);
@@ -117,12 +145,14 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     // Reset all Zustand memory states to empty
     useTaskStore.setState({ tasks: [] });
     useProjectStore.setState({ projects: [] });
-    useCareerStore.setState({ jobs: [], interviewTopics: [], dsaTopics: [] });
+    useCareerStore.getState().resetCareer();
     useResearchStore.setState({ projects: [] });
     useHabitStore.setState({ habits: [] });
     useGoalStore.setState({ goals: [] });
     useNotesStore.setState({ notes: [] });
     useCalendarStore.setState({ events: [] });
+    useLinkStore.setState({ links: [] });
+    useSettingsStore.getState().resetSettings();
 
     setSession(null);
     if (typeof window !== 'undefined') {

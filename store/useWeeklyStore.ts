@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { WeeklyPlan } from '../types';
-import { isUserAuthenticated } from '../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../lib/authCheck';
 
 const DEFAULT_WEEKLY_PLAN: WeeklyPlan = {
   weekId: 'Current-Week',
@@ -31,24 +31,28 @@ interface WeeklyState {
 
 export const useWeeklyStore = create<WeeklyState>((set, get) => {
   if (typeof window !== 'undefined') {
-    isUserAuthenticated().then((authenticated) => {
+    isUserAuthenticated().then(async (authenticated) => {
       if (!authenticated) {
         set({ isLoading: false });
         return;
       }
-      fetch('/api/weekly')
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/weekly', { headers });
+        if (res.ok) {
+          const data = await res.json();
           if (data && data.plan) {
             set({ plan: data.plan, isLoading: false });
           } else {
             set({ isLoading: false });
           }
-        })
-        .catch((err) => {
-          console.warn('[MongoDB WeeklySync] Offline or API unreachable', err);
+        } else {
           set({ isLoading: false });
-        });
+        }
+      } catch (err) {
+        console.warn('[MongoDB WeeklySync] Offline or API unreachable', err);
+        set({ isLoading: false });
+      }
     });
   }
 
@@ -60,7 +64,8 @@ export const useWeeklyStore = create<WeeklyState>((set, get) => {
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
       try {
-        const res = await fetch('/api/weekly');
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/weekly', { headers });
         if (!res.ok) return;
         const data = await res.json();
         if (data.plan) {
@@ -75,11 +80,16 @@ export const useWeeklyStore = create<WeeklyState>((set, get) => {
       const updatedPlan = { ...get().plan, ...updates };
       set({ plan: updatedPlan });
 
-      fetch('/api/weekly', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedPlan),
-      }).catch((err) => console.warn('Failed to update weekly plan in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/weekly', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedPlan),
+        });
+      } catch (err) {
+        console.warn('Failed to update weekly plan in MongoDB API', err);
+      }
     },
 
     updateReview: async (reviewUpdates) => {
@@ -89,13 +99,19 @@ export const useWeeklyStore = create<WeeklyState>((set, get) => {
       };
       set({ plan: updatedPlan });
 
-      fetch('/api/weekly', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedPlan),
-      }).catch((err) => console.warn('Failed to update review in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/weekly', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedPlan),
+        });
+      } catch (err) {
+        console.warn('Failed to update review in MongoDB API', err);
+      }
     },
 
     resetWeekly: () => set({ plan: DEFAULT_WEEKLY_PLAN }),
   };
 });
+

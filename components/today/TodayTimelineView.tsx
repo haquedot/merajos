@@ -17,6 +17,10 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { parseTimeAndSlotFromText } from '../../lib/taskUtils';
+import { SmartRecommendationCard } from './SmartRecommendationCard';
+import { WorkloadWarningCard } from './WorkloadWarningCard';
+import { usePersonalizationStore } from '../../store/usePersonalizationStore';
+import { buildCurrentContext } from '../../lib/personalization/context/contextBuilder';
 
 interface TodayTimelineViewProps {
   tasks: Task[];
@@ -205,6 +209,20 @@ export const TodayTimelineView: React.FC<TodayTimelineViewProps> = ({
           <span className="text-[11px] text-gray-500 hidden sm:inline">Timeline updates in real-time</span>
         </div>
       )}
+
+      {/* Workload Capacity Warning */}
+      {(() => {
+        const preferences = usePersonalizationStore.getState().preferences;
+        const currentContext = buildCurrentContext(tasks, [], preferences, effectiveFocusTaskId || undefined);
+        return <WorkloadWarningCard workload={currentContext.workload} />;
+      })()}
+
+      {/* Smart Personalization Recommendation Card */}
+      <SmartRecommendationCard
+        tasks={tasks}
+        onToggleMIT={onToggleMIT}
+        onSetFocusTask={onSetFocusTask}
+      />
 
       {/* Timeline Stream */}
       <div className="space-y-8 relative">

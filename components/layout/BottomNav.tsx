@@ -45,7 +45,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`relative flex flex-col items-center justify-center w-11 h-11 rounded-fulll transition-transform duration-150 active:scale-90 ${
+                className={`relative flex flex-col items-center justify-center w-11 h-11 rounded-full transition-transform duration-150 active:scale-90 ${
                   isActive
                     ? 'text-orbit-blue font-bold'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -59,24 +59,31 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   />
                 )}
                 <Icon className={`w-4.5 h-4.5 z-10 ${isActive ? 'scale-110' : ''}`} />
-                {/* <span className="text-[10px] font-semibold mt-0.5 z-10">
-                  {tab.name}
-                </span> */}
               </Link>
             );
           })}
         </div>
 
-        {/* Center Floating Action Button (FAB Quick Add) */}
-        <div className="relative flex items-center justify-center w-20 shrink-0">
-          <button
-            onClick={onOpenQuickAdd}
-            className="absolute flex items-center justify-center w-12 h-12 rounded-full bg-orbit-blue text-white shadow-lg shadow-orbit-blue/40 active:scale-90 transition-all duration-200 cursor-pointer"
-            aria-label="Quick Add Task"
-            title="Quick Add Task"
-          >
-            <Plus className="w-6 h-6 stroke-[2.5]" />
-          </button>
+        {/* Center Floating Action Button (FAB Quick Add with Moving Border Animation) */}
+        <div className="relative flex items-center justify-center w-24 shrink-0">
+          <div className="relative rounded-full p-[2.5px] overflow-hidden group shadow-xl shadow-orbit-blue/30">
+            {/* Continuous Rotating Conic Gradient Beam */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+              className="absolute -inset-[250%] bg-[conic-gradient(from_0deg_at_50%_50%,#0066FF_0deg,#38bdf8_90deg,transparent_180deg,#FF6B00_270deg,#0066FF_360deg)] opacity-100 pointer-events-none"
+            />
+
+            {/* Inner Quick Add Button */}
+            <button
+              onClick={onOpenQuickAdd}
+              className="relative z-10 flex items-center justify-center w-12 h-12 rounded-full bg-orbit-blue text-white shadow-md active:scale-90 transition-transform duration-150 cursor-pointer"
+              aria-label="Quick Add Task"
+              title="Quick Add Task"
+            >
+              <Plus className="w-6 h-6 stroke-[2.5]" />
+            </button>
+          </div>
         </div>
 
         {/* Right Tabs (Calendar, More) */}
@@ -103,9 +110,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   />
                 )}
                 <Icon className={`w-4.5 h-4.5 z-10 ${isActive ? 'scale-110' : ''}`} />
-                {/* <span className="text-[10px] font-semibold mt-0.5 z-10">
-                  {tab.name}
-                </span> */}
               </Link>
             );
           })}
@@ -118,7 +122,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             title="More Modules"
           >
             <Grid className="w-4.5 h-4.5" />
-            {/* <span className="text-[10px] font-semibold mt-0.5">More</span> */}
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { JobApplication, InterviewTopic, DSATopic, SubjectPlan, SubjectTopic } from '../types';
-import { isUserAuthenticated } from '../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../lib/authCheck';
 import { PRESET_SUBJECT_PLANS, PRESET_INTERVIEW_TOPICS, PRESET_DSA_TOPICS } from '../lib/careerPresets';
 import { SOFTWARE_ENGINEER_SEED_DATA } from '../lib/softwareEngineerSeed';
 
@@ -15,9 +15,12 @@ interface CareerState {
   loadedTabs: Record<CareerTab, boolean>;
   jobStatusFilter: string;
   dsaSearchQuery: string;
+  sharedAccessMap: Record<string, 'owner' | 'view_only'>;
+  sharedAccessError: { subjectId: string; message: string; planTitle: string } | null;
 
-  // On-demand lazy loaders
-  loadTabData: (tab: CareerTab) => Promise<void>;
+  // Store hydration & lazy loaders
+  loadFromDB: () => Promise<void>;
+  loadTabData: (tab: CareerTab, force?: boolean) => Promise<void>;
   loadSubjectPlanById: (subjectId: string) => Promise<void>;
 
   // Job Actions
@@ -70,11 +73,16 @@ export const useCareerStore = create<CareerState>((set, get) => {
       subjectPlans: state.subjectPlans || currentState.subjectPlans,
     };
 
-    fetch('/api/career', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }).catch((err) => console.warn('Failed to sync career to MongoDB API', err));
+    try {
+      const headers = await getAuthHeaders();
+      await fetch('/api/career', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.warn('Failed to sync career to MongoDB API', err);
+    }
   };
 
   return {
@@ -91,11 +99,51 @@ export const useCareerStore = create<CareerState>((set, get) => {
     },
     jobStatusFilter: 'all',
     dsaSearchQuery: '',
+    sharedAccessMap: {},
+    sharedAccessError: null,
+
+    loadFromDB: async () => {
+      const authenticated = await isUserAuthenticated();
+      if (!authenticated) {
+        set({ isLoadingTab: false });
+        return;
+      }
+
+      set({ isLoadingTab: true });
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/career', { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.career) {
+            set({
+              jobs: data.career.jobs || [],
+              interviewTopics: data.career.interviewTopics || [],
+              dsaTopics: data.career.dsaTopics || [],
+              subjectPlans: data.career.subjectPlans || [],
+              isLoadingTab: false,
+              loadedTabs: {
+                roadmaps: true,
+                dsa: true,
+                interview: true,
+                jobs: true,
+              },
+            });
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load career data from API', err);
+      }
+      set({ isLoadingTab: false });
+    },
 
     // On-demand Tab Data Loader
-    loadTabData: async (tab: CareerTab) => {
-      // If already loaded, skip network request
-      if (get().loadedTabs[tab]) return;
+    loadTabData: async (tab: CareerTab, force = false) => {
+      const state = get();
+      // Skip network call only if tab is already loaded AND we actually have populated data
+      const hasData = state.subjectPlans.length > 0 || state.dsaTopics.length > 0 || state.interviewTopics.length > 0 || state.jobs.length > 0;
+      if (!force && state.loadedTabs[tab] && hasData) return;
 
       set({ isLoadingTab: true });
 
@@ -109,7 +157,8 @@ export const useCareerStore = create<CareerState>((set, get) => {
           return;
         }
 
-        const res = await fetch('/api/career');
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/career', { headers });
         if (res.ok) {
           const data = await res.json();
           if (data && data.career) {
@@ -119,7 +168,12 @@ export const useCareerStore = create<CareerState>((set, get) => {
               dsaTopics: data.career.dsaTopics || state.dsaTopics,
               subjectPlans: data.career.subjectPlans || state.subjectPlans,
               isLoadingTab: false,
-              loadedTabs: { ...state.loadedTabs, [tab]: true },
+              loadedTabs: {
+                roadmaps: true,
+                dsa: true,
+                interview: true,
+                jobs: true,
+              },
             }));
             return;
           }
@@ -135,26 +189,47 @@ export const useCareerStore = create<CareerState>((set, get) => {
     },
 
     loadSubjectPlanById: async (subjectId: string) => {
-      if (get().subjectPlans.some((sp) => sp.id === subjectId)) return;
-
-      set({ isLoadingTab: true });
+      set({ isLoadingTab: true, sharedAccessError: null });
       try {
-        const res = await fetch('/api/career');
+        const headers = await getAuthHeaders();
+        const res = await fetch(`/api/career/${subjectId}`, { headers });
         if (res.ok) {
           const data = await res.json();
-          if (data && data.career && data.career.subjectPlans) {
+          if (data && data.plan) {
+            const existingPlans = get().subjectPlans;
+            const exists = existingPlans.some((sp) => sp.id === data.plan.id);
+            const updatedPlans = exists
+              ? existingPlans.map((sp) => (sp.id === data.plan.id ? data.plan : sp))
+              : [data.plan, ...existingPlans];
+
             set({
-              subjectPlans: data.career.subjectPlans,
+              subjectPlans: updatedPlans,
               isLoadingTab: false,
+              sharedAccessMap: {
+                ...get().sharedAccessMap,
+                [subjectId]: data.access || 'owner',
+              },
             });
             return;
           }
+        } else if (res.status === 403) {
+          const errorData = await res.json().catch(() => ({}));
+          set({
+            isLoadingTab: false,
+            sharedAccessError: {
+              subjectId,
+              message: errorData.error || 'This subject plan is private.',
+              planTitle: errorData.planTitle || 'Private Subject Plan',
+            },
+          });
+          return;
         }
       } catch (err) {
         console.warn('Failed to load subject plan by ID', err);
       }
       set({ isLoadingTab: false });
     },
+
 
     // Job Actions
     addJob: async (jobData) => {

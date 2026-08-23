@@ -170,7 +170,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
             if (collapsed) {
               return (
                 <Tooltip key={item.href}>
-                  <TooltipTrigger className="w-full block focus:outline-none">{linkContent}</TooltipTrigger>
+                  <TooltipTrigger render={<div className="w-full block focus:outline-none" />}>
+                    {linkContent}
+                  </TooltipTrigger>
                   <TooltipContent
                     side="right"
                     sideOffset={10}
@@ -191,17 +193,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           {/* Modern Theme Switch Toggle */}
           {collapsed ? (
             <Tooltip>
-              <TooltipTrigger className="w-full block focus:outline-none">
-                <button
-                  onClick={toggleTheme}
-                  className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800/80 flex items-center justify-center transition-all duration-200 ease-out group cursor-pointer active:scale-98"
-                >
-                  {theme === 'dark' ? (
-                    <Moon className="w-4 h-4 text-orbit-blue shrink-0 transition-transform duration-200 group-hover:rotate-12" />
-                  ) : (
-                    <Sun className="w-4 h-4 text-orbit-orange shrink-0 transition-transform duration-200 group-hover:rotate-45" />
-                  )}
-                </button>
+              <TooltipTrigger
+                render={
+                  <button
+                    onClick={toggleTheme}
+                    className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800/80 flex items-center justify-center transition-all duration-200 ease-out group cursor-pointer active:scale-98"
+                  />
+                }
+              >
+                {theme === 'dark' ? (
+                  <Moon className="w-4 h-4 text-orbit-blue shrink-0 transition-transform duration-200 group-hover:rotate-12" />
+                ) : (
+                  <Sun className="w-4 h-4 text-orbit-orange shrink-0 transition-transform duration-200 group-hover:rotate-45" />
+                )}
               </TooltipTrigger>
               <TooltipContent
                 side="right"
@@ -251,17 +255,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           {/* Platform Tour */}
           {collapsed ? (
             <Tooltip>
-              <TooltipTrigger className="w-full block focus:outline-none">
-                <button
-                  onClick={() => {
-                    onMobileClose();
-                    const tourBtn = document.getElementById('tour-help-icon');
-                    if (tourBtn) tourBtn.click();
-                  }}
-                  className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center justify-center transition-colors"
-                >
-                  <HelpCircle className="w-4 h-4 shrink-0 text-blue-500" />
-                </button>
+              <TooltipTrigger
+                render={
+                  <button
+                    onClick={() => {
+                      onMobileClose();
+                      const tourBtn = document.getElementById('tour-help-icon');
+                      if (tourBtn) tourBtn.click();
+                    }}
+                    className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center justify-center transition-colors"
+                  />
+                }
+              >
+                <HelpCircle className="w-4 h-4 shrink-0 text-blue-500" />
               </TooltipTrigger>
               <TooltipContent
                 side="right"

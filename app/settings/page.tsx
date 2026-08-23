@@ -28,6 +28,7 @@ import {
   Sliders,
   ShieldCheck,
   Scale,
+  Lock,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useTaskStore } from '../../store/useTaskStore';
@@ -50,6 +51,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Input } from '../../components/ui/input';
 import { DatePicker } from '../../components/ui/date-picker';
 import { Button } from '../../components/ui/button';
+import { PersonalizationInspectionPanel } from '../../components/settings/PersonalizationInspectionPanel';
 
 const MODULE_OPTIONS: { key: ModuleKey; label: string; description: string; alwaysOn?: boolean }[] = [
   { key: 'tasks', label: 'Tasks', description: 'Daily task management & priorities', alwaysOn: true },
@@ -312,11 +314,27 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {!session && (
+          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 flex items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-300">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>Sign in with Google to enable or disable optional workspace modules.</span>
+            </div>
+            <Button type="button" size="sm" onClick={signIn} className="text-xs font-bold shrink-0">
+              Sign In
+            </Button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {MODULE_OPTIONS.map((mod) => {
             const enabled = mod.alwaysOn || (settings.onboarding?.enabledModules ?? []).includes(mod.key);
             const handleToggle = () => {
               if (mod.alwaysOn) return;
+              if (!session) {
+                signIn();
+                return;
+              }
               const current: ModuleKey[] = settings.onboarding?.enabledModules ?? [];
               const next: ModuleKey[] = enabled
                 ? current.filter((m) => m !== mod.key)
@@ -341,22 +359,30 @@ export default function SettingsPage() {
                 key={mod.key}
                 onClick={handleToggle}
                 disabled={mod.alwaysOn}
-                className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${enabled
+                className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
+                  enabled
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40'
                     : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
-                  } ${mod.alwaysOn ? 'cursor-default' : 'hover:shadow-sm'}`}
+                } ${mod.alwaysOn ? 'cursor-default' : 'hover:shadow-sm cursor-pointer'}`}
               >
-                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${enabled ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}>
+                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
+                  enabled ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
+                }`}>
                   {enabled && <Check className="w-3 h-3 text-white" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className={`text-xs font-bold ${enabled ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
-                    }`}>
-                    {mod.label}
-                    {mod.alwaysOn && (
-                      <span className="ml-1.5 text-[9px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full">Always on</span>
-                    )}
+                  <div className={`text-xs font-bold flex items-center gap-1.5 ${
+                    enabled ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                  }`}>
+                    <span>{mod.label}</span>
+                    {mod.alwaysOn ? (
+                      <span className="text-[9px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full">Always on</span>
+                    ) : !session ? (
+                      <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                        <Lock className="w-2.5 h-2.5" />
+                        <span>Sign In</span>
+                      </span>
+                    ) : null}
                   </div>
                   <div className="text-[11px] text-gray-400 mt-0.5 truncate">{mod.description}</div>
                 </div>
@@ -474,6 +500,9 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Personalization Inspection & Transparency Panel */}
+      <PersonalizationInspectionPanel />
 
       {/* Theme Settings */}
       <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">

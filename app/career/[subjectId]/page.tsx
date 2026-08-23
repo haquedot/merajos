@@ -20,6 +20,10 @@ import {
   Edit2,
   Award,
   List,
+  Share2,
+  Globe,
+  Lock,
+  Mail,
 } from 'lucide-react';
 import { useCareerStore } from '../../../store/useCareerStore';
 import { useTaskStore } from '../../../store/useTaskStore';
@@ -31,6 +35,7 @@ import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import { Button } from '../../../components/ui/button';
 import { AddTopicModal } from '../../../components/career/AddTopicModal';
+import { ShareSubjectModal } from '../../../components/career/ShareSubjectModal';
 import { ConfirmDeleteModal } from '../../../components/modals/ConfirmDeleteModal';
 import { PRESET_SUBJECT_PLANS } from '../../../lib/careerPresets';
 
@@ -44,10 +49,13 @@ export default function SubjectReaderPage({ params }: PageProps) {
   const {
     subjectPlans,
     isLoadingTab,
+    sharedAccessMap,
+    sharedAccessError,
     loadSubjectPlanById,
     toggleTopicChecklist,
     updateSubjectTopic,
     deleteSubjectTopic,
+    addSubjectPlan,
   } = useCareerStore();
 
   React.useEffect(() => {
@@ -58,6 +66,7 @@ export default function SubjectReaderPage({ params }: PageProps) {
 
   const [isAddTopicModalOpen, setIsAddTopicModalOpen] = useState(false);
   const [isEditTopicModalOpen, setIsEditTopicModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [deleteTopicTarget, setDeleteTopicTarget] = useState<SubjectTopic | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -74,7 +83,7 @@ export default function SubjectReaderPage({ params }: PageProps) {
   const [editDifficulty, setEditDifficulty] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Intermediate');
   const [editNotes, setEditNotes] = useState('');
 
-  if (isLoadingTab || !plan) {
+  if (isLoadingTab) {
     return (
       <div className="p-12 text-center space-y-4">
         <div className="w-10 h-10 border-4 border-[#1F3B99] dark:border-[#6D5BFF] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -82,6 +91,48 @@ export default function SubjectReaderPage({ params }: PageProps) {
       </div>
     );
   }
+
+  if (sharedAccessError && !plan) {
+    return (
+      <div className="p-10 max-w-md mx-auto text-center space-y-5 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-xl my-12">
+        <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+          <Lock className="w-7 h-7" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-black text-gray-900 dark:text-white">
+            {sharedAccessError.planTitle || 'Private Subject Plan'}
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+            {sharedAccessError.message || 'This study plan is private. Ask the creator to grant view access to your email.'}
+          </p>
+        </div>
+        <div className="pt-2">
+          <Link
+            href="/career"
+            className="btn-primary px-5 py-2.5 rounded-xl text-xs font-bold inline-flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Career Prep</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!plan) {
+    return (
+      <div className="p-12 text-center space-y-4">
+        <BookOpen className="w-8 h-8 text-gray-400 mx-auto" />
+        <p className="text-sm font-bold text-gray-600 dark:text-gray-400">Subject Plan Not Found</p>
+        <Link href="/career" className="text-xs text-orbit-blue font-bold hover:underline">
+          Return to Career Prep
+        </Link>
+      </div>
+    );
+  }
+
+  const accessMode = sharedAccessMap[subjectId] || 'owner';
+  const isViewOnly = accessMode === 'view_only';
 
   const currentTopic = plan.topics[activeTopicIndex] || plan.topics[0];
 
@@ -164,6 +215,34 @@ export default function SubjectReaderPage({ params }: PageProps) {
         </div>
       )}
 
+      {/* Shared Access Banner */}
+      {isViewOnly && (
+        <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-orbit-blue">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-indigo-500 shrink-0" />
+            <span className="font-bold">
+              You are viewing a shared study plan {plan.ownerEmail ? `by ${plan.ownerEmail}` : ''} (View-Only Mode)
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              addSubjectPlan({
+                title: `${plan.title} (Copy)`,
+                category: plan.category,
+                description: plan.description,
+                colorTheme: plan.colorTheme,
+                topics: plan.topics,
+              });
+              showToast('Imported copy to your personal study plans!');
+            }}
+            className="btn-primary px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
+          >
+            <Copy className="w-3.5 h-3.5" />
+            <span>Save Copy to My Plans</span>
+          </button>
+        </div>
+      )}
+
       {/* Standardized PageHeader Component */}
       <PageHeader
         icon={BookOpen}
@@ -183,12 +262,22 @@ export default function SubjectReaderPage({ params }: PageProps) {
             </Link>
 
             <button
-              onClick={() => setIsAddTopicModalOpen(true)}
-              className="btn-primary px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
+              onClick={() => setIsShareModalOpen(true)}
+              className="px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-orbit-blue transition-colors text-xs font-bold flex items-center gap-1.5 shrink-0"
             >
-              <Plus className="w-4 h-4" />
-              <span>Add New Topic</span>
+              <Share2 className="w-4 h-4" />
+              <span>Share</span>
             </button>
+
+            {!isViewOnly && (
+              <button
+                onClick={() => setIsAddTopicModalOpen(true)}
+                className="btn-primary px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add New Topic</span>
+              </button>
+            )}
           </div>
         }
       />
@@ -398,21 +487,25 @@ export default function SubjectReaderPage({ params }: PageProps) {
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => handleOpenEditTopic(currentTopic)}
-                      className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-600 dark:text-gray-300 transition-colors"
-                      title="Edit Topic Details"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
+                    {!isViewOnly && (
+                      <>
+                        <button
+                          onClick={() => handleOpenEditTopic(currentTopic)}
+                          className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-600 dark:text-gray-300 transition-colors"
+                          title="Edit Topic Details"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
 
-                    <button
-                      onClick={() => setDeleteTopicTarget(currentTopic)}
-                      className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-400 transition-colors"
-                      title="Delete Topic"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                        <button
+                          onClick={() => setDeleteTopicTarget(currentTopic)}
+                          className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-400 transition-colors"
+                          title="Delete Topic"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
 
                     <button
                       onClick={handleCopyTopicToTask}
@@ -622,6 +715,13 @@ export default function SubjectReaderPage({ params }: PageProps) {
         isOpen={isAddTopicModalOpen}
         subjectId={plan.id}
         onClose={() => setIsAddTopicModalOpen(false)}
+      />
+
+      {/* Share Subject Plan Modal */}
+      <ShareSubjectModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        plan={plan}
       />
 
       {/* Confirm Delete Topic Modal */}

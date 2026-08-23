@@ -6,7 +6,7 @@ import {
   ResearchStatus,
   PaperStatus,
 } from '../types';
-import { isUserAuthenticated } from '../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../lib/authCheck';
 
 const ACTIVE_PROJECT_KEY = 'meraj_os_active_research_project_id';
 
@@ -59,7 +59,8 @@ export const useResearchStore = create<ResearchState>((set, get) => {
     fetchProjects: async () => {
       set({ isLoading: true });
       try {
-        const res = await fetch('/api/research');
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/research', { headers });
         if (res.ok) {
           const data = await res.json();
           set({ projects: data.projects ?? [], isLoading: false });
@@ -77,15 +78,17 @@ export const useResearchStore = create<ResearchState>((set, get) => {
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
       try {
+        const headers = await getAuthHeaders();
         await fetch('/api/research', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { ...headers, 'Content-Type': 'application/json' },
           body: JSON.stringify({ projects }),
         });
       } catch (err) {
         console.warn('Failed to save research projects:', err);
       }
     },
+
 
     // ─── Project Actions ───────────────────────────────────────────────────────
 
