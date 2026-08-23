@@ -313,60 +313,60 @@ export default function ResearchPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        icon={FlaskConical}
-        iconBgColor="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400"
-        title="Research Projects"
-        badgeText={`${projects.length} Projects`}
-        badgeVariant="purple"
-        subtitle={`${activeCount} active · Manage your research, literature, and writing progress`}
-        actions={
-          <Button
-            onClick={() => { setEditProject(null); setIsModalOpen(true); }}
-            className="flex items-center gap-1.5 shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            New Project
-          </Button>
-        }
-      />
+        <PageHeader
+          icon={FlaskConical}
+          iconBgColor="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400"
+          title="Research Projects"
+          badgeText={`${projects.length} Projects`}
+          badgeVariant="purple"
+          subtitle={`${activeCount} active · Manage your research, literature, and writing progress`}
+          actions={
+            <Button
+              onClick={() => { setEditProject(null); setIsModalOpen(true); }}
+              className="flex items-center gap-1.5 shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              New Project
+            </Button>
+          }
+        />
 
-      {projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
-            <BookOpen className="w-8 h-8 text-blue-500" />
+        {projects.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
+              <BookOpen className="w-8 h-8 text-blue-500" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">No research projects yet</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-xs">
+                Create your first research project to start managing papers, sections, and writing progress.
+              </p>
+            </div>
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Create First Project
+            </Button>
           </div>
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">No research projects yet</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-xs">
-              Create your first research project to start managing papers, sections, and writing progress.
-            </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onEdit={handleEdit}
+                onDelete={deleteProject}
+              />
+            ))}
           </div>
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> Create First Project
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onEdit={handleEdit}
-              onDelete={deleteProject}
-            />
-          ))}
-        </div>
-      )}
+        )}
 
-      <NewProjectModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        editProject={editProject}
-      />
-    </div>
+        <NewProjectModal
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          editProject={editProject}
+        />
+      </div>
   );
 }

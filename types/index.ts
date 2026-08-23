@@ -217,6 +217,9 @@ export interface SubjectPlan {
   topics: SubjectTopic[];
   createdAt: string;
   updatedAt: string;
+  isPublic?: boolean;
+  sharedWithEmails?: string[];
+  ownerEmail?: string;
 }
 
 export interface DSAProblemItem {
@@ -302,9 +305,14 @@ export interface Note {
   id: string;
   title: string;
   content: string;
-  category: string;
+  category?: string;
   pinned: boolean;
   folder: string;
+  tags?: string[];
+  isPublic?: boolean;
+  sharedWithEmails?: string[];
+  ownerEmail?: string;
+  createdAt?: string;
   updatedAt: string;
 }
 

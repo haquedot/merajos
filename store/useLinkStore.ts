@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { SavedLink } from '../types';
-import { isUserAuthenticated } from '../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../lib/authCheck';
 
 const DEFAULT_LINKS: SavedLink[] = [];
 
@@ -30,23 +30,27 @@ interface LinkState {
 export const useLinkStore = create<LinkState>((set, get) => {
   // Automatic initial fetch
   if (typeof window !== 'undefined') {
-    isUserAuthenticated().then((authenticated) => {
+    isUserAuthenticated().then(async (authenticated) => {
       if (!authenticated) {
         set({ links: DEFAULT_LINKS, isLoading: false });
         return;
       }
-      fetch('/api/links')
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/links', { headers });
+        if (res.ok) {
+          const data = await res.json();
           if (data && Array.isArray(data.links) && data.links.length > 0) {
             set({ links: data.links, isLoading: false });
           } else {
             set({ links: DEFAULT_LINKS, isLoading: false });
           }
-        })
-        .catch(() => {
+        } else {
           set({ links: DEFAULT_LINKS, isLoading: false });
-        });
+        }
+      } catch (err) {
+        set({ links: DEFAULT_LINKS, isLoading: false });
+      }
     });
   }
 
@@ -63,7 +67,8 @@ export const useLinkStore = create<LinkState>((set, get) => {
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
       try {
-        const res = await fetch('/api/links');
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/links', { headers });
         if (!res.ok) return;
         const data = await res.json();
         if (data.links && Array.isArray(data.links)) {
@@ -94,11 +99,16 @@ export const useLinkStore = create<LinkState>((set, get) => {
         currentPage: 1, // Reset to first page when adding
       }));
 
-      fetch('/api/links', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newLink),
-      }).catch((err) => console.warn('[LinksStore] Failed to save link to DB', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/links', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify(newLink),
+        });
+      } catch (err) {
+        console.warn('[LinksStore] Failed to save link to DB', err);
+      }
 
       return newLink;
     },
@@ -111,11 +121,16 @@ export const useLinkStore = create<LinkState>((set, get) => {
         ),
       }));
 
-      fetch('/api/links', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...updates, updatedAt }),
-      }).catch((err) => console.warn('[LinksStore] Failed to update link in DB', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/links', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, ...updates, updatedAt }),
+        });
+      } catch (err) {
+        console.warn('[LinksStore] Failed to update link in DB', err);
+      }
     },
 
     deleteLink: async (id) => {
@@ -123,9 +138,15 @@ export const useLinkStore = create<LinkState>((set, get) => {
         links: state.links.filter((l) => l.id !== id),
       }));
 
-      fetch(`/api/links?id=${id}`, {
-        method: 'DELETE',
-      }).catch((err) => console.warn('[LinksStore] Failed to delete link from DB', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch(`/api/links?id=${id}`, {
+          method: 'DELETE',
+          headers,
+        });
+      } catch (err) {
+        console.warn('[LinksStore] Failed to delete link from DB', err);
+      }
     },
 
     toggleFavorite: async (id) => {
@@ -140,11 +161,16 @@ export const useLinkStore = create<LinkState>((set, get) => {
         }),
       }));
 
-      fetch('/api/links', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, isFavorite: isFav }),
-      }).catch((err) => console.warn('[LinksStore] Failed to toggle favorite in DB', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/links', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, isFavorite: isFav }),
+        });
+      } catch (err) {
+        console.warn('[LinksStore] Failed to toggle favorite in DB', err);
+      }
     },
 
     setSearchQuery: (query) => set({ searchQuery: query, currentPage: 1 }),
@@ -155,3 +181,4 @@ export const useLinkStore = create<LinkState>((set, get) => {
     resetFilters: () => set({ searchQuery: '', selectedCategory: 'All', onlyFavorites: false, currentPage: 1 }),
   };
 });
+

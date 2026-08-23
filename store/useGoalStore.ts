@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Goal, GoalTier, Milestone } from '../types';
-import { isUserAuthenticated } from '../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../lib/authCheck';
 
 interface GoalState {
   goals: Goal[];
@@ -19,24 +19,28 @@ interface GoalState {
 
 export const useGoalStore = create<GoalState>((set, get) => {
   if (typeof window !== 'undefined') {
-    isUserAuthenticated().then((authenticated) => {
+    isUserAuthenticated().then(async (authenticated) => {
       if (!authenticated) {
         set({ isLoading: false });
         return;
       }
-      fetch('/api/goals')
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/goals', { headers });
+        if (res.ok) {
+          const data = await res.json();
           if (data && data.goals) {
             set({ goals: data.goals, isLoading: false });
           } else {
             set({ isLoading: false });
           }
-        })
-        .catch((err) => {
-          console.warn('[MongoDB GoalSync] Offline or API unreachable', err);
+        } else {
           set({ isLoading: false });
-        });
+        }
+      } catch (err) {
+        console.warn('[MongoDB GoalSync] Offline or API unreachable', err);
+        set({ isLoading: false });
+      }
     });
   }
 
@@ -49,7 +53,8 @@ export const useGoalStore = create<GoalState>((set, get) => {
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
       try {
-        const res = await fetch('/api/goals');
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/goals', { headers });
         if (!res.ok) return;
         const data = await res.json();
         if (data.goals) {
@@ -69,11 +74,16 @@ export const useGoalStore = create<GoalState>((set, get) => {
 
       set((state) => ({ goals: [newGoal, ...state.goals] }));
 
-      fetch('/api/goals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newGoal),
-      }).catch((err) => console.warn('Failed to save goal to MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/goals', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify(newGoal),
+        });
+      } catch (err) {
+        console.warn('Failed to save goal to MongoDB API', err);
+      }
     },
 
     updateGoal: async (id, updates) => {
@@ -81,11 +91,16 @@ export const useGoalStore = create<GoalState>((set, get) => {
         goals: state.goals.map((g) => (g.id === id ? { ...g, ...updates } : g)),
       }));
 
-      fetch('/api/goals', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...updates }),
-      }).catch((err) => console.warn('Failed to update goal in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/goals', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, ...updates }),
+        });
+      } catch (err) {
+        console.warn('Failed to update goal in MongoDB API', err);
+      }
     },
 
     deleteGoal: async (id) => {
@@ -93,9 +108,15 @@ export const useGoalStore = create<GoalState>((set, get) => {
         goals: state.goals.filter((g) => g.id !== id),
       }));
 
-      fetch(`/api/goals?id=${id}`, {
-        method: 'DELETE',
-      }).catch((err) => console.warn('Failed to delete goal from MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch(`/api/goals?id=${id}`, {
+          method: 'DELETE',
+          headers,
+        });
+      } catch (err) {
+        console.warn('Failed to delete goal from MongoDB API', err);
+      }
     },
 
     toggleMilestone: async (goalId, milestoneId) => {
@@ -127,11 +148,16 @@ export const useGoalStore = create<GoalState>((set, get) => {
       }));
 
       if (updatedGoal) {
-        fetch('/api/goals', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedGoal),
-        }).catch((err) => console.warn('Failed to update milestone in MongoDB API', err));
+        try {
+          const headers = await getAuthHeaders();
+          await fetch('/api/goals', {
+            method: 'PUT',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedGoal),
+          });
+        } catch (err) {
+          console.warn('Failed to update milestone in MongoDB API', err);
+        }
       }
     },
 
@@ -157,11 +183,16 @@ export const useGoalStore = create<GoalState>((set, get) => {
       }));
 
       if (updatedGoal) {
-        fetch('/api/goals', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedGoal),
-        }).catch((err) => console.warn('Failed to add milestone in MongoDB API', err));
+        try {
+          const headers = await getAuthHeaders();
+          await fetch('/api/goals', {
+            method: 'PUT',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedGoal),
+          });
+        } catch (err) {
+          console.warn('Failed to add milestone in MongoDB API', err);
+        }
       }
     },
 
@@ -170,3 +201,4 @@ export const useGoalStore = create<GoalState>((set, get) => {
     resetGoals: () => set({ goals: [] }),
   };
 });
+

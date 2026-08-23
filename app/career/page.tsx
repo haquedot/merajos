@@ -40,8 +40,10 @@ import { GridCardsSkeleton } from '../../components/ui/Skeleton';
 import { SubjectPlanCard } from '../../components/career/SubjectPlanCard';
 import { AddSubjectModal } from '../../components/career/AddSubjectModal';
 import { AddTopicModal } from '../../components/career/AddTopicModal';
+import { ShareSubjectModal } from '../../components/career/ShareSubjectModal';
 import { ConfirmDeleteModal } from '../../components/modals/ConfirmDeleteModal';
 import { PRESET_SUBJECT_PLANS } from '../../lib/careerPresets';
+import { SubjectPlan } from '../../types';
 
 export default function CareerPage() {
   const [activeTab, setActiveTab] = useState<CareerTab>('roadmaps');
@@ -50,6 +52,7 @@ export default function CareerPage() {
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
+  const [sharingPlan, setSharingPlan] = useState<SubjectPlan | null>(null);
   const [isDSAModalOpen, setIsDSAModalOpen] = useState(false);
   const [editingDSA, setEditingDSA] = useState<DSATopic | null>(null);
   const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
@@ -495,6 +498,7 @@ export default function CareerPage() {
                       key={plan.id}
                       plan={plan}
                       onAddTopic={(subjectId) => setActiveSubjectIdForTopic(subjectId)}
+                      onShare={(planToShare) => setSharingPlan(planToShare)}
                     />
                   ))}
                 </div>
@@ -1240,6 +1244,13 @@ export default function CareerPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Share Subject Plan Modal */}
+      <ShareSubjectModal
+        isOpen={sharingPlan !== null}
+        onClose={() => setSharingPlan(null)}
+        plan={sharingPlan}
+      />
 
       {/* Reusable Confirm Delete Modal */}
       <ConfirmDeleteModal

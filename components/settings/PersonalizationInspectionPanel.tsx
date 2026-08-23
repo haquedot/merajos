@@ -8,10 +8,13 @@ import { DerivedSignal } from '../../lib/personalization/types';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/Badge';
 
+import { seedPersonalizationTestData } from '../../lib/personalization/utils/seedPersonalizationData';
+
 export const PersonalizationInspectionPanel: React.FC = () => {
   const { preferences, updatePreferences, resetAllBehavioralData } = usePersonalizationStore();
   const [signals, setSignals] = useState<DerivedSignal[]>([]);
   const [isResetting, setIsResetting] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const [resetMsg, setResetMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,6 +22,21 @@ export const PersonalizationInspectionPanel: React.FC = () => {
       setSignals(res);
     });
   }, []);
+
+  const handleSeed = async () => {
+    setIsSeeding(true);
+    try {
+      await seedPersonalizationTestData();
+      const res = await aggregateUserSignals();
+      setSignals(res);
+      setResetMsg('Successfully seeded sample test data into Dexie!');
+      setTimeout(() => setResetMsg(null), 3000);
+    } catch (err: any) {
+      setResetMsg(`Seeding failed: ${err.message}`);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const handleReset = async () => {
     setIsResetting(true);
@@ -54,16 +72,29 @@ export const PersonalizationInspectionPanel: React.FC = () => {
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleReset}
-          disabled={isResetting}
-          className="text-xs font-bold border-rose-200 text-rose-600 dark:border-rose-900/50 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-1.5 shrink-0"
-        >
-          <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} />
-          <span>Reset Learned Signals</span>
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSeed}
+            disabled={isSeeding}
+            className="text-xs font-bold border-indigo-200 text-indigo-600 dark:border-indigo-900/50 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 flex items-center gap-1.5"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${isSeeding ? 'animate-spin' : ''}`} />
+            <span>Seed Test Data</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReset}
+            disabled={isResetting}
+            className="text-xs font-bold border-rose-200 text-rose-600 dark:border-rose-900/50 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-1.5"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} />
+            <span>Reset Signals</span>
+          </Button>
+        </div>
       </div>
 
       {resetMsg && (

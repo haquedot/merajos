@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Project, ProjectFeature, ProjectBug, ProjectInvoice } from '../types';
-import { isUserAuthenticated } from '../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../lib/authCheck';
 
 interface ProjectState {
   projects: Project[];
@@ -32,16 +32,20 @@ interface ProjectState {
 export const useProjectStore = create<ProjectState>((set, get) => {
   // Sync with MongoDB API on store load (if authenticated)
   if (typeof window !== 'undefined') {
-    isUserAuthenticated().then((authenticated) => {
+    isUserAuthenticated().then(async (authenticated) => {
       if (!authenticated) return;
-      fetch('/api/projects')
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/projects', { headers });
+        if (res.ok) {
+          const data = await res.json();
           if (data && data.projects) {
             set({ projects: data.projects });
           }
-        })
-        .catch((err) => console.warn('[MongoDB ProjectSync] Offline or API unreachable', err));
+        }
+      } catch (err) {
+        console.warn('[MongoDB ProjectSync] Offline or API unreachable', err);
+      }
     });
   }
 
@@ -53,7 +57,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       const authenticated = await isUserAuthenticated();
       if (!authenticated) return;
       try {
-        const res = await fetch('/api/projects');
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/projects', { headers });
         if (!res.ok) return;
         const data = await res.json();
         if (data.projects) {
@@ -79,11 +84,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         activeProjectId: state.activeProjectId || newId,
       }));
 
-      fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProj),
-      }).catch((err) => console.warn('Failed to save project to MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify(newProj),
+        });
+      } catch (err) {
+        console.warn('Failed to save project to MongoDB API', err);
+      }
 
       return newId;
     },
@@ -95,11 +105,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         ),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...updates }),
-      }).catch((err) => console.warn('Failed to update project in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, ...updates }),
+        });
+      } catch (err) {
+        console.warn('Failed to update project in MongoDB API', err);
+      }
     },
 
     deleteProject: async (id) => {
@@ -108,10 +123,17 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         activeProjectId: state.activeProjectId === id ? '' : state.activeProjectId,
       }));
 
-      fetch(`/api/projects?id=${id}`, {
-        method: 'DELETE',
-      }).catch((err) => console.warn('Failed to delete project from MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch(`/api/projects?id=${id}`, {
+          method: 'DELETE',
+          headers,
+        });
+      } catch (err) {
+        console.warn('Failed to delete project from MongoDB API', err);
+      }
     },
+
 
     setActiveProjectId: (id) => set({ activeProjectId: id }),
 
