@@ -25,6 +25,7 @@ interface ProjectState {
   deleteInvoice: (projectId: string, invoiceId: string) => Promise<void>;
 
   saveProjectNotes: (projectId: string, notes: string) => Promise<void>;
+  updateProjectSharing: (projectId: string, sharedWith: Project['sharedWith']) => Promise<void>;
   
   resetProjects: () => void;
 }
@@ -416,6 +417,23 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         });
       } catch (err) {
         console.warn('Failed to save project notes to API', err);
+      }
+    },
+
+    updateProjectSharing: async (projectId, sharedWith) => {
+      set((state) => ({
+        projects: state.projects.map((p) => (p.id === projectId ? { ...p, sharedWith } : p)),
+      }));
+
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, sharedWith }),
+        });
+      } catch (err) {
+        console.warn('Failed to save share settings to API', err);
       }
     },
 

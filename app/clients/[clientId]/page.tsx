@@ -30,6 +30,11 @@ import {
   Sparkles,
   ChevronRight,
   Send,
+  Share2,
+  Lock,
+  Eye,
+  Shield,
+  Edit3,
 } from 'lucide-react';
 import { useProjectStore } from '../../../store/useProjectStore';
 import { useTaskStore } from '../../../store/useTaskStore';
@@ -45,11 +50,14 @@ import { DatePicker } from '../../../components/ui/date-picker';
 import { Button } from '../../../components/ui/button';
 import { getProjectTheme } from '../../../lib/projectTheme';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/tabs';
+import { useGoogleAuth } from '../../../providers/GoogleAuthProvider';
+import { ShareClientModal } from '../../../components/clients/ShareClientModal';
 
 export default function ClientDetailPage() {
   const params = useParams();
   const router = useRouter();
   const clientId = params?.clientId as string;
+  const { session } = useGoogleAuth();
 
   const {
     projects,
@@ -66,6 +74,7 @@ export default function ClientDetailPage() {
     updateInvoiceStatus,
     deleteInvoice,
     saveProjectNotes,
+    updateProjectSharing,
   } = useProjectStore();
 
   const { addTask } = useTaskStore();
@@ -73,7 +82,7 @@ export default function ClientDetailPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'features' | 'bugs' | 'invoices' | 'notes'>('overview');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Form States
+  // Form & Modal States
   const [newFeatureTitle, setNewFeatureTitle] = useState('');
   const [newFeaturePriority, setNewFeaturePriority] = useState<'low' | 'medium' | 'high'>('medium');
 
@@ -89,6 +98,7 @@ export default function ClientDetailPage() {
   const [notesText, setNotesText] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [deletingConfirm, setDeletingConfirm] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Copy Task Deadline Modal States
   const [isCopyTaskModalOpen, setIsCopyTaskModalOpen] = useState(false);
@@ -131,6 +141,50 @@ export default function ClientDetailPage() {
     );
   }
 
+  // Calculate User Role & Access Controls
+  const userEmail = session?.email?.toLowerCase();
+  const userId = session?.id;
+
+  const isOwner =
+    !project.userId ||
+    !project.userEmail ||
+    (userId && project.userId === userId) ||
+    (userEmail && project.userEmail?.toLowerCase() === userEmail);
+
+  const sharedEntry = userEmail
+    ? project.sharedWith?.find((s) => s.email.toLowerCase() === userEmail)
+    : undefined;
+
+  const userRole: 'owner' | 'edit' | 'view' | 'none' = isOwner
+    ? 'owner'
+    : sharedEntry
+    ? sharedEntry.role
+    : 'none';
+
+  const isReadOnly = userRole === 'view';
+  const canEdit = userRole === 'owner' || userRole === 'edit';
+  const canShare = userRole === 'owner' || userRole === 'edit';
+  const canDeleteWorkspace = userRole === 'owner';
+
+  // Access Denied View for Uninvited Private Access
+  if (userRole === 'none') {
+    return (
+      <div className="p-12 text-center max-w-md mx-auto space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+          <Lock className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-black text-gray-900 dark:text-white">Private Client Workspace</h2>
+        <p className="text-xs text-gray-500 leading-relaxed">
+          This workspace is private and has not been shared with your account (<strong>{userEmail || 'Guest'}</strong>). Please contact the workspace owner to request access.
+        </p>
+        <Link href="/clients" className="btn-primary px-4 py-2 rounded-xl text-xs inline-flex items-center gap-2">
+          <ArrowLeft className="w-4 h-4" />
+          <span>Return to Client Hub</span>
+        </Link>
+      </div>
+    );
+  }
+
   // Calculate Metrics
   const completedFeatures = project.features ? project.features.filter((f) => f.completed).length : 0;
   const totalFeatures = project.features ? project.features.length : 0;
@@ -140,6 +194,7 @@ export default function ClientDetailPage() {
 
   // Prompt Deadline before Copying Feature to Task
   const handleCopyFeatureToTask = (feature: ProjectFeature) => {
+    if (isReadOnly) return;
     setCopyTaskTitle(`Feature: ${feature.title} (${project.name})`);
     setCopyTaskCategory('Client');
     setCopyTaskPriority(feature.priority === 'high' ? 'high' : 'medium');
@@ -151,6 +206,7 @@ export default function ClientDetailPage() {
 
   // Prompt Deadline before Copying Bug to Task
   const handleCopyBugToTask = (bug: ProjectBug) => {
+    if (isReadOnly) return;
     setCopyTaskTitle(`Fix Bug: ${bug.title} (${project.name})`);
     setCopyTaskCategory('Client');
     setCopyTaskPriority(bug.severity === 'critical' || bug.severity === 'high' ? 'urgent' : 'high');
@@ -163,6 +219,7 @@ export default function ClientDetailPage() {
   // Confirm Task Creation with Chosen Deadline
   const handleConfirmCopyTaskSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) return;
     const selectedDueDate = copyTaskDueDate || new Date().toISOString().split('T')[0];
     addTask({
       title: copyTaskTitle,
@@ -183,7 +240,7 @@ export default function ClientDetailPage() {
   // Handlers
   const handleAddFeatureSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFeatureTitle.trim()) return;
+    if (isReadOnly || !newFeatureTitle.trim()) return;
     await addFeature(project.id, {
       title: newFeatureTitle.trim(),
       completed: false,
@@ -195,7 +252,7 @@ export default function ClientDetailPage() {
 
   const handleAddBugSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newBugTitle.trim()) return;
+    if (isReadOnly || !newBugTitle.trim()) return;
     await addBug(project.id, {
       title: newBugTitle.trim(),
       severity: newBugSeverity,
@@ -208,7 +265,7 @@ export default function ClientDetailPage() {
 
   const handleAddInvoiceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newInvoiceNumber.trim() || !newInvoiceAmount) return;
+    if (isReadOnly || !newInvoiceNumber.trim() || !newInvoiceAmount) return;
     await addInvoice(project.id, {
       invoiceNumber: newInvoiceNumber.trim(),
       amount: Number(newInvoiceAmount),
@@ -222,6 +279,7 @@ export default function ClientDetailPage() {
   };
 
   const handleSaveNotes = async () => {
+    if (isReadOnly) return;
     setIsSavingNotes(true);
     await saveProjectNotes(project.id, notesText);
     setIsSavingNotes(false);
@@ -229,8 +287,14 @@ export default function ClientDetailPage() {
   };
 
   const handleDeleteProject = async () => {
+    if (!canDeleteWorkspace) return;
     await deleteProject(project.id);
     router.push('/clients');
+  };
+
+  const handleUpdateShareSettings = async (sharedWith: any[]) => {
+    await updateProjectSharing(project.id, sharedWith);
+    showToast('Share settings updated successfully!');
   };
 
   return (
@@ -248,6 +312,17 @@ export default function ClientDetailPage() {
         </motion.div>
       )}
 
+      {/* View Only Access Warning Banner */}
+      {isReadOnly && (
+        <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-900 dark:text-blue-200 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 font-bold">
+            <Eye className="w-4 h-4 text-blue-500 shrink-0" />
+            <span>You have View Only access to this client workspace.</span>
+          </div>
+          <Badge variant="secondary" size="sm">Read Only</Badge>
+        </div>
+      )}
+
       {/* Header & Navigation */}
       <div className="space-y-3">
         <Link
@@ -262,18 +337,36 @@ export default function ClientDetailPage() {
           icon={Briefcase}
           iconBgColor={theme.bgLight + ' ' + theme.text}
           title={project.name}
-          badgeText={project.status.replace('_', ' ')}
+          badgeText={
+            userRole === 'owner'
+              ? `${project.status.replace('_', ' ')} (Owner)`
+              : userRole === 'edit'
+              ? `${project.status.replace('_', ' ')} (Editor)`
+              : `${project.status.replace('_', ' ')} (Viewer)`
+          }
           badgeVariant={project.status === 'completed' ? 'emerald' : theme.headerBadgeVariant}
           subtitle={`Client Workspace for ${project.clientName || 'Client Project'}`}
           actions={
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setDeletingConfirm(true)}
-                className="bg-rose-500/10 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-500/20 dark:hover:bg-rose-500/50 flex items-center gap-1.5 cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete Workspace</span>
-              </button>
+              {canShare && (
+                <button
+                  onClick={() => setIsShareModalOpen(true)}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-white transition-colors cursor-pointer ${theme.bg} ${theme.bgHover}`}
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>Share</span>
+                </button>
+              )}
+
+              {canDeleteWorkspace && (
+                <button
+                  onClick={() => setDeletingConfirm(true)}
+                  className="bg-rose-500/10 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-500/20 dark:hover:bg-rose-500/50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Workspace</span>
+                </button>
+              )}
             </div>
           }
         />
@@ -281,7 +374,7 @@ export default function ClientDetailPage() {
 
       {/* Standardized UI Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as any)} className="w-full space-y-6">
-        <TabsList className='h-9'>
+        <TabsList>
           <TabsTrigger value="overview">
             <Building2 className="w-3.5 h-3.5" />
             <span>Overview & Info</span>
@@ -437,31 +530,33 @@ export default function ClientDetailPage() {
                 </span>
               </div>
 
-              {/* Add Feature Form */}
-              <form onSubmit={handleAddFeatureSubmit} className="flex flex-col sm:flex-row gap-2">
-                <div className="flex-1">
-                  <Input
-                    value={newFeatureTitle}
-                    onChange={(e) => setNewFeatureTitle(e.target.value)}
-                    placeholder="Enter new feature requirement..."
-                  />
-                </div>
-                <div className="w-full sm:w-44">
-                  <Select
-                    value={newFeaturePriority}
-                    onValueChange={(val) => setNewFeaturePriority(val as any)}
-                    options={[
-                      { value: 'low', label: 'Low Priority' },
-                      { value: 'medium', label: 'Medium Priority' },
-                      { value: 'high', label: 'High Priority' },
-                    ]}
-                  />
-                </div>
-                <Button type="submit" className="shrink-0 flex items-center gap-1">
-                  <Plus className="w-4 h-4" />
-                  <span>Add Feature</span>
-                </Button>
-              </form>
+              {/* Add Feature Form (Hidden if Read Only) */}
+              {!isReadOnly && (
+                <form onSubmit={handleAddFeatureSubmit} className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex-1">
+                    <Input
+                      value={newFeatureTitle}
+                      onChange={(e) => setNewFeatureTitle(e.target.value)}
+                      placeholder="Enter new feature requirement..."
+                    />
+                  </div>
+                  <div className="w-full sm:w-44">
+                    <Select
+                      value={newFeaturePriority}
+                      onValueChange={(val) => setNewFeaturePriority(val as any)}
+                      options={[
+                        { value: 'low', label: 'Low Priority' },
+                        { value: 'medium', label: 'Medium Priority' },
+                        { value: 'high', label: 'High Priority' },
+                      ]}
+                    />
+                  </div>
+                  <Button type="submit" className="shrink-0 flex items-center gap-1">
+                    <Plus className="w-4 h-4" />
+                    <span>Add Feature</span>
+                  </Button>
+                </form>
+              )}
 
               {/* Feature Cards List */}
               <div className="space-y-3 pt-2">
@@ -479,12 +574,13 @@ export default function ClientDetailPage() {
                     >
                       <div className="flex items-start tems-center gap-3 min-w-0 flex-1 w-full sm:w-auto">
                         <button
+                          disabled={isReadOnly}
                           onClick={() => toggleFeature(project.id, feature.id)}
                           className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs transition-colors shrink-0 mt-0.5 sm:mt-0 ${
                             feature.completed
                               ? `${theme.bg} text-white`
                               : 'border border-gray-300 dark:border-gray-600 hover:border-purple-500'
-                          }`}
+                          } ${isReadOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                         >
                           {feature.completed && '✓'}
                         </button>
@@ -504,21 +600,25 @@ export default function ClientDetailPage() {
                           {feature.priority || 'medium'}
                         </Badge>
 
-                        <button
-                          onClick={() => handleCopyFeatureToTask(feature)}
-                          className={`cursor-pointer px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ${theme.bgLight} ${theme.text}`}
-                          title="Copy feature to Task module with deadline"
-                        >
-                          <Copy className="w-3 h-3" />
-                          <span>Copy to Task</span>
-                        </button>
+                        {!isReadOnly && (
+                          <button
+                            onClick={() => handleCopyFeatureToTask(feature)}
+                            className={`cursor-pointer px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ${theme.bgLight} ${theme.text}`}
+                            title="Copy feature to Task module with deadline"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>Copy to Task</span>
+                          </button>
+                        )}
 
-                        <button
-                          onClick={() => deleteFeature(project.id, feature.id)}
-                          className="cursor-pointer p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {!isReadOnly && (
+                          <button
+                            onClick={() => deleteFeature(project.id, feature.id)}
+                            className="cursor-pointer p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))
@@ -537,13 +637,15 @@ export default function ClientDetailPage() {
                   <h3 className="text-base font-black text-gray-900 dark:text-white">Bug Tracker & Issues</h3>
                   <p className="text-xs text-gray-500">Log software bugs, track resolution status, and copy urgent bugs to tasks.</p>
                 </div>
-                <button
-                  onClick={() => setIsBugModalOpen(true)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-white transition-colors ${theme.bg} ${theme.bgHover}`}
-                >
-                  <Bug className="w-4 h-4" />
-                  <span>Report Bug</span>
-                </button>
+                {!isReadOnly && (
+                  <button
+                    onClick={() => setIsBugModalOpen(true)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-white transition-colors ${theme.bg} ${theme.bgHover}`}
+                  >
+                    <Bug className="w-4 h-4" />
+                    <span>Report Bug</span>
+                  </button>
+                )}
               </div>
 
               <div className="space-y-3 pt-2">
@@ -571,6 +673,7 @@ export default function ClientDetailPage() {
                       <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800">
                         <div className="w-28">
                           <Select
+                            disabled={isReadOnly}
                             value={bug.status}
                             onValueChange={(val) => updateBugStatus(project.id, bug.id, val as any)}
                             options={[
@@ -581,21 +684,25 @@ export default function ClientDetailPage() {
                           />
                         </div>
 
-                        <button
-                          onClick={() => handleCopyBugToTask(bug)}
-                          className="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold flex items-center gap-1 transition-colors"
-                          title="Copy bug to Task module with deadline"
-                        >
-                          <Copy className="w-3 h-3" />
-                          <span>Copy to Task</span>
-                        </button>
+                        {!isReadOnly && (
+                          <button
+                            onClick={() => handleCopyBugToTask(bug)}
+                            className="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold flex items-center gap-1 transition-colors"
+                            title="Copy bug to Task module with deadline"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>Copy to Task</span>
+                          </button>
+                        )}
 
-                        <button
-                          onClick={() => deleteBug(project.id, bug.id)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {!isReadOnly && (
+                          <button
+                            onClick={() => deleteBug(project.id, bug.id)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))
@@ -614,13 +721,15 @@ export default function ClientDetailPage() {
                   <h3 className="text-base font-black text-gray-900 dark:text-white">Invoices & Payment Milestones</h3>
                   <p className="text-xs text-gray-500">Track client billing, due dates, and paid invoices.</p>
                 </div>
-                <button
-                  onClick={() => setIsInvoiceModalOpen(true)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-white transition-colors ${theme.bg} ${theme.bgHover}`}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create Invoice</span>
-                </button>
+                {!isReadOnly && (
+                  <button
+                    onClick={() => setIsInvoiceModalOpen(true)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-white transition-colors ${theme.bg} ${theme.bgHover}`}
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create Invoice</span>
+                  </button>
+                )}
               </div>
 
               <div className="space-y-3 pt-2">
@@ -651,6 +760,7 @@ export default function ClientDetailPage() {
                       <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800">
                         <div className="w-32">
                           <Select
+                            disabled={isReadOnly}
                             value={inv.status}
                             onValueChange={(val) => updateInvoiceStatus(project.id, inv.id, val as any)}
                             options={[
@@ -661,12 +771,14 @@ export default function ClientDetailPage() {
                           />
                         </div>
 
-                        <button
-                          onClick={() => deleteInvoice(project.id, inv.id)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {!isReadOnly && (
+                          <button
+                            onClick={() => deleteInvoice(project.id, inv.id)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))
@@ -685,27 +797,42 @@ export default function ClientDetailPage() {
                   <h3 className="text-base font-black text-gray-900 dark:text-white">Project Notes & Specifications</h3>
                   <p className="text-xs text-gray-500">Save client meeting notes, scope documents, or access links.</p>
                 </div>
-                <button
-                  onClick={handleSaveNotes}
-                  disabled={isSavingNotes}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-white transition-colors cursor-pointer ${theme.bg} ${theme.bgHover}`}
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{isSavingNotes ? 'Saving...' : 'Save Notes'}</span>
-                </button>
+                {!isReadOnly && (
+                  <button
+                    onClick={handleSaveNotes}
+                    disabled={isSavingNotes}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-white transition-colors cursor-pointer ${theme.bg} ${theme.bgHover}`}
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{isSavingNotes ? 'Saving...' : 'Save Notes'}</span>
+                  </button>
+                )}
               </div>
 
               <textarea
+                readOnly={isReadOnly}
                 value={notesText}
                 onChange={(e) => setNotesText(e.target.value)}
                 rows={12}
                 placeholder="Type client project notes, requirements, links, or instructions..."
-                className="w-full p-4 text-xs font-mono rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 leading-relaxed resize-y"
+                className={`w-full p-4 text-xs font-mono rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 leading-relaxed resize-y ${
+                  isReadOnly ? 'cursor-not-allowed opacity-80' : ''
+                }`}
               />
             </div>
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* SHARE CLIENT WORKSPACE MODAL */}
+      {isShareModalOpen && (
+        <ShareClientModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          project={project}
+          onUpdateShareSettings={handleUpdateShareSettings}
+        />
+      )}
 
       {/* COPY TASK DEADLINE MODAL */}
       <Modal

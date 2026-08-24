@@ -74,6 +74,12 @@ export interface ProjectInvoice {
   notes?: string;
 }
 
+export interface ProjectSharedUser {
+  email: string;
+  role: 'view' | 'edit';
+  addedAt?: string;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -96,6 +102,9 @@ export interface Project {
   invoices?: ProjectInvoice[];
   techStack: string[];
   notes?: string;
+  sharedWith?: ProjectSharedUser[];
+  userId?: string;
+  userEmail?: string;
   createdAt?: string;
   updatedAt?: string;
 }
