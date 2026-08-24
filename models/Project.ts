@@ -33,6 +33,12 @@ const ProjectInvoiceSchema = new Schema({
   notes: { type: String, default: '' },
 });
 
+const ProjectSharedUserSchema = new Schema({
+  email: { type: String, required: true },
+  role: { type: String, enum: ['view', 'edit'], default: 'view' },
+  addedAt: { type: String },
+});
+
 const ProjectSchema: Schema = new Schema(
   {
     _id: { type: String, required: true },
@@ -56,6 +62,7 @@ const ProjectSchema: Schema = new Schema(
     invoices: [ProjectInvoiceSchema],
     techStack: [{ type: String }],
     notes: { type: String, default: '' },
+    sharedWith: [ProjectSharedUserSchema],
     userId: { type: String, index: true },
     userEmail: { type: String, index: true },
   },

@@ -12,9 +12,13 @@ export async function GET(req: Request) {
     const userId = auth.user.userId;
     const userEmail = auth.user.userEmail;
 
-    const projects = await Project.find({
-      $or: [{ userId }, { userEmail }, { userId: { $exists: false } }],
-    })
+    const queryConditions: any[] = [{ userId }, { userId: { $exists: false } }];
+    if (userEmail) {
+      queryConditions.push({ userEmail });
+      queryConditions.push({ 'sharedWith.email': userEmail.toLowerCase() });
+    }
+
+    const projects = await Project.find({ $or: queryConditions })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -63,15 +67,25 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Project id is required' }, { status: 400 });
     }
 
-    const updatedProj = await Project.findOneAndUpdate(
-      { _id: id, $or: [{ userId }, { userEmail }, { userId: { $exists: false } }] },
-      { $set: { ...updates, userId, userEmail } },
+    // Check project ownership or edit access
+    const existing = await Project.findById(id).lean();
+    if (!existing) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    const isOwner = (existing as any).userId === userId || (userEmail && (existing as any).userEmail === userEmail) || !(existing as any).userId;
+    const sharedEntry = userEmail && (existing as any).sharedWith?.find((s: any) => s.email.toLowerCase() === userEmail.toLowerCase());
+    const isEditor = sharedEntry && sharedEntry.role === 'edit';
+
+    if (!isOwner && !isEditor) {
+      return NextResponse.json({ error: 'Access denied: You have view-only permission for this workspace.' }, { status: 403 });
+    }
+
+    const updatedProj = await Project.findByIdAndUpdate(
+      id,
+      { $set: updates },
       { returnDocument: 'after' }
     ).lean();
-
-    if (!updatedProj) {
-      return NextResponse.json({ error: 'Project not found or access denied' }, { status: 404 });
-    }
 
     return NextResponse.json({ project: { ...updatedProj, id: (updatedProj as any)._id } });
   } catch (error: any) {
