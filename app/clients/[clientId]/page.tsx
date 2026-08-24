@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { useProjectStore } from '../../../store/useProjectStore';
 import { useTaskStore } from '../../../store/useTaskStore';
-import { ProjectFeature, ProjectBug, ProjectInvoice, Project } from '../../../types';
+import { ProjectFeature, ProjectBug, ProjectInvoice, Project, Category } from '../../../types';
 import { Badge } from '../../../components/ui/Badge';
 import { CircularProgress } from '../../../components/ui/CircularProgress';
 import { Modal } from '../../../components/ui/Modal';
@@ -89,6 +89,15 @@ export default function ClientDetailPage() {
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [deletingConfirm, setDeletingConfirm] = useState(false);
 
+  // Copy Task Deadline Modal States
+  const [isCopyTaskModalOpen, setIsCopyTaskModalOpen] = useState(false);
+  const [copyTaskTitle, setCopyTaskTitle] = useState('');
+  const [copyTaskCategory, setCopyTaskCategory] = useState<Category>('Client');
+  const [copyTaskPriority, setCopyTaskPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [copyTaskDueDate, setCopyTaskDueDate] = useState('');
+  const [copyTaskTags, setCopyTaskTags] = useState<string[]>([]);
+  const [copyTaskEstHours, setCopyTaskEstHours] = useState<number>(1);
+
   useEffect(() => {
     loadFromDB();
   }, []);
@@ -128,38 +137,46 @@ export default function ClientDetailPage() {
   const totalInvoiced = (project.invoices || []).reduce((acc, inv) => acc + inv.amount, 0);
   const totalPaid = (project.invoices || []).filter((inv) => inv.status === 'paid').reduce((acc, inv) => acc + inv.amount, 0);
 
-  // Copy Feature to Task
+  // Prompt Deadline before Copying Feature to Task
   const handleCopyFeatureToTask = (feature: ProjectFeature) => {
-    addTask({
-      title: `Feature: ${feature.title} (${project.name})`,
-      category: 'Client',
-      priority: feature.priority === 'high' ? 'high' : 'medium',
-      status: 'todo',
-      tags: ['client', 'feature', project.clientName || 'work'],
-      dueDate: project.deadline || new Date().toISOString().split('T')[0],
-      estimatedHours: 1,
-      actualHours: 0,
-      recurring: 'none',
-      mit: false,
-    });
-    showToast(`"Feature: ${feature.title}" copied to Tasks!`);
+    setCopyTaskTitle(`Feature: ${feature.title} (${project.name})`);
+    setCopyTaskCategory('Client');
+    setCopyTaskPriority(feature.priority === 'high' ? 'high' : 'medium');
+    setCopyTaskTags(['client', 'feature', project.clientName || 'work']);
+    setCopyTaskDueDate(project.deadline || new Date().toISOString().split('T')[0]);
+    setCopyTaskEstHours(1);
+    setIsCopyTaskModalOpen(true);
   };
 
-  // Copy Bug to Task
+  // Prompt Deadline before Copying Bug to Task
   const handleCopyBugToTask = (bug: ProjectBug) => {
+    setCopyTaskTitle(`Fix Bug: ${bug.title} (${project.name})`);
+    setCopyTaskCategory('Client');
+    setCopyTaskPriority(bug.severity === 'critical' || bug.severity === 'high' ? 'urgent' : 'high');
+    setCopyTaskTags(['client', 'bug', 'urgent']);
+    setCopyTaskDueDate(project.deadline || new Date().toISOString().split('T')[0]);
+    setCopyTaskEstHours(1);
+    setIsCopyTaskModalOpen(true);
+  };
+
+  // Confirm Task Creation with Chosen Deadline
+  const handleConfirmCopyTaskSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const selectedDueDate = copyTaskDueDate || new Date().toISOString().split('T')[0];
     addTask({
-      title: `Fix Bug: ${bug.title} (${project.name})`,
-      category: 'Client',
-      priority: bug.severity === 'critical' || bug.severity === 'high' ? 'urgent' : 'high',
+      title: copyTaskTitle,
+      category: copyTaskCategory,
+      priority: copyTaskPriority,
       status: 'todo',
-      tags: ['client', 'bug', 'urgent'],
-      dueDate: new Date().toISOString().split('T')[0],
-      estimatedHours: 1,
+      tags: copyTaskTags,
+      dueDate: selectedDueDate,
+      estimatedHours: copyTaskEstHours,
       actualHours: 0,
       recurring: 'none',
       mit: false,
     });
-    showToast(`"Fix Bug: ${bug.title}" copied to Tasks!`);
+    setIsCopyTaskModalOpen(false);
+    showToast(`Task created with deadline: ${selectedDueDate}`);
   };
 
   // Handlers
@@ -488,7 +505,7 @@ export default function ClientDetailPage() {
                       <button
                         onClick={() => handleCopyFeatureToTask(feature)}
                         className={`cursor-pointer px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ${theme.bgLight} ${theme.text}`}
-                        title="Copy feature to Task module"
+                        title="Copy feature to Task module with deadline"
                       >
                         <Copy className="w-3 h-3" />
                         <span>Copy to Task</span>
@@ -565,7 +582,7 @@ export default function ClientDetailPage() {
                       <button
                         onClick={() => handleCopyBugToTask(bug)}
                         className="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold flex items-center gap-1 transition-colors"
-                        title="Copy bug to Task module"
+                        title="Copy bug to Task module with deadline"
                       >
                         <Copy className="w-3 h-3" />
                         <span>Copy to Task</span>
@@ -599,8 +616,8 @@ export default function ClientDetailPage() {
                 onClick={() => setIsInvoiceModalOpen(true)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-white transition-colors ${theme.bg} ${theme.bgHover}`}
               >
-                <Receipt className="w-4 h-4" />
-                <span>New Invoice</span>
+                <Plus className="w-4 h-4" />
+                <span>Create Invoice</span>
               </button>
             </div>
 
@@ -608,8 +625,8 @@ export default function ClientDetailPage() {
               {!project.invoices || project.invoices.length === 0 ? (
                 <div className="p-8 text-center bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 space-y-2">
                   <Receipt className="w-8 h-8 text-gray-400 mx-auto" />
-                  <p className="text-xs font-bold text-gray-700 dark:text-gray-300">No invoices logged yet.</p>
-                  <p className="text-[11px] text-gray-400">Add an invoice milestone to track payments!</p>
+                  <p className="text-xs font-bold text-gray-700 dark:text-gray-300">No invoices issued yet.</p>
+                  <p className="text-[11px] text-gray-400">Create an invoice milestone to track payments.</p>
                 </div>
               ) : (
                 project.invoices.map((inv) => (
@@ -617,42 +634,37 @@ export default function ClientDetailPage() {
                     key={inv.id}
                     className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                   >
-                    <div className="space-y-0.5 min-w-0 flex-1 w-full sm:w-auto">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-extrabold text-xs text-gray-900 dark:text-white">
-                          Invoice #{inv.invoiceNumber}
-                        </span>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-gray-900 dark:text-white">{inv.invoiceNumber}</span>
                         <Badge variant={inv.status === 'paid' ? 'success' : inv.status === 'overdue' ? 'danger' : 'warning'} size="sm">
                           {inv.status}
                         </Badge>
                       </div>
-                      <span className="text-[11px] text-gray-400 block">Due Date: {inv.dueDate}</span>
+                      <p className="text-[11px] text-gray-500">
+                        Amount: <strong className="text-gray-800 dark:text-gray-200">{project.currency || '$'}{inv.amount.toLocaleString()}</strong> | Due: {inv.dueDate || 'N/A'}
+                      </p>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800 shrink-0">
-                      <span className="font-black text-sm text-gray-900 dark:text-white">
-                        {project.currency || '$'}{inv.amount.toLocaleString()}
-                      </span>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateInvoiceStatus(project.id, inv.id, inv.status === 'paid' ? 'unpaid' : 'paid')}
-                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors ${
-                            inv.status === 'paid'
-                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
-                              : `${theme.bg} text-white ${theme.bgHover}`
-                          }`}
-                        >
-                          {inv.status === 'paid' ? 'Mark Unpaid' : 'Mark Paid'}
-                        </button>
-
-                        <button
-                          onClick={() => deleteInvoice(project.id, inv.id)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800">
+                      <div className="w-32">
+                        <Select
+                          value={inv.status}
+                          onValueChange={(val) => updateInvoiceStatus(project.id, inv.id, val as any)}
+                          options={[
+                            { value: 'unpaid', label: 'Unpaid' },
+                            { value: 'paid', label: 'Paid' },
+                            { value: 'overdue', label: 'Overdue' },
+                          ]}
+                        />
                       </div>
+
+                      <button
+                        onClick={() => deleteInvoice(project.id, inv.id)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 ))
@@ -668,13 +680,13 @@ export default function ClientDetailPage() {
           <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-black text-gray-900 dark:text-white">Project Notes & Client Feedback</h3>
-                <p className="text-xs text-gray-500">Keep meeting minutes, technical specifications, and client requirements safe.</p>
+                <h3 className="text-base font-black text-gray-900 dark:text-white">Project Notes & Specifications</h3>
+                <p className="text-xs text-gray-500">Save client meeting notes, scope documents, or access links.</p>
               </div>
               <button
                 onClick={handleSaveNotes}
                 disabled={isSavingNotes}
-                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-white transition-colors ${theme.bg} ${theme.bgHover}`}
+                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-white transition-colors cursor-pointer ${theme.bg} ${theme.bgHover}`}
               >
                 <Save className="w-4 h-4" />
                 <span>{isSavingNotes ? 'Saving...' : 'Save Notes'}</span>
@@ -682,21 +694,118 @@ export default function ClientDetailPage() {
             </div>
 
             <textarea
-              rows={12}
               value={notesText}
               onChange={(e) => setNotesText(e.target.value)}
-              placeholder="Type client meeting notes, design feedback, or system specs here..."
-              className="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 font-mono"
+              rows={12}
+              placeholder="Type client project notes, requirements, links, or instructions..."
+              className="w-full p-4 text-xs font-mono rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 leading-relaxed resize-y"
             />
           </div>
         </div>
       )}
 
+      {/* COPY TASK DEADLINE MODAL */}
+      <Modal
+        isOpen={isCopyTaskModalOpen}
+        onClose={() => setIsCopyTaskModalOpen(false)}
+        title="Set Deadline for Copied Task"
+        maxWidth="md"
+      >
+        <form onSubmit={handleConfirmCopyTaskSubmit} className="space-y-4">
+          <div>
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Task Title *</label>
+            <Input
+              value={copyTaskTitle}
+              onChange={(e) => setCopyTaskTitle(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Target Deadline (Due Date) *</label>
+            <DatePicker
+              value={copyTaskDueDate}
+              onChange={(val) => setCopyTaskDueDate(val)}
+            />
+            {/* Quick Deadline Presets */}
+            <div className="flex flex-wrap gap-1.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setCopyTaskDueDate(new Date().toISOString().split('T')[0])}
+                className="px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-[11px] font-bold text-gray-600 dark:text-gray-300 transition-colors cursor-pointer"
+              >
+                ⚡ Today
+              </button>
+              <button
+                type="button"
+                onClick={() => setCopyTaskDueDate(new Date(Date.now() + 86400000).toISOString().split('T')[0])}
+                className="px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-[11px] font-bold text-gray-600 dark:text-gray-300 transition-colors cursor-pointer"
+              >
+                📅 Tomorrow
+              </button>
+              <button
+                type="button"
+                onClick={() => setCopyTaskDueDate(new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0])}
+                className="px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-[11px] font-bold text-gray-600 dark:text-gray-300 transition-colors cursor-pointer"
+              >
+                🗓️ In 1 Week
+              </button>
+              {project.deadline && (
+                <button
+                  type="button"
+                  onClick={() => setCopyTaskDueDate(project.deadline!)}
+                  className="px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-[11px] font-bold transition-colors cursor-pointer"
+                >
+                  🎯 Project Deadline ({project.deadline})
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Priority</label>
+              <Select
+                value={copyTaskPriority}
+                onValueChange={(val) => setCopyTaskPriority(val as any)}
+                options={[
+                  { value: 'low', label: 'Low' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'high', label: 'High' },
+                  { value: 'urgent', label: 'Urgent' },
+                ]}
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">Estimated Hours</label>
+              <Input
+                type="number"
+                min="0.5"
+                step="0.5"
+                value={copyTaskEstHours}
+                onChange={(e) => setCopyTaskEstHours(Number(e.target.value) || 1)}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <Button type="button" variant="ghost" onClick={() => setIsCopyTaskModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" className={`${theme.bg} text-white`}>
+              <CheckCircle2 className="w-4 h-4 mr-1.5" />
+              <span>Confirm & Add Task</span>
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
       {/* REPORT BUG MODAL */}
       <Modal
         isOpen={isBugModalOpen}
         onClose={() => setIsBugModalOpen(false)}
-        title="Report New Bug / Issue"
+        title="Report Software Bug"
         maxWidth="md"
       >
         <form onSubmit={handleAddBugSubmit} className="space-y-4">
