@@ -65,7 +65,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           set({ projects: data.projects });
         }
       } catch (err) {
-        console.warn('Failed to load projects from MongoDB API', err);
+        console.warn('Failed to load projects from API', err);
       }
     },
 
@@ -92,7 +92,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           body: JSON.stringify(newProj),
         });
       } catch (err) {
-        console.warn('Failed to save project to MongoDB API', err);
+        console.warn('Failed to save project to API', err);
       }
 
       return newId;
@@ -113,7 +113,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           body: JSON.stringify({ id, ...updates }),
         });
       } catch (err) {
-        console.warn('Failed to update project in MongoDB API', err);
+        console.warn('Failed to update project in API', err);
       }
     },
 
@@ -130,10 +130,9 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           headers,
         });
       } catch (err) {
-        console.warn('Failed to delete project from MongoDB API', err);
+        console.warn('Failed to delete project from API', err);
       }
     },
-
 
     setActiveProjectId: (id) => set({ activeProjectId: id }),
 
@@ -155,11 +154,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         projects: state.projects.map((p) => (p.id === projectId ? updatedProj : p)),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId, features: updatedFeatures, progress: newProgress }),
-      }).catch((err) => console.warn('Failed to update feature in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, features: updatedFeatures, progress: newProgress }),
+        });
+      } catch (err) {
+        console.warn('Failed to update feature in API', err);
+      }
     },
 
     addFeature: async (projectId, featureInput) => {
@@ -183,11 +187,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         }),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId, features: updatedFeatures, progress: newProgress }),
-      }).catch((err) => console.warn('Failed to add feature to MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, features: updatedFeatures, progress: newProgress }),
+        });
+      } catch (err) {
+        console.warn('Failed to add feature to API', err);
+      }
     },
 
     deleteFeature: async (projectId, featureId) => {
@@ -206,11 +215,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         ),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId, features: updatedFeatures, progress: newProgress }),
-      }).catch((err) => console.warn('Failed to delete feature in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, features: updatedFeatures, progress: newProgress }),
+        });
+      } catch (err) {
+        console.warn('Failed to delete feature in API', err);
+      }
     },
 
     addBug: async (projectId, bugData) => {
@@ -230,11 +244,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         ),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId, bugs: updatedBugs }),
-      }).catch((err) => console.warn('Failed to add bug to MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, bugs: updatedBugs }),
+        });
+      } catch (err) {
+        console.warn('Failed to add bug to API', err);
+      }
     },
 
     updateBugStatus: async (projectId, bugId, status) => {
@@ -252,11 +271,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         }),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId, bugs: updatedBugs }),
-      }).catch((err) => console.warn('Failed to update bug status in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, bugs: updatedBugs }),
+        });
+      } catch (err) {
+        console.warn('Failed to update bug status in API', err);
+      }
     },
 
     deleteBug: async (projectId, bugId) => {
@@ -271,11 +295,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         ),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId, bugs: updatedBugs }),
-      }).catch((err) => console.warn('Failed to delete bug in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, bugs: updatedBugs }),
+        });
+      } catch (err) {
+        console.warn('Failed to delete bug in API', err);
+      }
     },
 
     addInvoice: async (projectId, invoiceData) => {
@@ -298,11 +327,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         ),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId, invoices: updatedInvoices, amountPaid: newAmountPaid }),
-      }).catch((err) => console.warn('Failed to add invoice to MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, invoices: updatedInvoices, amountPaid: newAmountPaid }),
+        });
+      } catch (err) {
+        console.warn('Failed to add invoice to API', err);
+      }
     },
 
     updateInvoiceStatus: async (projectId, invoiceId, status) => {
@@ -329,11 +363,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         ),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId, invoices: updatedInvoices, amountPaid: newAmountPaid }),
-      }).catch((err) => console.warn('Failed to update invoice in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, invoices: updatedInvoices, amountPaid: newAmountPaid }),
+        });
+      } catch (err) {
+        console.warn('Failed to update invoice in API', err);
+      }
     },
 
     deleteInvoice: async (projectId, invoiceId) => {
@@ -351,11 +390,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         ),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId, invoices: updatedInvoices, amountPaid: newAmountPaid }),
-      }).catch((err) => console.warn('Failed to delete invoice in MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, invoices: updatedInvoices, amountPaid: newAmountPaid }),
+        });
+      } catch (err) {
+        console.warn('Failed to delete invoice in API', err);
+      }
     },
 
     saveProjectNotes: async (projectId, notes) => {
@@ -363,11 +407,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         projects: state.projects.map((p) => (p.id === projectId ? { ...p, notes } : p)),
       }));
 
-      fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId, notes }),
-      }).catch((err) => console.warn('Failed to save project notes to MongoDB API', err));
+      try {
+        const headers = await getAuthHeaders();
+        await fetch('/api/projects', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, notes }),
+        });
+      } catch (err) {
+        console.warn('Failed to save project notes to API', err);
+      }
     },
 
     resetProjects: () => set({ projects: [], activeProjectId: '' }),
