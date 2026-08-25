@@ -1,5 +1,18 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export interface IGoogleAccount {
+  connected: boolean;
+  googleAccountId?: string;
+  email?: string;
+  refreshTokenEncrypted?: string;
+  accessTokenEncrypted?: string;
+  accessTokenExpiresAt?: Date;
+  scopes?: string[];
+  connectedAt?: Date;
+  lastSyncAt?: Date;
+  syncStatus: 'connected' | 'syncing' | 'reauth_required' | 'error';
+}
+
 export interface IUser extends Document {
   googleId?: string;
   email: string;
@@ -11,6 +24,7 @@ export interface IUser extends Document {
   workStartTime?: string;
   workEndTime?: string;
   primaryGoal?: string;
+  google?: IGoogleAccount;
   lastLoginAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -35,9 +49,26 @@ const UserSchema = new Schema<IUser>(
     workStartTime: { type: String, default: '09:00' },
     workEndTime: { type: String, default: '18:00' },
     primaryGoal: { type: String },
+    google: {
+      connected: { type: Boolean, default: false },
+      googleAccountId: { type: String },
+      email: { type: String },
+      refreshTokenEncrypted: { type: String },
+      accessTokenEncrypted: { type: String },
+      accessTokenExpiresAt: { type: Date },
+      scopes: [{ type: String }],
+      connectedAt: { type: Date },
+      lastSyncAt: { type: Date },
+      syncStatus: {
+        type: String,
+        enum: ['connected', 'syncing', 'reauth_required', 'error'],
+        default: 'connected',
+      },
+    },
     lastLoginAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+

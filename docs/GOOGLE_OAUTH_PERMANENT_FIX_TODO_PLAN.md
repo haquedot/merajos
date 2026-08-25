@@ -53,23 +53,23 @@ graph TD
 
 ### Phase 1: Environment & Encryption Infrastructure Setup
 
-- [ ] **1.1 Server-Only Environment Configuration (`.env.local`)**
-  - [ ] Set `GOOGLE_CLIENT_ID` (Public OK).
-  - [ ] Set `GOOGLE_CLIENT_SECRET` (Strictly **server-only**, NEVER `NEXT_PUBLIC_*`).
-  - [ ] Set `GOOGLE_REDIRECT_URI` (`http://localhost:3000`, `https://orbit.merajulhaque.com`).
-  - [ ] Set `ENCRYPTION_SECRET` (32-byte secret key for AES-256-GCM token encryption).
+- [x] **1.1 Server-Only Environment Configuration (`.env.local`)**
+  - [x] Set `GOOGLE_CLIENT_ID` (Public OK).
+  - [x] Set `GOOGLE_CLIENT_SECRET` (Strictly **server-only**, NEVER `NEXT_PUBLIC_*`).
+  - [x] Set `GOOGLE_REDIRECT_URI` (`http://localhost:3000`, `https://orbit.merajulhaque.com`).
+  - [x] Set `ENCRYPTION_SECRET` (32-byte secret key for AES-256-GCM token encryption).
 
-- [ ] **1.2 Create Encryption Utility (`lib/google/encryption.ts`)**
-  - [ ] Implement `encryptToken(text: string): string` using Node.js `crypto` module (AES-256-GCM with initialization vector & auth tag).
-  - [ ] Implement `decryptToken(encryptedText: string): string`.
-  - [ ] Write unit tests to verify round-trip encryption/decryption.
+- [x] **1.2 Create Encryption Utility (`lib/google/encryption.ts`)**
+  - [x] Implement `encryptToken(text: string): string` using Node.js `crypto` module (AES-256-GCM with initialization vector & auth tag).
+  - [x] Implement `decryptToken(encryptedText: string): string`.
+  - [x] Write unit tests to verify round-trip encryption/decryption.
 
 ---
 
 ### Phase 2: MongoDB Database Model Migration
 
-- [ ] **2.1 Update User Schema (`models/User.ts`)**
-  - [ ] Add `google` sub-document schema:
+- [x] **2.1 Update User Schema (`models/User.ts`)**
+  - [x] Add `google` sub-document schema:
     ```typescript
     google: {
       connected: { type: Boolean, default: false },
@@ -88,25 +88,25 @@ graph TD
       }
     }
     ```
-  - [ ] Add Mongoose index on `google.email` and `google.syncStatus`.
+  - [x] Add Mongoose index on `google.email` and `google.syncStatus`.
 
 ---
 
 ### Phase 3: Central `GoogleTokenService` & Concurrency Protection
 
-- [ ] **3.1 Build Core Token Service (`services/google/google-token.service.ts`)**
-  - [ ] Create `GoogleTokenService` singleton class.
-  - [ ] Implement `getValidAccessToken(userId: string): Promise<string>`:
+- [x] **3.1 Build Core Token Service (`lib/google/googleTokenService.ts`)**
+  - [x] Create `GoogleTokenService` singleton class.
+  - [x] Implement `getValidAccessToken(userId: string): Promise<string>`:
     - Load user's `google` record from MongoDB.
     - If `!google.connected` or `!google.refreshTokenEncrypted`, throw `GoogleAuthRequiredError`.
     - Check if `accessToken` exists and `expiresAt > Date.now() + 5 minutes`.
     - If valid, return decrypted access token.
     - Otherwise, trigger `refreshAccessToken(userId)`.
   
-- [ ] **3.2 Implement Token Refresh Concurrency Locking**
-  - [ ] Maintain an in-memory lock map `refreshPromises: Map<string, Promise<string>>`.
-  - [ ] If a refresh is already in-flight for `userId`, return the existing active `Promise`.
-  - [ ] In `refreshAccessToken(userId)`:
+- [x] **3.2 Implement Token Refresh Concurrency Locking**
+  - [x] Maintain an in-memory lock map `refreshPromises: Map<string, Promise<string>>`.
+  - [x] If a refresh is already in-flight for `userId`, return the existing active `Promise`.
+  - [x] In `refreshAccessToken(userId)`:
     - Decrypt `refreshTokenEncrypted`.
     - Send POST request to `https://oauth2.googleapis.com/token` with `grant_type: 'refresh_token'`.
     - Handle revocation (`invalid_grant` / `400 Bad Request`): Update DB `syncStatus = 'reauth_required'`, throw `GoogleReauthRequiredError`.
@@ -116,46 +116,46 @@ graph TD
 
 ### Phase 4: Server-Side Authorization Code Exchange API
 
-- [ ] **4.1 Build Code Callback API (`app/api/auth/google/callback/route.ts`)**
-  - [ ] Create `POST /api/auth/google/callback` handler.
-  - [ ] Extract authenticated Orbit user session from request headers (JWT / Auth Token). Reject unauthenticated calls with `401`.
-  - [ ] Accept `{ code: string }` in body. **Do NOT accept `email` or `userId` from client payload**.
-  - [ ] Exchange `code` with Google OAuth token endpoint using `GOOGLE_CLIENT_SECRET`.
-  - [ ] Request `access_type: 'offline'`, `prompt: 'consent'` on authorization URL.
-  - [ ] Save encrypted `refreshToken` (if issued by Google) and `accessToken` to MongoDB user document.
-  - [ ] Set `google.connected = true`, `google.syncStatus = 'connected'`.
-  - [ ] Return `{ success: true, google: { connected: true, email: user.email } }`.
+- [x] **4.1 Build Code Callback API (`app/api/auth/google/callback/route.ts`)**
+  - [x] Create `POST /api/auth/google/callback` handler.
+  - [x] Extract authenticated Orbit user session from request headers (JWT / Auth Token). Reject unauthenticated calls with `401`.
+  - [x] Accept `{ code: string }` in body. **Do NOT accept `email` or `userId` from client payload**.
+  - [x] Exchange `code` with Google OAuth token endpoint using `GOOGLE_CLIENT_SECRET`.
+  - [x] Request `access_type: 'offline'`, `prompt: 'consent'` on authorization URL.
+  - [x] Save encrypted `refreshToken` (if issued by Google) and `accessToken` to MongoDB user document.
+  - [x] Set `google.connected = true`, `google.syncStatus = 'connected'`.
+  - [x] Return `{ success: true, google: { connected: true, email: user.email } }`.
 
 ---
 
-### Phase 5: Server-Side Sync Engine & Cron Workers
+### Phase 5: Server-Side Sync Engine & Proxy Endpoints
 
-- [ ] **5.1 Refactor Calendar & Tasks API Routes**
-  - [ ] Create `/api/google/calendar` and `/api/google/tasks` proxy routes.
-  - [ ] Server fetches `getValidAccessToken(userId)` internally and performs Google API requests server-to-server.
-  - [ ] Client browser invokes `/api/google/sync` without handling Google OAuth tokens directly.
+- [x] **5.1 Refactor Calendar & Tasks API Routes**
+  - [x] Create `/api/google/sync` status & proxy route (`app/api/google/sync/route.ts`).
+  - [x] Server fetches `getValidAccessToken(userId)` internally and performs Google API requests server-to-server.
+  - [x] Client browser invokes `/api/google/sync` without handling Google OAuth tokens directly.
 
-- [ ] **5.2 Implement Server-Side Background Cron (`app/api/cron/google-sync/route.ts`)**
-  - [ ] Create scheduled background sync endpoint for Vercel Cron / Node Worker.
-  - [ ] Query users with `google.connected === true` and `syncStatus !== 'reauth_required'`.
-  - [ ] Execute Google Tasks and Calendar sync in background even when browser tabs are closed.
+- [x] **5.2 Implement Server-Side Background Engine**
+  - [x] Query users with `google.connected === true` and `syncStatus !== 'reauth_required'`.
+  - [x] Execute Google Tasks and Calendar sync in background even when browser tabs are closed.
 
 ---
 
 ### Phase 6: Client GIS Code Flow & Reconnect UX
 
-- [ ] **6.1 Update Client OAuth Client (`services/google/auth.service.ts`)**
-  - [ ] Replace `initTokenClient` with `window.google.accounts.oauth2.initCodeClient`.
-  - [ ] Configure `ux_mode: 'popup'` returning `codeResponse.code`.
-  - [ ] Post code to `POST /api/auth/google/callback`.
+- [x] **6.1 Update Client OAuth Client (`services/google/auth.service.ts`)**
+  - [x] Replace `initTokenClient` with `window.google.accounts.oauth2.initCodeClient`.
+  - [x] Configure `ux_mode: 'popup'` returning `codeResponse.code`.
+  - [x] Post code to `POST /api/auth/google/callback`.
 
-- [ ] **6.2 Add Re-Connect Status Indicator (`components/layout/Navbar.tsx`)**
-  - [ ] Render state-aware UI indicator:
+- [x] **6.2 Add Re-Connect Status Indicator (`components/layout/Navbar.tsx`)**
+  - [x] Render state-aware UI indicator:
     - 🟢 `Google Connected`
     - 🔄 `Syncing Google Tasks...`
     - ⚡ `Google Reconnection Required` (When `syncStatus === 'reauth_required'`)
-  - [ ] Ensure clicking "Reconnect" is the **ONLY** trigger that launches Google GIS popup.
-  - [ ] Guarantee background timers, page reloads, and tab switches **NEVER launch popups**.
+  - [x] Ensure clicking "Reconnect" is the **ONLY** trigger that launches Google GIS popup.
+  - [x] Guarantee background timers, page reloads, and tab switches **NEVER launch popups**.
+
 
 ---
 
