@@ -23,6 +23,7 @@ import {
 import { Button } from '../ui/button';
 import { Badge } from '../ui/Badge';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
+import { getAuthHeaders } from '../../lib/authCheck';
 
 interface FocusOverlayModalProps {
   isOpen: boolean;
@@ -285,9 +286,10 @@ export const FocusOverlayModal: React.FC<FocusOverlayModalProps> = ({
   const logFocusSessionAPI = useCallback(async (minutesSpent: number) => {
     if (minutesSpent <= 0) return;
     try {
+      const headers = await getAuthHeaders();
       await fetch('/api/analytics', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify({
           type: 'focus_session',
           durationMinutes: minutesSpent,

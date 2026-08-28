@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Modal } from '../ui/Modal';
 import { useCareerStore } from '../../store/useCareerStore';
 import { Input } from '../ui/input';
@@ -12,27 +12,65 @@ interface AddSubjectModalProps {
   onClose: () => void;
 }
 
+const DEFAULT_CATEGORIES = [
+  'Web Development',
+  'System Architecture',
+  'CS Fundamentals',
+  'Data Engineering',
+  'DevOps & Cloud',
+  'Mobile Development',
+];
+
 export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose }) => {
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('Web Development');
+  const [selectedCategory, setSelectedCategory] = useState('Web Development');
+  const [customCategory, setCustomCategory] = useState('');
+  const [isCustom, setIsCustom] = useState(false);
   const [description, setDescription] = useState('');
   const [colorTheme, setColorTheme] = useState('#1F3B99');
 
-  const { addSubjectPlan } = useCareerStore();
+  const { addSubjectPlan, subjectPlans } = useCareerStore();
+
+  // Combine default categories with any existing custom categories from active store
+  const categoryOptions = useMemo(() => {
+    const existing = new Set(DEFAULT_CATEGORIES);
+    subjectPlans.forEach((sp) => {
+      if (sp.category) existing.add(sp.category);
+    });
+    const opts = Array.from(existing).map((cat) => ({ value: cat, label: cat }));
+    opts.push({ value: '__custom__', label: '+ Create Custom Category...' });
+    return opts;
+  }, [subjectPlans]);
+
+  const handleCategorySelectChange = (value: string) => {
+    if (value === '__custom__') {
+      setIsCustom(true);
+    } else {
+      setIsCustom(false);
+      setSelectedCategory(value);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
+    const finalCategory = isCustom
+      ? customCategory.trim() || 'General'
+      : selectedCategory.trim();
+
     addSubjectPlan({
       title: title.trim(),
-      category: category.trim(),
+      category: finalCategory,
       description: description.trim(),
       colorTheme,
       topics: [],
     });
 
     setTitle('');
+    setCustomCategory('');
+    setIsCustom(false);
+    setSelectedCategory('Web Development');
     setDescription('');
     onClose();
   };
@@ -52,23 +90,36 @@ export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClos
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              Category
-            </label>
-            <Select
-              value={category}
-              onValueChange={setCategory}
-              options={[
-                { value: 'Web Development', label: 'Web Development' },
-                { value: 'System Architecture', label: 'System Architecture' },
-                { value: 'CS Core', label: 'CS Fundamentals' },
-                { value: 'Data Engineering', label: 'Data Engineering' },
-                { value: 'DevOps', label: 'DevOps & Cloud' },
-                { value: 'Mobile Development', label: 'Mobile Development' },
-              ]}
-            />
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Category
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsCustom(!isCustom)}
+                className="text-[11px] font-bold text-[#0066FF] dark:text-blue-400 hover:underline"
+              >
+                {isCustom ? 'Select Preset' : '+ Custom Category'}
+              </button>
+            </div>
+
+            {isCustom ? (
+              <Input
+                required
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="Enter custom category name..."
+                autoFocus
+              />
+            ) : (
+              <Select
+                value={selectedCategory}
+                onValueChange={handleCategorySelectChange}
+                options={categoryOptions}
+              />
+            )}
           </div>
 
           <div>
