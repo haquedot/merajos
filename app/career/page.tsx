@@ -52,6 +52,7 @@ export default function CareerPage() {
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
+  const [editingSubjectPlan, setEditingSubjectPlan] = useState<SubjectPlan | null>(null);
   const [sharingPlan, setSharingPlan] = useState<SubjectPlan | null>(null);
   const [isDSAModalOpen, setIsDSAModalOpen] = useState(false);
   const [editingDSA, setEditingDSA] = useState<DSATopic | null>(null);
@@ -424,7 +425,10 @@ export default function CareerPage() {
                     </div>
 
                     <button
-                      onClick={() => setIsSubjectModalOpen(true)}
+                      onClick={() => {
+                        setEditingSubjectPlan(null);
+                        setIsSubjectModalOpen(true);
+                      }}
                       className="btn-primary px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5"
                     >
                       <FolderPlus className="w-4 h-4" />
@@ -472,7 +476,10 @@ export default function CareerPage() {
 
                   <div className="flex items-center justify-center gap-2 pt-2 flex-wrap">
                     <button
-                      onClick={() => setIsSubjectModalOpen(true)}
+                      onClick={() => {
+                        setEditingSubjectPlan(null);
+                        setIsSubjectModalOpen(true);
+                      }}
                       className="btn-primary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
                     >
                       <Plus className="w-4 h-4" />
@@ -498,6 +505,10 @@ export default function CareerPage() {
                       key={plan.id}
                       plan={plan}
                       onAddTopic={(subjectId) => setActiveSubjectIdForTopic(subjectId)}
+                      onEdit={(planToEdit) => {
+                        setEditingSubjectPlan(planToEdit);
+                        setIsSubjectModalOpen(true);
+                      }}
                       onShare={(planToShare) => setSharingPlan(planToShare)}
                     />
                   ))}
@@ -1093,10 +1104,14 @@ export default function CareerPage() {
         </form>
       </Modal>
 
-      {/* Add Subject Modal */}
+      {/* Add / Edit Subject Modal */}
       <AddSubjectModal
         isOpen={isSubjectModalOpen}
-        onClose={() => setIsSubjectModalOpen(false)}
+        editingPlan={editingSubjectPlan}
+        onClose={() => {
+          setIsSubjectModalOpen(false);
+          setEditingSubjectPlan(null);
+        }}
       />
 
       {/* Add Topic Modal */}

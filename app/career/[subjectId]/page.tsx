@@ -24,6 +24,7 @@ import {
   Globe,
   Lock,
   Mail,
+  X,
 } from 'lucide-react';
 import { useCareerStore } from '../../../store/useCareerStore';
 import { useTaskStore } from '../../../store/useTaskStore';
@@ -82,6 +83,13 @@ export default function SubjectReaderPage({ params }: PageProps) {
   const [editDescription, setEditDescription] = useState('');
   const [editDifficulty, setEditDifficulty] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Intermediate');
   const [editNotes, setEditNotes] = useState('');
+  const [editChecklistRaw, setEditChecklistRaw] = useState('');
+  const [editResourceRaw, setEditResourceRaw] = useState('');
+
+  // Inline Resource Addition state
+  const [newResourceTitle, setNewResourceTitle] = useState('');
+  const [newResourceUrl, setNewResourceUrl] = useState('');
+  const [isAddingResourceInline, setIsAddingResourceInline] = useState(false);
 
   if (isLoadingTab) {
     return (
@@ -157,6 +165,10 @@ export default function SubjectReaderPage({ params }: PageProps) {
     setEditDescription(topic.description || '');
     setEditDifficulty(topic.difficulty || 'Intermediate');
     setEditNotes(topic.notes || '');
+    setEditChecklistRaw((topic.checklist || []).map((c) => c.title).join('\n'));
+    setEditResourceRaw(
+      (topic.resources || []).map((r) => `${r.title} | ${r.url}`).join('\n')
+    );
     setIsEditTopicModalOpen(true);
   };
 
@@ -164,15 +176,67 @@ export default function SubjectReaderPage({ params }: PageProps) {
     e.preventDefault();
     if (!currentTopic || !editTitle.trim()) return;
 
+    const checklistItems = editChecklistRaw
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line, idx) => {
+        const existing = currentTopic.checklist?.find((c) => c.title === line);
+        return {
+          id: existing ? existing.id : `check-${Date.now()}-${idx}`,
+          title: line,
+          completed: existing ? existing.completed : false,
+        };
+      });
+
+    const resources = editResourceRaw
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => {
+        const parts = line.split('|');
+        return {
+          title: parts[0]?.trim() || 'Resource Link',
+          url: parts[1]?.trim() || parts[0]?.trim() || 'https://google.com',
+        };
+      });
+
     updateSubjectTopic(plan.id, currentTopic.id, {
       title: editTitle.trim(),
       description: editDescription.trim(),
       difficulty: editDifficulty,
       notes: editNotes.trim(),
+      checklist: checklistItems,
+      resources,
     });
 
     setIsEditTopicModalOpen(false);
     showToast(`Updated topic "${editTitle}"`);
+  };
+
+  const handleAddInlineResource = () => {
+    if (!currentTopic || !newResourceTitle.trim() || !newResourceUrl.trim()) return;
+    const existingResources = currentTopic.resources || [];
+    const updatedResources = [
+      ...existingResources,
+      { title: newResourceTitle.trim(), url: newResourceUrl.trim() },
+    ];
+    updateSubjectTopic(plan.id, currentTopic.id, {
+      resources: updatedResources,
+    });
+    setNewResourceTitle('');
+    setNewResourceUrl('');
+    setIsAddingResourceInline(false);
+    showToast(`Added resource "${newResourceTitle}"`);
+  };
+
+  const handleRemoveResource = (indexToRemove: number) => {
+    if (!currentTopic) return;
+    const updatedResources = (currentTopic.resources || []).filter((_, idx) => idx !== indexToRemove);
+    updateSubjectTopic(plan.id, currentTopic.id, {
+      resources: updatedResources,
+    });
+    showToast('Removed resource link');
   };
 
   const handleConfirmDeleteTopic = () => {
@@ -530,28 +594,99 @@ export default function SubjectReaderPage({ params }: PageProps) {
                 </div>
               )}
 
-              {/* Resource Links */}
-              {currentTopic.resources && currentTopic.resources.length > 0 && (
-                <div className="space-y-2">
+              {/* Curated External Resources */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
-                    Curated External Resources
+                    Curated External Resources ({currentTopic.resources?.length || 0})
                   </span>
+                  {!isViewOnly && (
+                    <button
+                      onClick={() => setIsAddingResourceInline(!isAddingResourceInline)}
+                      className="text-[11px] font-bold text-[#1F3B99] dark:text-[#6D5BFF] hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{isAddingResourceInline ? 'Cancel' : 'Add Resource Link'}</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Inline Add Resource Link Form */}
+                {!isViewOnly && isAddingResourceInline && (
+                  <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 space-y-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={newResourceTitle}
+                        onChange={(e) => setNewResourceTitle(e.target.value)}
+                        placeholder="Resource Title (e.g. Official Docs)"
+                        className="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                      />
+                      <input
+                        type="url"
+                        value={newResourceUrl}
+                        onChange={(e) => setNewResourceUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleAddInlineResource();
+                        }}
+                        placeholder="URL (https://...)"
+                        className="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingResourceInline(false)}
+                        className="px-3 py-1 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddInlineResource}
+                        className="px-3.5 py-1 rounded-lg bg-[#1F3B99] dark:bg-[#6D5BFF] text-white text-xs font-bold hover:opacity-90 transition-opacity"
+                      >
+                        Add Link
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Resource Badges */}
+                {currentTopic.resources && currentTopic.resources.length > 0 ? (
                   <div className="flex items-center gap-2 flex-wrap">
                     {currentTopic.resources.map((res, idx) => (
-                      <a
+                      <div
                         key={idx}
-                        href={res.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-800 dark:text-gray-200 hover:text-[#1F3B99] dark:hover:text-[#6D5BFF] flex items-center gap-1.5 shadow-2xs transition-colors"
+                        className="group relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-800 dark:text-gray-200 shadow-2xs hover:border-gray-300 dark:hover:border-gray-600 transition-all"
                       >
-                        <span>{res.title}</span>
-                        <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
-                      </a>
+                        <a
+                          href={res.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:text-[#1F3B99] dark:hover:text-[#6D5BFF] flex items-center gap-1.5"
+                        >
+                          <span>{res.title}</span>
+                          <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+                        </a>
+                        {!isViewOnly && (
+                          <button
+                            onClick={() => handleRemoveResource(idx)}
+                            className="opacity-0 group-hover:opacity-100 ml-1 text-gray-400 hover:text-rose-500 transition-opacity"
+                            title="Remove link"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  !isAddingResourceInline && (
+                    <p className="text-xs text-gray-400 italic">No external resource links added yet.</p>
+                  )
+                )}
+              </div>
 
               {/* Interactive Key Mastery Checklist */}
               <div className="space-y-3 pt-2">
@@ -656,19 +791,34 @@ export default function SubjectReaderPage({ params }: PageProps) {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              Difficulty
-            </label>
-            <Select
-              value={editDifficulty}
-              onValueChange={(val) => setEditDifficulty(val as any)}
-              options={[
-                { value: 'Beginner', label: 'Beginner' },
-                { value: 'Intermediate', label: 'Intermediate' },
-                { value: 'Advanced', label: 'Advanced' },
-              ]}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Difficulty
+              </label>
+              <Select
+                value={editDifficulty}
+                onValueChange={(val) => setEditDifficulty(val as any)}
+                options={[
+                  { value: 'Beginner', label: 'Beginner' },
+                  { value: 'Intermediate', label: 'Intermediate' },
+                  { value: 'Advanced', label: 'Advanced' },
+                ]}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Resource Links (Title | URL per line)
+              </label>
+              <textarea
+                rows={2}
+                value={editResourceRaw}
+                onChange={(e) => setEditResourceRaw(e.target.value)}
+                placeholder="Docs | https://react.dev"
+                className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           <div>
@@ -676,9 +826,22 @@ export default function SubjectReaderPage({ params }: PageProps) {
               Overview & Learning Objectives
             </label>
             <textarea
-              rows={3}
+              rows={2}
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+              Mastery Checklist (One item per line)
+            </label>
+            <textarea
+              rows={3}
+              value={editChecklistRaw}
+              onChange={(e) => setEditChecklistRaw(e.target.value)}
+              placeholder="Key concept to master..."
               className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -688,7 +851,7 @@ export default function SubjectReaderPage({ params }: PageProps) {
               Topic Takeaways & Formula Notes
             </label>
             <textarea
-              rows={3}
+              rows={2}
               value={editNotes}
               onChange={(e) => setEditNotes(e.target.value)}
               className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
