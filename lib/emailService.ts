@@ -43,6 +43,23 @@ export async function sendDailyTaskLogEmail(
     pendingItems = (snapshot.pendingTaskTitles || []).map((t) => ({ title: t, category: 'Personal', priority: 'medium' }));
   }
 
+  // Deduplicate items by title to ensure clean email report
+  const dedupeByTitle = (items: any[]) => {
+    const map = new Map<string, any>();
+    for (const item of items) {
+      const titleStr = (typeof item === 'string' ? item : item.title || '').trim();
+      const key = titleStr.toLowerCase();
+      if (key && !map.has(key)) {
+        map.set(key, typeof item === 'string' ? { title: item, category: 'Personal', priority: 'medium' } : item);
+      }
+    }
+    return Array.from(map.values());
+  };
+
+  completedItems = dedupeByTitle(completedItems);
+  const completedKeys = new Set(completedItems.map((i) => (i.title || '').trim().toLowerCase()));
+  pendingItems = dedupeByTitle(pendingItems).filter((i) => !completedKeys.has((i.title || '').trim().toLowerCase()));
+
   const completedCount = completedItems.length;
   const pendingCount = pendingItems.length;
 

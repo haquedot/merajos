@@ -25,7 +25,7 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
     // 1. Check Bearer Token
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7).trim();
-      if (token) {
+      if (token && !token.startsWith('code_flow')) {
         try {
           // Verify access token with Google OAuth TokenInfo API
           const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${token}`);

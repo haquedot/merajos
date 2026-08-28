@@ -27,7 +27,7 @@ export async function calculateDailyTasksAndLogAnalytics(
   const todayStr = targetDateStr || new Date().toISOString().split('T')[0];
   const calculatedAt = new Date().toISOString();
 
-  // If client tasks are passed, bulk upsert them into MongoDB first by String _id query
+  // If client tasks are passed, bulk upsert them into MongoDB first
   if (clientTasks && Array.isArray(clientTasks) && clientTasks.length > 0) {
     for (const task of clientTasks) {
       const taskId = task.id || (task as any)._id;
@@ -56,11 +56,48 @@ export async function calculateDailyTasksAndLogAnalytics(
   }
 
   // Fetch all tasks from MongoDB
-  const allTasks = (await Task.find({}).lean()) as unknown as ITask[];
-  const completedTasksList = allTasks.filter((t) => t.status === 'completed');
-  const pendingTasksList = allTasks.filter((t) => t.status !== 'completed');
+  const rawTasks = (await Task.find({}).lean()) as unknown as ITask[];
 
-  const totalTasks = allTasks.length;
+  // Filter tasks relevant to targetDateStr:
+  // 1. Completed tasks: Completed on targetDateStr or matching targetDateStr due date
+  const rawCompleted = rawTasks.filter((t) => {
+    if (t.status !== 'completed') return false;
+    if (t.completedAt && t.completedAt.startsWith(todayStr)) return true;
+    if (t.dueDate && t.dueDate.startsWith(todayStr)) return true;
+    // Fallback: If no completedAt or dueDate string set, match if updated today or default to true for un-dated completed tasks
+    return true;
+  });
+
+  // Deduplicate completed tasks by normalized title
+  const completedMap = new Map<string, ITask>();
+  for (const t of rawCompleted) {
+    const key = (t.title || 'Untitled Task').trim().toLowerCase();
+    if (!completedMap.has(key)) {
+      completedMap.set(key, t);
+    }
+  }
+  const completedTasksList = Array.from(completedMap.values());
+
+  // 2. Pending tasks: Non-completed tasks due on or before targetDateStr (or active today)
+  const rawPending = rawTasks.filter((t) => {
+    if (t.status === 'completed') return false;
+    if (t.dueDate && t.dueDate > todayStr) return false; // Future tasks ignored
+    return true;
+  });
+
+  // Deduplicate pending tasks by normalized title (ignoring items already completed)
+  const pendingMap = new Map<string, ITask>();
+  for (const t of rawPending) {
+    const key = (t.title || 'Untitled Task').trim().toLowerCase();
+    if (!completedMap.has(key) && !pendingMap.has(key)) {
+      pendingMap.set(key, t);
+    }
+  }
+  const pendingTasksList = Array.from(pendingMap.values());
+
+  const todayTasks = [...completedTasksList, ...pendingTasksList];
+
+  const totalTasks = todayTasks.length;
   const completedTasks = completedTasksList.length;
   const pendingTasks = pendingTasksList.length;
 
@@ -71,7 +108,7 @@ export async function calculateDailyTasksAndLogAnalytics(
     title: t.title || 'Untitled Task',
     category: t.category || 'Personal',
     priority: t.priority || 'medium',
-    status: t.status || 'completed',
+    status: 'completed',
   }));
 
   const pendingTaskDetails = pendingTasksList.map((t: any) => ({
@@ -83,51 +120,51 @@ export async function calculateDailyTasksAndLogAnalytics(
 
   const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 100;
 
-  const totalEstHours = allTasks.reduce((acc: number, t: any) => acc + (t.estimatedHours || 0), 0);
-  const totalActualHours = allTasks.reduce((acc: number, t: any) => acc + (t.actualHours || 0), 0);
+  const totalEstHours = todayTasks.reduce((acc: number, t: any) => acc + (t.estimatedHours || 0), 0);
+  const totalActualHours = todayTasks.reduce((acc: number, t: any) => acc + (t.actualHours || 0), 0);
 
-  const clientTasksCount = allTasks.filter((t: any) => matchesCategory(t.category, 'Client')).length;
-  const researchTasksCount = allTasks.filter((t: any) => matchesCategory(t.category, 'Research')).length;
-  const careerTasksCount = allTasks.filter((t: any) => matchesCategory(t.category, 'Career')).length;
-  const personalTasksCount = allTasks.filter((t: any) => matchesCategory(t.category, 'Personal')).length;
+  const clientTasksCount = todayTasks.filter((t: any) => matchesCategory(t.category, 'Client')).length;
+  const researchTasksCount = todayTasks.filter((t: any) => matchesCategory(t.category, 'Research')).length;
+  const careerTasksCount = todayTasks.filter((t: any) => matchesCategory(t.category, 'Career')).length;
+  const personalTasksCount = todayTasks.filter((t: any) => matchesCategory(t.category, 'Personal')).length;
 
   // Category breakdown
   const categoryBreakdown = {
     Client: {
-      completed: allTasks.filter((t: any) => matchesCategory(t.category, 'Client') && t.status === 'completed').length,
-      pending: allTasks.filter((t: any) => matchesCategory(t.category, 'Client') && t.status !== 'completed').length,
+      completed: completedTasksList.filter((t: any) => matchesCategory(t.category, 'Client')).length,
+      pending: pendingTasksList.filter((t: any) => matchesCategory(t.category, 'Client')).length,
     },
     Research: {
-      completed: allTasks.filter((t: any) => matchesCategory(t.category, 'Research') && t.status === 'completed').length,
-      pending: allTasks.filter((t: any) => matchesCategory(t.category, 'Research') && t.status !== 'completed').length,
+      completed: completedTasksList.filter((t: any) => matchesCategory(t.category, 'Research')).length,
+      pending: pendingTasksList.filter((t: any) => matchesCategory(t.category, 'Research')).length,
     },
     Career: {
-      completed: allTasks.filter((t: any) => matchesCategory(t.category, 'Career') && t.status === 'completed').length,
-      pending: allTasks.filter((t: any) => matchesCategory(t.category, 'Career') && t.status !== 'completed').length,
+      completed: completedTasksList.filter((t: any) => matchesCategory(t.category, 'Career')).length,
+      pending: pendingTasksList.filter((t: any) => matchesCategory(t.category, 'Career')).length,
     },
     Personal: {
-      completed: allTasks.filter((t: any) => matchesCategory(t.category, 'Personal') && t.status === 'completed').length,
-      pending: allTasks.filter((t: any) => matchesCategory(t.category, 'Personal') && t.status !== 'completed').length,
+      completed: completedTasksList.filter((t: any) => matchesCategory(t.category, 'Personal')).length,
+      pending: pendingTasksList.filter((t: any) => matchesCategory(t.category, 'Personal')).length,
     },
   };
 
   // Priority breakdown
   const priorityBreakdown = {
     urgent: {
-      completed: allTasks.filter((t: any) => t.priority === 'urgent' && t.status === 'completed').length,
-      pending: allTasks.filter((t: any) => t.priority === 'urgent' && t.status !== 'completed').length,
+      completed: completedTasksList.filter((t: any) => t.priority === 'urgent').length,
+      pending: pendingTasksList.filter((t: any) => t.priority === 'urgent').length,
     },
     high: {
-      completed: allTasks.filter((t: any) => t.priority === 'high' && t.status === 'completed').length,
-      pending: allTasks.filter((t: any) => t.priority === 'high' && t.status !== 'completed').length,
+      completed: completedTasksList.filter((t: any) => t.priority === 'high').length,
+      pending: pendingTasksList.filter((t: any) => t.priority === 'high').length,
     },
     medium: {
-      completed: allTasks.filter((t: any) => t.priority === 'medium' && t.status === 'completed').length,
-      pending: allTasks.filter((t: any) => t.priority === 'medium' && t.status !== 'completed').length,
+      completed: completedTasksList.filter((t: any) => t.priority === 'medium').length,
+      pending: pendingTasksList.filter((t: any) => t.priority === 'medium').length,
     },
     low: {
-      completed: allTasks.filter((t: any) => t.priority === 'low' && t.status === 'completed').length,
-      pending: allTasks.filter((t: any) => t.priority === 'low' && t.status !== 'completed').length,
+      completed: completedTasksList.filter((t: any) => t.priority === 'low').length,
+      pending: pendingTasksList.filter((t: any) => t.priority === 'low').length,
     },
   };
 
@@ -145,14 +182,14 @@ export async function calculateDailyTasksAndLogAnalytics(
 
   // --- Dynamic Modular Daily Score Engine ---
   const { dailyScore: productivityScore } = calculateDailyScore({
-    todayTasks: allTasks,
+    todayTasks: todayTasks,
     habitsCount: totalHabitsCount,
     completedHabitsCount: completedHabitsCount,
     projectsCount: activeProjectsCount,
     goalsCount: totalGoalsCount,
     completedGoalsCount: completedGoalsCount,
-    researchCount: allTasks.filter((t: any) => matchesCategory(t.category, 'Research')).length,
-    dsaCount: allTasks.filter((t: any) => matchesCategory(t.category, 'Career')).length,
+    researchCount: todayTasks.filter((t: any) => matchesCategory(t.category, 'Research')).length,
+    dsaCount: todayTasks.filter((t: any) => matchesCategory(t.category, 'Career')).length,
   });
 
   // Upsert snapshot into MongoDB
@@ -194,7 +231,7 @@ export async function calculateDailyTasksAndLogAnalytics(
   // Send email ONLY if sendEmail is explicitly true or undefined (for 11:45 PM cron/manual run)
   if (emailOptions?.sendEmail !== false) {
     console.log(`[Snapshot] Snapshot saved for ${todayStr}. Triggering email dispatch...`);
-    emailResult = await sendDailyTaskLogEmail(snapshot.toObject(), allTasks, emailOptions);
+    emailResult = await sendDailyTaskLogEmail(snapshot.toObject(), todayTasks, emailOptions);
   } else {
     console.log(`[Snapshot] Snapshot saved for ${todayStr}. Email dispatch skipped (sendEmail=false).`);
   }

@@ -39,7 +39,7 @@ import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { PageHeader } from '../../components/ui/PageHeader';
 
 import { DashboardSkeleton } from '../../components/ui/Skeleton';
-import { isUserAuthenticated } from '../../lib/authCheck';
+import { isUserAuthenticated, getAuthHeaders } from '../../lib/authCheck';
 import { calculateDailyScore, ScoreBreakdownItem } from '../../lib/productivityCalculator';
 import { DailyScoreBreakdownModal } from '../../components/modals/DailyScoreBreakdownModal';
 
@@ -111,12 +111,13 @@ export default function AnalyticsPage() {
 
   // Fetch live MongoDB analytics and snapshots (if authenticated)
   useEffect(() => {
-    isUserAuthenticated().then((authenticated) => {
+    isUserAuthenticated().then(async (authenticated) => {
       if (!authenticated) {
         setIsLoading(false);
         return;
       }
-      fetch('/api/analytics')
+      const headers = await getAuthHeaders();
+      fetch('/api/analytics', { headers })
         .then((res) => res.json())
         .then((data) => {
           if (data.summary) {
