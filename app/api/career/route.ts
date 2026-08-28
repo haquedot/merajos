@@ -14,8 +14,18 @@ export async function GET(req: Request) {
     const docId = `career-${userId}`;
 
     let career = await Career.findOne({
-      $or: [{ _id: docId }, { userId }, { userEmail }, { _id: 'career-main' }],
+      $or: [
+        { _id: docId },
+        { userId },
+        { userEmail },
+        { _id: 'career-me' },
+        { _id: 'career-main' },
+      ],
     }).lean();
+
+    if (!career) {
+      career = await Career.findOne({}).lean();
+    }
 
     if (!career) {
       return NextResponse.json({ career: null });
@@ -37,9 +47,25 @@ export async function POST(req: Request) {
     const body = await req.json();
     const docId = `career-${userId}`;
 
+    let existingDoc = await Career.findOne({
+      $or: [
+        { _id: docId },
+        { userId },
+        { userEmail },
+        { _id: 'career-me' },
+        { _id: 'career-main' },
+      ],
+    }).lean();
+
+    if (!existingDoc) {
+      existingDoc = await Career.findOne({}).lean();
+    }
+
+    const targetDocId = existingDoc ? (existingDoc as any)._id : docId;
+
     const updated = await Career.findOneAndUpdate(
-      { _id: docId },
-      { ...body, _id: docId, userId, userEmail },
+      { _id: targetDocId },
+      { ...body, _id: targetDocId, userId, userEmail },
       { upsert: true, returnDocument: 'after' }
     ).lean();
 
