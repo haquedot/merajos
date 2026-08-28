@@ -7,6 +7,7 @@ import {
   BookOpen,
   Plus,
   Trash2,
+  Edit2,
   Sparkles,
   ArrowRight,
   CheckCircle2,
@@ -23,10 +24,16 @@ import { ConfirmDeleteModal } from '../modals/ConfirmDeleteModal';
 interface SubjectPlanCardProps {
   plan: SubjectPlan;
   onAddTopic: (subjectId: string) => void;
+  onEdit?: (plan: SubjectPlan) => void;
   onShare?: (plan: SubjectPlan) => void;
 }
 
-export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({ plan, onAddTopic, onShare }) => {
+export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({
+  plan,
+  onAddTopic,
+  onEdit,
+  onShare,
+}) => {
   const { deleteSubjectPlan } = useCareerStore();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -85,6 +92,16 @@ export const SubjectPlanCard: React.FC<SubjectPlanCardProps> = ({ plan, onAddTop
             </div>
 
             <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+              {onEdit && (
+                <button
+                  onClick={() => onEdit(plan)}
+                  className="p-1.5 rounded-lg text-gray-500 hover:text-orbit-blue hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                  title="Edit Subject Plan"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              )}
+
               {onShare && (
                 <button
                   onClick={() => onShare(plan)}

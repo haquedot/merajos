@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { useCareerStore } from '../../store/useCareerStore';
 import { Input } from '../ui/input';
 import { Select } from '../ui/select';
 import { Button } from '../ui/button';
+import { SubjectPlan } from '../../types';
 
 interface AddSubjectModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editingPlan?: SubjectPlan | null;
 }
 
 const DEFAULT_CATEGORIES = [
@@ -21,7 +23,11 @@ const DEFAULT_CATEGORIES = [
   'Mobile Development',
 ];
 
-export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose }) => {
+export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
+  isOpen,
+  onClose,
+  editingPlan,
+}) => {
   const [title, setTitle] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Web Development');
   const [customCategory, setCustomCategory] = useState('');
@@ -29,7 +35,30 @@ export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClos
   const [description, setDescription] = useState('');
   const [colorTheme, setColorTheme] = useState('#1F3B99');
 
-  const { addSubjectPlan, subjectPlans } = useCareerStore();
+  const { addSubjectPlan, updateSubjectPlan, subjectPlans } = useCareerStore();
+
+  useEffect(() => {
+    if (editingPlan) {
+      setTitle(editingPlan.title);
+      setDescription(editingPlan.description || '');
+      setColorTheme(editingPlan.colorTheme || '#1F3B99');
+      if (DEFAULT_CATEGORIES.includes(editingPlan.category)) {
+        setSelectedCategory(editingPlan.category);
+        setIsCustom(false);
+        setCustomCategory('');
+      } else {
+        setIsCustom(true);
+        setCustomCategory(editingPlan.category);
+      }
+    } else {
+      setTitle('');
+      setSelectedCategory('Web Development');
+      setCustomCategory('');
+      setIsCustom(false);
+      setDescription('');
+      setColorTheme('#1F3B99');
+    }
+  }, [editingPlan, isOpen]);
 
   // Combine default categories with any existing custom categories from active store
   const categoryOptions = useMemo(() => {
@@ -59,24 +88,32 @@ export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClos
       ? customCategory.trim() || 'General'
       : selectedCategory.trim();
 
-    addSubjectPlan({
-      title: title.trim(),
-      category: finalCategory,
-      description: description.trim(),
-      colorTheme,
-      topics: [],
-    });
+    if (editingPlan) {
+      updateSubjectPlan(editingPlan.id, {
+        title: title.trim(),
+        category: finalCategory,
+        description: description.trim(),
+        colorTheme,
+      });
+    } else {
+      addSubjectPlan({
+        title: title.trim(),
+        category: finalCategory,
+        description: description.trim(),
+        colorTheme,
+        topics: [],
+      });
+    }
 
-    setTitle('');
-    setCustomCategory('');
-    setIsCustom(false);
-    setSelectedCategory('Web Development');
-    setDescription('');
     onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Subject Study Plan">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editingPlan ? 'Edit Subject Study Plan' : 'Create Subject Study Plan'}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
@@ -153,7 +190,7 @@ export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClos
             Cancel
           </Button>
           <Button type="submit">
-            Create Subject Plan
+            {editingPlan ? 'Update Subject Plan' : 'Create Subject Plan'}
           </Button>
         </div>
       </form>

@@ -63,9 +63,27 @@ export async function POST(req: Request) {
 
     const targetDocId = existingDoc ? (existingDoc as any)._id : docId;
 
+    // Prevent unhydrated empty arrays from wiping existing non-empty DB collections
+    const payload = { ...body };
+    if (existingDoc) {
+      const doc = existingDoc as any;
+      if (Array.isArray(doc.jobs) && doc.jobs.length > 0 && Array.isArray(body.jobs) && body.jobs.length === 0) {
+        payload.jobs = doc.jobs;
+      }
+      if (Array.isArray(doc.interviewTopics) && doc.interviewTopics.length > 0 && Array.isArray(body.interviewTopics) && body.interviewTopics.length === 0) {
+        payload.interviewTopics = doc.interviewTopics;
+      }
+      if (Array.isArray(doc.dsaTopics) && doc.dsaTopics.length > 0 && Array.isArray(body.dsaTopics) && body.dsaTopics.length === 0) {
+        payload.dsaTopics = doc.dsaTopics;
+      }
+      if (Array.isArray(doc.subjectPlans) && doc.subjectPlans.length > 0 && Array.isArray(body.subjectPlans) && body.subjectPlans.length === 0) {
+        payload.subjectPlans = doc.subjectPlans;
+      }
+    }
+
     const updated = await Career.findOneAndUpdate(
       { _id: targetDocId },
-      { ...body, _id: targetDocId, userId, userEmail },
+      { ...payload, _id: targetDocId, userId, userEmail },
       { upsert: true, returnDocument: 'after' }
     ).lean();
 

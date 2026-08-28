@@ -70,7 +70,7 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({ isOpen, subjectId,
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add Topic & Mastery Checklist">
+    <Modal isOpen={isOpen} onClose={onClose} title="Add Topic & Curriculum Checklist">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
@@ -84,32 +84,32 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({ isOpen, subjectId,
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              Difficulty
-            </label>
-            <Select
-              value={difficulty}
-              onValueChange={(val) => setDifficulty(val as any)}
-              options={[
-                { value: 'Beginner', label: 'Beginner' },
-                { value: 'Intermediate', label: 'Intermediate' },
-                { value: 'Advanced', label: 'Advanced' },
-              ]}
-            />
-          </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            Difficulty
+          </label>
+          <Select
+            value={difficulty}
+            onValueChange={(val) => setDifficulty(val as any)}
+            options={[
+              { value: 'Beginner', label: 'Beginner' },
+              { value: 'Intermediate', label: 'Intermediate' },
+              { value: 'Advanced', label: 'Advanced' },
+            ]}
+          />
+        </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              Resource Links (Title | URL)
-            </label>
-            <Input
-              value={resourceRaw}
-              onChange={(e) => setResourceRaw(e.target.value)}
-              placeholder="Docs | https://react.dev"
-            />
-          </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            Resource Links (One per line: Title | URL)
+          </label>
+          <textarea
+            rows={3}
+            value={resourceRaw}
+            onChange={(e) => setResourceRaw(e.target.value)}
+            placeholder="React Docs | https://react.dev&#10;MDN Web Security | https://developer.mozilla.org"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50/70 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 text-xs font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1F3B99] dark:focus:ring-[#6D5BFF] resize-none transition-all shadow-2xs"
+          />
         </div>
 
         <div>
