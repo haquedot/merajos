@@ -1,7 +1,7 @@
+import mongoose from 'mongoose';
 import { connectToDatabase } from '../mongodb';
 import User from '../../models/User';
 import { encryptToken, decryptToken } from './encryption';
-
 
 export class GoogleAuthRequiredError extends Error {
   constructor(message = 'Google account connection required') {
@@ -20,16 +20,21 @@ export class GoogleReauthRequiredError extends Error {
 class GoogleTokenService {
   private refreshPromises: Map<string, Promise<string>> = new Map();
 
+  private async findUser(userIdOrEmail: string) {
+    await connectToDatabase();
+    const isObjectId = mongoose.Types.ObjectId.isValid(userIdOrEmail);
+    const query = isObjectId
+      ? { $or: [{ _id: userIdOrEmail }, { email: userIdOrEmail }] }
+      : { email: userIdOrEmail };
+    return User.findOne(query);
+  }
+
   /**
    * Retrieves a valid Google Access Token for the given user.
    * Auto-refreshes using stored encrypted refresh token if expired.
    */
   public async getValidAccessToken(userIdOrEmail: string): Promise<string> {
-    await connectToDatabase();
-
-    const user = await User.findOne({
-      $or: [{ _id: userIdOrEmail }, { email: userIdOrEmail }],
-    });
+    const user = await this.findUser(userIdOrEmail);
 
     if (!user || !user.google?.connected || !user.google?.refreshTokenEncrypted) {
       throw new GoogleAuthRequiredError();
@@ -64,11 +69,7 @@ class GoogleTokenService {
     }
 
     const refreshPromise = (async () => {
-      await connectToDatabase();
-
-      const user = await User.findOne({
-        $or: [{ _id: userIdOrEmail }, { email: userIdOrEmail }],
-      });
+      const user = await this.findUser(userIdOrEmail);
 
       if (!user || !user.google?.refreshTokenEncrypted) {
         throw new GoogleAuthRequiredError();
@@ -151,10 +152,7 @@ class GoogleTokenService {
    * Disconnects Google OAuth connection for a user.
    */
   public async revokeConnection(userIdOrEmail: string): Promise<void> {
-    await connectToDatabase();
-    const user = await User.findOne({
-      $or: [{ _id: userIdOrEmail }, { email: userIdOrEmail }],
-    });
+    const user = await this.findUser(userIdOrEmail);
 
     if (user && user.google) {
       user.google.connected = false;
