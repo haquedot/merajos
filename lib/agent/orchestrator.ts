@@ -28,7 +28,8 @@ export class OrbitAgentOrchestrator {
 
   public runPipeline(
     context: ComprehensiveAgentContext,
-    userPreferences?: UserPreferences | null
+    userPreferences?: UserPreferences | null,
+    userPrompt?: string
   ): OrchestrationResult {
     const steps: AgentStep[] = [];
     const timestamp = new Date().toISOString();
@@ -64,8 +65,53 @@ export class OrbitAgentOrchestrator {
       timestamp
     });
 
-    // Combine raw candidate task proposals
+    // Extract User-Prompt Specific Task if provided
+    const promptTasks: TaskProposal[] = [];
+    if (userPrompt && userPrompt.trim() && !userPrompt.toLowerCase().includes('analyze my workload')) {
+      const cleanPrompt = userPrompt.trim();
+      let slot: 'morning' | 'afternoon' | 'evening' | 'night' = 'evening';
+      const lower = cleanPrompt.toLowerCase();
+      if (lower.includes('morning')) slot = 'morning';
+      else if (lower.includes('afternoon')) slot = 'afternoon';
+      else if (lower.includes('night')) slot = 'night';
+
+      let category: TaskProposal['category'] = 'Career';
+      if (lower.includes('research') || lower.includes('paper')) category = 'Research';
+      else if (lower.includes('client') || lower.includes('project')) category = 'Client';
+      else if (lower.includes('habit')) category = 'Habit';
+      else if (lower.includes('college')) category = 'College';
+
+      // Extract task title cleanly from prompt
+      let title = cleanPrompt;
+      if (lower.startsWith('create a new task for this evening for ')) {
+        title = cleanPrompt.substring(39);
+      } else if (lower.startsWith('create a new task for ')) {
+        title = cleanPrompt.substring(22);
+      } else if (lower.startsWith('add a task for ')) {
+        title = cleanPrompt.substring(15);
+      } else if (lower.startsWith('add task: ')) {
+        title = cleanPrompt.substring(10);
+      }
+
+      // Capitalize title
+      title = title.charAt(0).toUpperCase() + title.slice(1);
+
+      promptTasks.push({
+        id: `prompt_task_${Date.now()}`,
+        title,
+        category,
+        estimatedHours: 1.5,
+        priority: 'high',
+        mit: true,
+        timeSlot: slot,
+        reason: `Direct user request: "${cleanPrompt}"`,
+        sourceModule: 'tasks'
+      });
+    }
+
+    // Combine raw candidate task proposals (prompt tasks first!)
     const rawCandidates: TaskProposal[] = [
+      ...promptTasks,
       ...careerRes.proposals,
       ...researchRes.proposals,
       ...context.pendingTasks.slice(0, 3).map((t) => ({

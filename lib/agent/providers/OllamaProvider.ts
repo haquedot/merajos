@@ -8,12 +8,12 @@ export class OllamaProvider implements LLMProvider {
   private baseUrl: string;
   private model: string;
 
-  constructor(baseUrl?: string, model: string = 'llama3') {
+  constructor(baseUrl?: string, model?: string) {
     this.baseUrl = baseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-    this.model = model;
+    this.model = process.env.OLLAMA_MODEL || model || 'qwen2.5-coder:7b';
   }
 
-  async generateText(prompt: string, options?: LLMGenerationOptions): Promise<string> {
+  async generateText(prompt: string, options?: LLMGenerationOptions & { formatJson?: boolean }): Promise<string> {
     const response = await fetch(`${this.baseUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -21,6 +21,7 @@ export class OllamaProvider implements LLMProvider {
         model: this.model,
         prompt: `${options?.systemPrompt ? options.systemPrompt + '\n\n' : ''}${prompt}`,
         stream: false,
+        ...(options?.formatJson ? { format: 'json' } : {}),
         options: {
           temperature: options?.temperature ?? 0.2
         }
@@ -43,12 +44,31 @@ export class OllamaProvider implements LLMProvider {
   ): Promise<T> {
     const rawText = await this.generateText(prompt, {
       ...options,
+      formatJson: true,
       systemPrompt: (options?.systemPrompt ? options.systemPrompt + '\n\n' : '') +
         'CRITICAL: Return valid JSON matching schema only.'
     });
 
-    const cleanedJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(cleanedJson);
-    return schema.parse(parsed);
+    try {
+      const cleanedJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      let parsed = JSON.parse(cleanedJson);
+
+      // If local LLM wrapped the payload inside a top-level wrapper
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        if (parsed.response && typeof parsed.response === 'object') parsed = parsed.response;
+        else if (parsed.data && typeof parsed.data === 'object') parsed = parsed.data;
+        else if (parsed.result && typeof parsed.result === 'object') parsed = parsed.result;
+      }
+
+      // If local LLM returned an array directly
+      if (Array.isArray(parsed)) {
+        parsed = { summary: 'Generated task proposals from local LLM', taskProposals: parsed };
+      }
+
+      return schema.parse(parsed);
+    } catch (err: any) {
+      console.warn(`[OllamaProvider] Structured parsing warning on model ${this.model}:`, err.message);
+      throw err;
+    }
   }
 }

@@ -65,14 +65,14 @@ export async function POST(req: Request) {
       researchPapers: (researchDoc?.projects?.flatMap((p: any) => p.sections?.flatMap((s: any) => s.papers || [])) || []) as any
     });
 
-    // Run Orchestrated Sub-Agent Tool Pipeline
+    // Run Orchestrated Sub-Agent Tool Pipeline with User Prompt Context
     const orchestrator = new OrbitAgentOrchestrator();
-    const orchestratedResult = orchestrator.runPipeline(agentContext, preferences as any);
+    const orchestratedResult = orchestrator.runPipeline(agentContext, preferences as any, parsedReq.prompt);
 
     // Resolve AI provider using Factory
     const provider = ProviderFactory.getProvider(parsedReq.providerId as AIProviderId);
 
-    // Formulate system prompt with context
+    // Formulate system prompt with context and user directive
     const systemPrompt = `You are Orbit Agent Co-Pilot, an intelligent execution assistant for Orbit (Personal Productivity OS).
 Context Summary:
 - Date: ${agentContext.currentContext.currentDate}
@@ -82,30 +82,58 @@ Context Summary:
 - Stale DSA Topics Needing Practice: ${agentContext.staleDSATopics.map((t) => t.name).join(', ') || 'None'}
 - Unread Important Research Papers: ${agentContext.unreadResearchPapers.map((p) => p.title).join(', ') || 'None'}
 
-Goal: Help the user transform goals into 4 daily time-slots (morning, afternoon, evening, night), pick Top 3 MITs, and maintain a sustainable <7.0h workload.`;
+User Directive / Request:
+"${parsedReq.prompt}"
+
+Goal: Address the user's specific request while organizing tasks into 4 daily time-slots (morning, afternoon, evening, night), selecting Top 3 MITs, and maintaining a sustainable <7.0h workload.
+
+Return ONLY JSON in this exact structure:
+{
+  "summary": "Brief summary of planned schedule",
+  "taskProposals": [
+    {
+      "title": "Task title",
+      "category": "Career",
+      "estimatedHours": 1.5,
+      "priority": "high",
+      "mit": true,
+      "timeSlot": "evening",
+      "reason": "Direct user request"
+    }
+  ]
+}`;
 
     const StructuredSchema = z.object({
-      summary: z.string(),
+      summary: z.string().optional().default('Generated daily schedule proposal'),
       taskProposals: z.array(z.object({
-        title: z.string(),
-        category: z.enum(['Client', 'Research', 'Career', 'Personal', 'College', 'Habit']),
-        estimatedHours: z.number(),
-        priority: z.enum(['low', 'medium', 'high', 'urgent']),
-        mit: z.boolean(),
-        timeSlot: z.enum(['morning', 'afternoon', 'evening', 'night']),
-        reason: z.string()
-      }))
+        title: z.string().optional().default('Scheduled Action Item'),
+        category: z.enum(['Client', 'Research', 'Career', 'Personal', 'College', 'Habit']).optional().default('Career'),
+        estimatedHours: z.number().optional().default(1.0),
+        priority: z.enum(['low', 'medium', 'high', 'urgent']).optional().default('medium'),
+        mit: z.boolean().optional().default(false),
+        timeSlot: z.enum(['morning', 'afternoon', 'evening', 'night']).optional().default('morning'),
+        reason: z.string().optional().default('AI scheduled candidate')
+      })).optional().default([])
     });
 
-    const llmOutput = await provider.generateStructured(
-      parsedReq.prompt,
-      StructuredSchema,
-      { systemPrompt }
-    );
+    let llmProposals: TaskProposal[] = [];
+
+    try {
+      const llmOutput = await provider.generateStructured(
+        parsedReq.prompt,
+        StructuredSchema,
+        { systemPrompt }
+      );
+      if (llmOutput.taskProposals && llmOutput.taskProposals.length > 0) {
+        llmProposals = llmOutput.taskProposals as TaskProposal[];
+      }
+    } catch (err: any) {
+      console.warn(`[Agent Co-Pilot API] Provider '${provider.id}' output parsing failed, falling back to deterministic sub-agents:`, err.message);
+    }
 
     // Merge LLM generated proposals with deterministic pipeline proposals
-    const finalProposals: TaskProposal[] = llmOutput.taskProposals.length > 0
-      ? (llmOutput.taskProposals as TaskProposal[])
+    const finalProposals: TaskProposal[] = llmProposals.length > 0
+      ? llmProposals
       : orchestratedResult.taskProposals;
 
     // Group tasks into 4 Time Slots
