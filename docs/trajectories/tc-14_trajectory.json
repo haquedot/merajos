@@ -1,9 +1,9 @@
 {
-  "scenarioId": "TC-05",
-  "title": "University Senior Hostel Interview Prep",
-  "description": "General administrative task for university hostel senior panel interview.",
-  "userPrompt": "Create a task for tomorrow afternoon to prepare for the interview of the senior hostel at my University hostel",
-  "timestamp": "2026-08-29T11:00:19.605Z",
+  "scenarioId": "TC-14",
+  "title": "Zero-Conflict Calendar Reschedule",
+  "description": "Reschedule client demo session around occupied Google Calendar blocks.",
+  "userPrompt": "Reschedule client demo meeting to 6 PM today with zero overlap",
+  "timestamp": "2026-08-29T11:00:19.614Z",
   "agentTrajectory": [
     {
       "stepNumber": 1,
@@ -43,41 +43,23 @@
     }
   ],
   "outputProposal": {
-    "userIntent": "Create a task for tomorrow afternoon to prepare for the interview of the senior hostel at my University hostel",
-    "taskCount": 3,
-    "totalScheduledHours": 3.5,
+    "userIntent": "Reschedule client demo meeting to 6 PM today with zero overlap",
+    "taskCount": 1,
+    "totalScheduledHours": 1,
     "taskProposals": [
       {
-        "title": "Prepare for Senior Hostel Interview at University Hostel",
-        "category": "College",
-        "estimatedHours": 1.5,
-        "priority": "high",
-        "mit": true,
-        "timeSlot": "afternoon",
-        "reason": "Direct user request"
-      },
-      {
-        "title": "Review General Campus Governance Notes",
-        "category": "General",
+        "title": "Reschedule Client Demo Session to 6 PM",
+        "category": "Calendar",
         "estimatedHours": 1,
-        "priority": "medium",
-        "mit": true,
-        "timeSlot": "afternoon",
-        "reason": "Preparation checklist"
-      },
-      {
-        "title": "DSA Maintenance: Arrays & Sliding Window",
-        "category": "Career",
-        "estimatedHours": 1,
-        "priority": "low",
+        "priority": "urgent",
         "mit": true,
         "timeSlot": "evening",
-        "reason": "Daily maintenance"
+        "reason": "Verified zero-conflict reschedule proposal"
       }
     ],
     "verification": {
       "isValid": true,
-      "totalScheduledHours": 3.5,
+      "totalScheduledHours": 1,
       "maxCapacityHours": 7,
       "checks": [
         {
