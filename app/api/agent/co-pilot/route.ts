@@ -8,6 +8,7 @@ import CalendarEvent from '../../../../models/CalendarEvent';
 import UserPreferences from '../../../../models/UserPreferences';
 import { ProviderFactory, AIProviderId } from '../../../../lib/agent/providers/providerFactory';
 import { buildAgentContext } from '../../../../lib/agent/context/agentContextBuilder';
+import { OrbitAgentOrchestrator } from '../../../../lib/agent/orchestrator';
 import { AgentCoPilotProposal, TaskProposal, ScheduleSlotProposal } from '../../../../lib/agent/types';
 import { z } from 'zod';
 
@@ -64,6 +65,10 @@ export async function POST(req: Request) {
       researchPapers: (researchDoc?.projects?.flatMap((p: any) => p.sections?.flatMap((s: any) => s.papers || [])) || []) as any
     });
 
+    // Run Orchestrated Sub-Agent Tool Pipeline
+    const orchestrator = new OrbitAgentOrchestrator();
+    const orchestratedResult = orchestrator.runPipeline(agentContext, preferences as any);
+
     // Resolve AI provider using Factory
     const provider = ProviderFactory.getProvider(parsedReq.providerId as AIProviderId);
 
@@ -98,6 +103,11 @@ Goal: Help the user transform goals into 4 daily time-slots (morning, afternoon,
       { systemPrompt }
     );
 
+    // Merge LLM generated proposals with deterministic pipeline proposals
+    const finalProposals: TaskProposal[] = llmOutput.taskProposals.length > 0
+      ? (llmOutput.taskProposals as TaskProposal[])
+      : orchestratedResult.taskProposals;
+
     // Group tasks into 4 Time Slots
     const slots: Record<string, TaskProposal[]> = {
       morning: [],
@@ -106,12 +116,12 @@ Goal: Help the user transform goals into 4 daily time-slots (morning, afternoon,
       night: []
     };
 
-    llmOutput.taskProposals.forEach((tp) => {
+    finalProposals.forEach((tp) => {
       const slotKey = tp.timeSlot || 'morning';
       if (slots[slotKey]) {
-        slots[slotKey].push(tp as TaskProposal);
+        slots[slotKey].push(tp);
       } else {
-        slots.morning.push(tp as TaskProposal);
+        slots.morning.push(tp);
       }
     });
 
@@ -122,14 +132,14 @@ Goal: Help the user transform goals into 4 daily time-slots (morning, afternoon,
       { slot: 'night', label: 'Night (9 PM - 12:30 AM)', tasks: slots.night, allocatedHours: slots.night.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 2.5 },
     ];
 
-    const totalScheduledHours = llmOutput.taskProposals.reduce((sum, t) => sum + t.estimatedHours, 0);
+    const totalScheduledHours = finalProposals.reduce((sum, t) => sum + t.estimatedHours, 0);
 
     const proposal: AgentCoPilotProposal = {
       proposalId: `prop_${Date.now()}`,
       userIntent: parsedReq.prompt,
       createdAt: new Date().toISOString(),
       providerUsed: provider.id as AIProviderId,
-      taskProposals: llmOutput.taskProposals as TaskProposal[],
+      taskProposals: finalProposals,
       scheduleSlots,
       verification: {
         isValid: totalScheduledHours <= 7.0,
@@ -137,13 +147,13 @@ Goal: Help the user transform goals into 4 daily time-slots (morning, afternoon,
         maxCapacityHours: 7.0,
         checks: [
           { name: 'Capacity Ceiling', passed: totalScheduledHours <= 7.0, severity: 'error', message: totalScheduledHours <= 7.0 ? 'Workload within sustainable 7.0h limit' : 'Exceeds 7.0h limit' },
-          { name: 'MIT Count', passed: llmOutput.taskProposals.filter((t) => t.mit).length === 3, severity: 'warning', message: 'Top 3 MITs marked' }
+          { name: 'MIT Count', passed: finalProposals.filter((t) => t.mit).length === 3, severity: 'warning', message: 'Top 3 MITs marked' }
         ]
       },
       steps: [
         { stepNumber: 1, agentName: 'OrbitOrchestrator', action: 'Ingested context & initialized provider', status: 'completed', details: `Provider: ${provider.name}`, timestamp: new Date().toISOString() },
-        { stepNumber: 2, agentName: 'SubAgentPipeline', action: 'Deconstructed Career DSA & Research queues', status: 'completed', details: `Generated ${llmOutput.taskProposals.length} task proposals`, timestamp: new Date().toISOString() },
-        { stepNumber: 3, agentName: 'VerificationAgent', action: 'Verified 4-slot layout & capacity ceiling', status: 'completed', details: `Total hours: ${totalScheduledHours}h`, timestamp: new Date().toISOString() }
+        ...orchestratedResult.steps.map((s, idx) => ({ ...s, stepNumber: idx + 2 })),
+        { stepNumber: orchestratedResult.steps.length + 2, agentName: 'VerificationAgent', action: 'Verified 4-slot layout & capacity ceiling', status: 'completed', details: `Total hours: ${totalScheduledHours}h`, timestamp: new Date().toISOString() }
       ]
     };
 

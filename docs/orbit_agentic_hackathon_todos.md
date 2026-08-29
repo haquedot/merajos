@@ -36,15 +36,15 @@ graph LR
 ---
 
 ## 🛠️ Phase 2: Specialized Sub-Agent Tool Suite (Days 2–3)
-- [ ] **Task 2.1: Career & DSA Sub-Agent (`lib/agent/subagents/careerAgent.ts` & `lib/agent/tools/careerTools.ts`)**
+- [x] **Task 2.1: Career & DSA Sub-Agent (`lib/agent/subagents/careerAgent.ts` & `lib/agent/tools/careerTools.ts`)**
   - Scan `models/Career.ts` (`dsaTopics`, `subjectPlans`).
   - Extract stale topics (`lastRevised > 7 days`) and pending checklist items.
   - Generate 30m/45m practice sub-task candidates.
-- [ ] **Task 2.2: Research Synthesizer Sub-Agent (`lib/agent/subagents/researchAgent.ts` & `lib/agent/tools/researchTools.ts`)**
+- [x] **Task 2.2: Research Synthesizer Sub-Agent (`lib/agent/subagents/researchAgent.ts` & `lib/agent/tools/researchTools.ts`)**
   - Scan `models/Research.ts` (`ResearchPaperSchema`, `ResearchSectionSchema`).
   - Extract unread papers flagged `isImportant: true` and section writing word count gaps.
   - Output reading/writing time-slot candidates.
-- [ ] **Task 2.3: Task & Time-Slot Sub-Agent (`lib/agent/subagents/taskSlotAgent.ts` & `lib/agent/tools/taskSlotTools.ts`)**
+- [x] **Task 2.3: Task & Time-Slot Sub-Agent (`lib/agent/subagents/taskSlotAgent.ts` & `lib/agent/tools/taskSlotTools.ts`)**
   - Fetch occupied Google Calendar blocks via `services/google/calendarService.ts`.
   - Distribute task candidates into Orbit's 4 time slots (`morning`, `afternoon`, `evening`, `night`).
   - Score tasks via `lib/personalization/scoring/taskScorer.ts` and select Top 3 MITs (`mit: true`).
