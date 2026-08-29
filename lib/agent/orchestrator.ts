@@ -10,10 +10,50 @@ function extractTargetTitle(prompt: string): string {
   const quoteMatch = prompt.match(/["']([^"']+)["']/);
   if (quoteMatch) return quoteMatch[1].trim();
 
-  return prompt
-    .replace(/^(delete|remove|clear|mark|update|edit|complete)\s+/i, '')
-    .replace(/\s*(task|from today's task|today|from schedule|from list)\s*/gi, '')
+  let cleaned = prompt
+    .replace(/^(create|add|schedule|put|set)\s+(a\s+)?(new\s+)?task\s+(for\s+)?(this\s+|today's\s+|today\s+|tomorrow's\s+|tomorrow\s+)?(morning|afternoon|evening|night)?\s*(to\s+)?/i, '')
+    .replace(/^(delete|remove|clear|mark|update|edit|complete)\s+(task\s+)?/i, '')
+    .replace(/\s*(from today's task|from today|from schedule|from list)\s*/gi, '')
     .trim();
+
+  if (cleaned.toLowerCase().startsWith('to ')) {
+    cleaned = cleaned.substring(3).trim();
+  }
+
+  if (!cleaned) return prompt.trim();
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+export function isAnalysisQuery(userPrompt: string): boolean {
+  if (!userPrompt || !userPrompt.trim()) return false;
+  const lower = userPrompt.toLowerCase().trim();
+  return (
+    lower.endsWith('?') ||
+    lower.startsWith('who') ||
+    lower.startsWith('what') ||
+    lower.startsWith('where') ||
+    lower.startsWith('when') ||
+    lower.startsWith('why') ||
+    lower.startsWith('how') ||
+    lower.startsWith('which') ||
+    lower.startsWith('is ') ||
+    lower.startsWith('are ') ||
+    lower.startsWith('can ') ||
+    lower.startsWith('could ') ||
+    lower.startsWith('would ') ||
+    lower.includes('should i') ||
+    lower.includes('can i') ||
+    lower.includes('tell me') ||
+    lower.includes('recommend') ||
+    lower.includes('suggest') ||
+    lower.includes('analyze') ||
+    lower.includes('summarize') ||
+    lower.includes('overview') ||
+    lower.includes('review') ||
+    lower.includes('check my') ||
+    lower.includes('workload') ||
+    lower.includes('status of')
+  );
 }
 
 export function parseOmniActionProposal(userPrompt: string): AgentActionProposal | null {
@@ -21,8 +61,8 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
   const clean = userPrompt.trim();
   const lower = clean.toLowerCase();
 
-  // Ignore general workload analysis commands
-  if (lower.includes('analyze my workload') || lower.includes('generate schedule')) {
+  // Ignore general workload analysis and informational queries
+  if (isAnalysisQuery(clean)) {
     return null;
   }
 
@@ -117,8 +157,7 @@ export function parseUserIntentPrompt(userPrompt: string): TaskProposal | null {
   const lower = cleanPrompt.toLowerCase();
 
   if (
-    lower.includes('analyze my workload') ||
-    lower.includes('generate schedule') ||
+    isAnalysisQuery(cleanPrompt) ||
     lower.startsWith('delete') ||
     lower.startsWith('remove') ||
     lower.startsWith('clear') ||
