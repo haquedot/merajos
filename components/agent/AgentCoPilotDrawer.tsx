@@ -23,6 +23,7 @@ import {
 import { AgentCoPilotProposal, TaskProposal, ScheduleSlotProposal } from '../../lib/agent/types';
 import { AIProviderId } from '../../lib/agent/providers/providerFactory';
 import { useTaskStore } from '../../store/useTaskStore';
+import { getAuthHeaders } from '../../lib/authCheck';
 import toast from 'react-hot-toast';
 
 interface AgentCoPilotDrawerProps {
@@ -43,18 +44,23 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
   useEffect(() => {
     setMounted(true);
 
-    // Fetch available AI providers from route GET endpoint
-    fetch('/api/agent/co-pilot')
-      .then((res) => res.json())
-      .then((data) => {
+    const loadProviders = async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/agent/co-pilot', { headers });
+        const data = await res.json();
         if (data.availableProviders) {
           setAvailableProviders(data.availableProviders);
         }
         if (data.activeProvider) {
           setSelectedProvider(data.activeProvider as AIProviderId);
         }
-      })
-      .catch((err) => console.error('Failed to load AI providers:', err));
+      } catch (err) {
+        console.error('Failed to load AI providers:', err);
+      }
+    };
+
+    loadProviders();
   }, []);
 
   const handleGeneratePlan = async () => {
@@ -62,9 +68,10 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
     setProposal(null);
 
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch('/api/agent/co-pilot', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           prompt: prompt.trim() || 'Analyze my workload and generate today\'s optimal schedule',
           providerId: selectedProvider
