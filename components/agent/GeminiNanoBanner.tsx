@@ -27,7 +27,7 @@ export const GeminiNanoBanner: React.FC = () => {
             Enable Zero-API-Key On-Device AI (Gemini Nano)
           </p>
           <p className="text-[11px] text-gray-300 leading-relaxed">
-            Run Omini Co-Pilot 100% locally in your browser with zero latency and zero API keys.
+            Run Omini 100% locally in your browser with zero latency and zero API keys.
             Enable Chrome flags <code className="px-1 py-0.5 bg-black/40 rounded text-purple-300 font-mono text-[10px]">#prompt-api-for-gemini-nano</code> in Chrome 126+.
           </p>
         </div>

@@ -145,18 +145,18 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <Search className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
         </button>
-        
+
         {/* Single Unified Google & Local Sync Status Pill */}
         <button
           id="tour-google-sync"
           onClick={syncNow}
           className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${syncState === 'offline'
-              ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-              : syncState === 'error'
-                ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-                : syncState === 'syncing'
-                  ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border-[#E2E8F0] dark:border-[#243244]'
+            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+            : syncState === 'error'
+              ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+              : syncState === 'syncing'
+                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border-[#E2E8F0] dark:border-[#243244]'
             }`}
           title={syncMessage || 'Click to synchronize with Google'}
         >
@@ -187,7 +187,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           id="tour-agent-copilot"
           onClick={() => setIsCoPilotOpen(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-blue-500/20 transition-all cursor-pointer border border-blue-400/30"
-          title="Open Omini Co-Pilot (Alt+J or Ctrl+Shift+O)"
+          title="Open Omini (Alt+J or Ctrl+Shift+O)"
         >
           <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-300" />
           <span className="hidden sm:inline">Omini</span>

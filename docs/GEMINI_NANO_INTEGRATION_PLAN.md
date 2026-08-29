@@ -1,4 +1,4 @@
-# 🔮 Gemini Nano (Chrome Built-in AI) Integration Plan for Orbit & Omini Co-Pilot
+# 🔮 Gemini Nano (Chrome Built-in AI) Integration Plan for Orbit & Omini
 
 > **Executive Summary**: This document evaluates the feasibility, architecture, and implementation blueprint for integrating **Gemini Nano**—Google's on-device LLM natively embedded in Chrome—into Orbit OS and the **Omini Agent Co-Pilot**. It details how Gemini Nano eliminates API keys, removes cloud infrastructure costs, guarantees 100% privacy, and works as a zero-latency local fallback alongside Ollama.
 
