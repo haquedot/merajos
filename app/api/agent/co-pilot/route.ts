@@ -6,7 +6,7 @@ import Career from '../../../../models/Career';
 import Research from '../../../../models/Research';
 import CalendarEvent from '../../../../models/CalendarEvent';
 import UserPreferences from '../../../../models/UserPreferences';
-import { ProviderFactory, AIProviderId } from '../../../../lib/agent/providers/providerFactory';
+import { ProviderFactory, AIProviderId, DEFAULT_AI_PROVIDER } from '../../../../lib/agent/providers/providerFactory';
 import { buildAgentContext } from '../../../../lib/agent/context/agentContextBuilder';
 import { OrbitAgentOrchestrator, parseUserIntentPrompt } from '../../../../lib/agent/orchestrator';
 import { AgentCoPilotProposal, TaskProposal, ScheduleSlotProposal } from '../../../../lib/agent/types';
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     if (!auth.authenticated) return auth.response;
 
     const availableProviders = ProviderFactory.getAvailableProviders();
-    const activeProvider = process.env.AI_PROVIDER || 'gemini';
+    const activeProvider = process.env.AI_PROVIDER || DEFAULT_AI_PROVIDER;
 
     return NextResponse.json({
       activeProvider,
@@ -99,15 +99,50 @@ Return ONLY JSON matching this structure:
   ]
 }`;
 
+    const TaskCategorySchema = z.preprocess((val) => {
+      if (typeof val === 'string') {
+        const norm = val.trim().toLowerCase();
+        if (norm.includes('client') || norm.includes('freelance')) return 'Client';
+        if (norm.includes('research') || norm.includes('paper')) return 'Research';
+        if (norm.includes('career') || norm.includes('dsa') || norm.includes('job') || norm.includes('interview')) return 'Career';
+        if (norm.includes('personal') || norm.includes('life')) return 'Personal';
+        if (norm.includes('college') || norm.includes('university') || norm.includes('hostel') || norm.includes('exam')) return 'College';
+        if (norm.includes('habit') || norm.includes('gym')) return 'Habit';
+        return 'General';
+      }
+      return 'General';
+    }, z.enum(['Client', 'Research', 'Career', 'Personal', 'College', 'Habit', 'General'])).default('General');
+
+    const TimeSlotSchema = z.preprocess((val) => {
+      if (typeof val === 'string') {
+        const norm = val.trim().toLowerCase();
+        if (norm.includes('morning')) return 'morning';
+        if (norm.includes('afternoon')) return 'afternoon';
+        if (norm.includes('evening')) return 'evening';
+        if (norm.includes('night')) return 'night';
+      }
+      return 'afternoon';
+    }, z.enum(['morning', 'afternoon', 'evening', 'night'])).default('afternoon');
+
+    const PrioritySchema = z.preprocess((val) => {
+      if (typeof val === 'string') {
+        const norm = val.trim().toLowerCase();
+        if (norm.includes('low')) return 'low';
+        if (norm.includes('urgent')) return 'urgent';
+        if (norm.includes('high')) return 'high';
+      }
+      return 'medium';
+    }, z.enum(['low', 'medium', 'high', 'urgent'])).default('medium');
+
     const StructuredSchema = z.object({
       summary: z.string().optional().default('Generated daily schedule proposal'),
       taskProposals: z.array(z.object({
         title: z.string().optional().default('Scheduled Action Item'),
-        category: z.enum(['Client', 'Research', 'Career', 'Personal', 'College', 'Habit', 'General']).optional().default('General'),
-        estimatedHours: z.number().optional().default(1.0),
-        priority: z.enum(['low', 'medium', 'high', 'urgent']).optional().default('medium'),
+        category: TaskCategorySchema,
+        estimatedHours: z.preprocess((val) => (typeof val === 'string' ? parseFloat(val) || 1.0 : val), z.number()).default(1.0),
+        priority: PrioritySchema,
         mit: z.boolean().optional().default(false),
-        timeSlot: z.enum(['morning', 'afternoon', 'evening', 'night']).optional().default('morning'),
+        timeSlot: TimeSlotSchema,
         targetDate: z.string().optional(),
         reason: z.string().optional().default('AI scheduled candidate')
       })).optional().default([])

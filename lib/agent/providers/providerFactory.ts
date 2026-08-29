@@ -8,6 +8,9 @@ import { MockProvider } from './MockProvider';
 
 export type AIProviderId = 'gemini' | 'openai' | 'anthropic' | 'groq' | 'ollama' | 'mock';
 
+// Central Default AI Provider configuration (Change here to switch default across application)
+export const DEFAULT_AI_PROVIDER: AIProviderId = 'ollama';
+
 export class ProviderFactory {
   private static instance: LLMProvider | null = null;
 
@@ -15,7 +18,7 @@ export class ProviderFactory {
    * Returns the active LLM Provider instance based on:
    * 1. Explicit override passed in parameters
    * 2. `AGENT_MOCK_MODE=true` environment variable -> MockProvider
-   * 3. `AI_PROVIDER` environment variable (default: 'gemini')
+   * 3. `AI_PROVIDER` environment variable (default: 'ollama')
    */
   public static getProvider(providerId?: AIProviderId): LLMProvider {
     // If offline mock mode is flagged, prioritize MockProvider for benchmark safety
@@ -23,7 +26,7 @@ export class ProviderFactory {
       return new MockProvider();
     }
 
-    const activeId = (providerId || process.env.AI_PROVIDER || 'gemini').toLowerCase() as AIProviderId;
+    const activeId = (providerId || process.env.AI_PROVIDER || DEFAULT_AI_PROVIDER).toLowerCase() as AIProviderId;
 
     switch (activeId) {
       case 'openai':
