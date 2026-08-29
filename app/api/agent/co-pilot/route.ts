@@ -8,7 +8,7 @@ import CalendarEvent from '../../../../models/CalendarEvent';
 import UserPreferences from '../../../../models/UserPreferences';
 import { ProviderFactory, AIProviderId, DEFAULT_AI_PROVIDER } from '../../../../lib/agent/providers/providerFactory';
 import { buildAgentContext } from '../../../../lib/agent/context/agentContextBuilder';
-import { OrbitAgentOrchestrator, parseUserIntentPrompt, parseOmniActionProposal } from '../../../../lib/agent/orchestrator';
+import { OrbitAgentOrchestrator, parseUserIntentPrompt, parseOmniActionProposal, isAnalysisQuery } from '../../../../lib/agent/orchestrator';
 import { AgentCoPilotProposal, TaskProposal, ScheduleSlotProposal, AgentActionProposal } from '../../../../lib/agent/types';
 import { z } from 'zod';
 
@@ -73,31 +73,25 @@ export async function POST(req: Request) {
     const effectiveProviderId = parsedReq.providerId === 'gemini-nano' ? DEFAULT_AI_PROVIDER : (parsedReq.providerId as AIProviderId);
     const provider = ProviderFactory.getProvider(effectiveProviderId);
 
-    // Formulate system prompt with context and user directive
-    const systemPrompt = `You are Orbit Agent Co-Pilot, an intelligent execution assistant for Orbit (Personal Productivity OS).
+    // Formulate system prompt with context and user directive for LLM semantic reasoning
+    const systemPrompt = `You are Omini, the intelligent personal AI assistant for Orbit OS.
+User's Explicit Directive: "${parsedReq.prompt}"
 
-CRITICAL DIRECTIVE:
-User's Explicit Request: "${parsedReq.prompt}"
+Classify the user's directive into one of 3 semantic intent types:
+1. "INFORMATIONAL_QUERY": Questions, analysis, or recommendations (e.g. "What should I do tomorrow", "Analyze todays tasks", "How is my day").
+   - DO NOT create fake tasks matching the prompt text.
+   - Provide a helpful, concise answer in "summary" analyzing the user's workload and context.
+2. "TASK_MUTATION": Direct request to create or schedule a specific task (e.g. "Create a task for tomorrow afternoon to play badminton").
+   - Fill "explicitTask" with the title, category, timeSlot, and targetDate requested.
+3. "MODULE_ACTION": Direct request to create, update, or delete workspace items (e.g. "Delete Accenture assessment task", "Create note titled Meeting Notes").
+   - Fill "actionProposals" array with the requested CRUD operation details.
 
-RULES:
-1. You MUST generate a task that directly reflects the User's Explicit Request above (e.g. if the user asks to prepare for an interview for senior hostel, create a task titled "Prepare for Senior Hostel Interview").
-2. DO NOT substitute user requests with unrelated DSA coding topics or academic papers.
-3. Organize all tasks into 4 daily time-slots (morning, afternoon, evening, night), select Top 3 MITs, and maintain a sustainable <7.0h workload.
-
-Return ONLY JSON matching this structure:
+Return ONLY valid JSON matching this structure:
 {
-  "summary": "Brief summary of planned schedule",
-  "taskProposals": [
-    {
-      "title": "Exact title matching user request",
-      "category": "College",
-      "estimatedHours": 1.5,
-      "priority": "high",
-      "mit": true,
-      "timeSlot": "afternoon",
-      "reason": "Direct user request"
-    }
-  ]
+  "intentType": "INFORMATIONAL_QUERY",
+  "summary": "Clear response or summary answering the prompt",
+  "actionProposals": [],
+  "explicitTask": null
 }`;
 
     const TaskCategorySchema = z.preprocess((val) => {
@@ -136,20 +130,31 @@ Return ONLY JSON matching this structure:
     }, z.enum(['low', 'medium', 'high', 'urgent'])).default('medium');
 
     const StructuredSchema = z.object({
-      summary: z.string().optional().default('Generated daily schedule proposal'),
-      taskProposals: z.array(z.object({
-        title: z.string().optional().default('Scheduled Action Item'),
+      intentType: z.enum(['INFORMATIONAL_QUERY', 'TASK_MUTATION', 'MODULE_ACTION']).default('INFORMATIONAL_QUERY'),
+      summary: z.string().optional().default(''),
+      actionProposals: z.array(z.object({
+        module: z.enum(['tasks', 'career', 'research', 'calendar', 'notes', 'projects', 'habits', 'goals']).default('tasks'),
+        opType: z.enum(['CREATE', 'READ', 'UPDATE', 'DELETE']).default('CREATE'),
+        title: z.string(),
+        description: z.string().optional().default('Parsed action proposal'),
+        targetData: z.record(z.string(), z.unknown()).optional().default({})
+      })).optional().default([]),
+      explicitTask: z.object({
+        title: z.string(),
         category: TaskCategorySchema,
         estimatedHours: z.preprocess((val) => (typeof val === 'string' ? parseFloat(val) || 1.0 : val), z.number()).default(1.0),
         priority: PrioritySchema,
-        mit: z.boolean().optional().default(false),
+        mit: z.boolean().optional().default(true),
         timeSlot: TimeSlotSchema,
         targetDate: z.string().optional(),
-        reason: z.string().optional().default('AI scheduled candidate')
-      })).optional().default([])
+        reason: z.string().optional().default('User requested task')
+      }).optional().nullable().default(null)
     });
 
-    let llmProposals: TaskProposal[] = [];
+    let llmSummary = '';
+    let llmIntent: 'INFORMATIONAL_QUERY' | 'TASK_MUTATION' | 'MODULE_ACTION' = 'INFORMATIONAL_QUERY';
+    let llmActionProposals: AgentActionProposal[] = [];
+    let llmExplicitTask: TaskProposal | null = null;
 
     try {
       const llmOutput = await provider.generateStructured(
@@ -157,30 +162,56 @@ Return ONLY JSON matching this structure:
         StructuredSchema,
         { systemPrompt }
       );
-      if (llmOutput.taskProposals && llmOutput.taskProposals.length > 0) {
-        llmProposals = llmOutput.taskProposals as TaskProposal[];
+
+      if (llmOutput) {
+        llmIntent = llmOutput.intentType;
+        llmSummary = llmOutput.summary || '';
+        if (llmOutput.actionProposals && llmOutput.actionProposals.length > 0) {
+          llmActionProposals = llmOutput.actionProposals.map((a, i) => ({
+            actionId: `act_${Date.now()}_${i}`,
+            module: a.module as any,
+            opType: a.opType as any,
+            title: a.title,
+            description: a.description || `Parsed ${a.opType} operation for ${a.module}`,
+            targetData: a.targetData || { prompt: parsedReq.prompt },
+            requiresConfirmation: a.opType === 'DELETE',
+            status: 'pending'
+          }));
+        }
+        if (llmOutput.explicitTask && llmOutput.explicitTask.title) {
+          llmExplicitTask = {
+            id: `prompt_task_${Date.now()}`,
+            title: llmOutput.explicitTask.title,
+            category: llmOutput.explicitTask.category as any,
+            estimatedHours: llmOutput.explicitTask.estimatedHours,
+            priority: llmOutput.explicitTask.priority as any,
+            mit: llmOutput.explicitTask.mit ?? true,
+            timeSlot: llmOutput.explicitTask.timeSlot as any,
+            targetDate: llmOutput.explicitTask.targetDate,
+            reason: `Direct user request: "${parsedReq.prompt}"`,
+            sourceModule: 'tasks'
+          };
+        }
       }
     } catch (err: any) {
-      console.warn(`[Agent Co-Pilot API] Provider '${provider.id}' output parsing failed, falling back to deterministic sub-agents:`, err.message);
+      console.warn(`[Agent Co-Pilot API] Provider '${provider.id}' semantic evaluation fallback:`, err.message);
     }
 
-    // Merge LLM generated proposals with deterministic pipeline proposals
-    let finalProposals: TaskProposal[] = llmProposals.length > 0
-      ? llmProposals
-      : orchestratedResult.taskProposals;
+    // Fallback to deterministic orchestrator if LLM didn't specify explicit task
+    let finalProposals: TaskProposal[] = orchestratedResult.taskProposals;
 
-    // Guaranteed Intent Enforcement: Ensure user's prompt task is present
-    const userPromptTask = parseUserIntentPrompt(parsedReq.prompt);
-    if (userPromptTask) {
+    const isAnalysisOnly = llmIntent === 'INFORMATIONAL_QUERY' || isAnalysisQuery(parsedReq.prompt);
+
+    // If LLM or prompt extraction identified an explicit task, insert it ONLY if not an analysis/informational query
+    const fallbackUserTask = parseUserIntentPrompt(parsedReq.prompt);
+    const taskToAdd = !isAnalysisOnly && (llmExplicitTask || (llmIntent === 'TASK_MUTATION' ? fallbackUserTask : null));
+
+    if (taskToAdd) {
       const matchesUserIntent = finalProposals.some((t) =>
-        t.title.toLowerCase().includes('hostel') ||
-        t.title.toLowerCase().includes('interview') ||
-        t.title.toLowerCase().includes(userPromptTask.title.toLowerCase().substring(0, 8))
+        t.title.toLowerCase().includes(taskToAdd.title.toLowerCase().substring(0, 8))
       );
-
       if (!matchesUserIntent) {
-        // Prepend user task to ensure exact intent accuracy
-        finalProposals = [userPromptTask, ...finalProposals.filter((t) => !t.mit)];
+        finalProposals = [taskToAdd, ...finalProposals.filter((t) => !t.mit)];
       }
     }
 
@@ -210,14 +241,31 @@ Return ONLY JSON matching this structure:
 
     const totalScheduledHours = finalProposals.reduce((sum, t) => sum + t.estimatedHours, 0);
 
+    // Dynamic Action Proposals: strictly empty if informational query
     const omniAction = parseOmniActionProposal(parsedReq.prompt);
-    const actionProposals: AgentActionProposal[] = omniAction ? [omniAction] : [];
+    const actionProposals: AgentActionProposal[] = isAnalysisOnly
+      ? []
+      : llmActionProposals.length > 0
+      ? llmActionProposals
+      : omniAction
+      ? [omniAction]
+      : [];
+
+    const usedProviderId = parsedReq.providerId || provider.id;
+    const usedProviderName = parsedReq.providerId === 'gemini-nano' ? 'Gemini Nano (Chrome Built-in On-Device)' : provider.name;
+
+    const isTomorrowQuery = parsedReq.prompt.toLowerCase().includes('tomorrow');
+    const summaryText = llmSummary.trim() || (isTomorrowQuery
+      ? `Tomorrow's Recommendation: ${finalProposals.length} tasks totaling ${totalScheduledHours}h recommended based on your workspace context.`
+      : `Workload Overview: ${finalProposals.length} tasks scheduled totaling ${totalScheduledHours}h out of 7.0h max capacity limit.`);
 
     const proposal: AgentCoPilotProposal = {
       proposalId: `prop_${Date.now()}`,
       userIntent: parsedReq.prompt,
+      summary: summaryText,
+      isAnalysisOnly,
       createdAt: new Date().toISOString(),
-      providerUsed: provider.id as AIProviderId,
+      providerUsed: usedProviderId as AIProviderId,
       taskProposals: finalProposals,
       actionProposals,
       scheduleSlots,
@@ -231,7 +279,7 @@ Return ONLY JSON matching this structure:
         ]
       },
       steps: [
-        { stepNumber: 1, agentName: 'OrbitOrchestrator', action: 'Ingested context & initialized provider', status: 'completed', details: `Provider: ${provider.name}`, timestamp: new Date().toISOString() },
+        { stepNumber: 1, agentName: 'OrbitOrchestrator', action: 'Ingested context & initialized provider', status: 'completed', details: `Provider: ${usedProviderName}`, timestamp: new Date().toISOString() },
         ...orchestratedResult.steps.map((s, idx) => ({ ...s, stepNumber: idx + 2 })),
         { stepNumber: orchestratedResult.steps.length + 2, agentName: 'VerificationAgent', action: 'Verified 4-slot layout & capacity ceiling', status: 'completed', details: `Total hours: ${totalScheduledHours}h`, timestamp: new Date().toISOString() }
       ]

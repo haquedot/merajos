@@ -80,6 +80,8 @@ export interface AgentStep {
 export interface AgentCoPilotProposal {
   proposalId: string;
   userIntent: string;
+  summary?: string;
+  isAnalysisOnly?: boolean;
   createdAt: string;
   providerUsed: AIProviderId;
   taskProposals: TaskProposal[];
