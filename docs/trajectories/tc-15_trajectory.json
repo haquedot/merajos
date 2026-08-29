@@ -3,7 +3,7 @@
   "title": "Safe Task Deletion Guardrail",
   "description": "Request to remove obsolete draft task with explicit confirmation alert.",
   "userPrompt": "Delete task Old Draft Setup",
-  "timestamp": "2026-08-29T10:52:58.661Z",
+  "timestamp": "2026-08-29T11:00:19.614Z",
   "agentTrajectory": [
     {
       "stepNumber": 1,

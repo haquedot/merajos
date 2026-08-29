@@ -6,6 +6,16 @@ import { ComprehensiveAgentContext } from './context/agentContextBuilder';
 import { TaskProposal, ScheduleSlotProposal, AgentStep, VerificationResult, AgentActionProposal, ModuleType, CrudOp } from './types';
 import { UserPreferences } from '../personalization/types';
 
+function extractTargetTitle(prompt: string): string {
+  const quoteMatch = prompt.match(/["']([^"']+)["']/);
+  if (quoteMatch) return quoteMatch[1].trim();
+
+  return prompt
+    .replace(/^(delete|remove|clear|mark|update|edit|complete)\s+/i, '')
+    .replace(/\s*(task|from today's task|today|from schedule|from list)\s*/gi, '')
+    .trim();
+}
+
 export function parseOmniActionProposal(userPrompt: string): AgentActionProposal | null {
   if (!userPrompt || !userPrompt.trim()) return null;
   const clean = userPrompt.trim();
@@ -45,6 +55,7 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
   }
 
   const actionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const extractedTitle = extractTargetTitle(clean);
 
   if (module === 'notes') {
     const titleMatch = clean.replace(/^(create|add|new)\s+(a\s+)?(note|memo)\s*(titled|named|called)?\s*/i, '').trim();
@@ -52,9 +63,9 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
       actionId,
       module: 'notes',
       opType,
-      title: opType === 'DELETE' ? `Delete Note: ${titleMatch || clean}` : `Note: ${titleMatch || clean}`,
+      title: opType === 'DELETE' ? `Delete Note: "${extractedTitle}"` : `Note: "${extractedTitle}"`,
       description: `${opType} note action parsed from prompt`,
-      targetData: { title: titleMatch || clean, content: '', tags: ['co-pilot'] },
+      targetData: { title: extractedTitle || titleMatch || clean, content: '', tags: ['co-pilot'] },
       requiresConfirmation: opType === 'DELETE',
       status: 'pending'
     };
@@ -67,7 +78,7 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
       opType: 'UPDATE',
       title: `Career/DSA Action: ${clean}`,
       description: `Update revision status/progress for DSA or Subject Syllabus`,
-      targetData: { prompt: clean, markRevised: true },
+      targetData: { title: extractedTitle, prompt: clean, markRevised: true },
       diffPreview: [{ field: 'revisionStatus', before: 'Stale (>7d)', after: 'Revised (Today)' }],
       requiresConfirmation: false,
       status: 'pending'
@@ -81,7 +92,7 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
       opType,
       title: `Research Engine: ${clean}`,
       description: `${opType} research paper citation or section word count`,
-      targetData: { prompt: clean },
+      targetData: { title: extractedTitle, prompt: clean },
       requiresConfirmation: opType === 'DELETE',
       status: 'pending'
     };
@@ -91,9 +102,10 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
     actionId,
     module,
     opType,
-    title: `${opType} ${module.toUpperCase()}: ${clean}`,
-    description: `Parsed action proposal for ${module} module`,
-    targetData: { prompt: clean },
+    title: opType === 'DELETE' ? `Delete Task: "${extractedTitle}"` : `${opType} ${module.toUpperCase()}: "${extractedTitle}"`,
+    description: opType === 'DELETE' ? `Delete task matching "${extractedTitle}"` : `Parsed action proposal for ${module} module`,
+    targetData: { title: extractedTitle, prompt: clean },
+    diffPreview: opType === 'DELETE' ? [{ field: 'Status', before: 'Active', after: 'Deleted' }] : undefined,
     requiresConfirmation: opType === 'DELETE',
     status: 'pending'
   };
@@ -104,7 +116,19 @@ export function parseUserIntentPrompt(userPrompt: string): TaskProposal | null {
   const cleanPrompt = userPrompt.trim();
   const lower = cleanPrompt.toLowerCase();
 
-  if (lower.includes('analyze my workload') || lower.includes('generate schedule')) {
+  if (
+    lower.includes('analyze my workload') ||
+    lower.includes('generate schedule') ||
+    lower.startsWith('delete') ||
+    lower.startsWith('remove') ||
+    lower.startsWith('clear') ||
+    lower.startsWith('mark') ||
+    lower.startsWith('update') ||
+    lower.startsWith('edit') ||
+    lower.startsWith('complete') ||
+    lower.includes('delete task') ||
+    lower.includes('remove task')
+  ) {
     return null;
   }
 

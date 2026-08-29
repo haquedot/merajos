@@ -231,7 +231,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                   </div>
                   <div>
                     <h2 className="text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
-                      Orbit Agent Co-Pilot
+                      Omini Agent Co-Pilot
                       <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[10px] font-extrabold uppercase">
                         HITL
                       </span>
@@ -425,13 +425,15 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                   {/* Clean Human-Friendly Proposal View */}
                   {proposal && !isGenerating && (
                     <div className="space-y-4">
-                      {/* Executive AI Summary Card */}
-                      <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-emerald-50/60 dark:from-blue-950/30 dark:to-emerald-950/20 border border-blue-200/60 dark:border-blue-900/40 space-y-2.5 shadow-sm">
+                      {/* Top Action Plan / Directive Banner */}
+                      <div className="p-4 rounded-2xl bg-blue-50/80 dark:bg-[#182035]/80 border border-blue-200 dark:border-blue-800/60 space-y-2.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                             <h3 className="text-xs font-black text-gray-900 dark:text-white">
-                              Optimized Schedule Action Plan
+                              {proposal.actionProposals && proposal.actionProposals.length > 0
+                                ? 'Omni-Module Action Directive'
+                                : 'Optimized Schedule Action Plan'}
                             </h3>
                           </div>
                           <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold flex items-center gap-1 border border-emerald-300 dark:border-emerald-800">
@@ -441,14 +443,18 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                         </div>
 
                         <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
-                          Created <strong>{proposal.taskProposals.length} task proposal</strong> ({proposal.verification.totalScheduledHours}h total workload) mapped to your requested target date and time slot.
+                          {proposal.actionProposals && proposal.actionProposals.length > 0
+                            ? `Parsed ${proposal.actionProposals.length} module operation request. Review the action proposal card below to approve and execute.`
+                            : `Created ${proposal.taskProposals.length} task proposal (${proposal.verification.totalScheduledHours}h total workload) mapped to your requested target date and time slot.`}
                         </p>
 
-                        <div className="flex items-center gap-4 text-[11px] text-gray-600 dark:text-gray-400 pt-1 border-t border-blue-200/50 dark:border-blue-900/30">
-                          <span>Total Workload: <strong className="text-gray-900 dark:text-white">{proposal.verification.totalScheduledHours}h / 7.0h</strong></span>
-                          <span>•</span>
-                          <span>MIT Marked: <strong className="text-amber-600 dark:text-amber-400">{proposal.taskProposals.filter(t => t.mit).length} Task</strong></span>
-                        </div>
+                        {(!proposal.actionProposals || proposal.actionProposals.length === 0) && (
+                          <div className="flex items-center gap-4 text-[11px] text-gray-600 dark:text-gray-400 pt-1 border-t border-blue-200/50 dark:border-blue-900/30">
+                            <span>Total Workload: <strong className="text-gray-900 dark:text-white">{proposal.verification.totalScheduledHours}h / 7.0h</strong></span>
+                            <span>•</span>
+                            <span>MIT Marked: <strong className="text-amber-600 dark:text-amber-400">{proposal.taskProposals.filter(t => t.mit).length} Task</strong></span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Collapsible Technical Reasoning Accordion */}
@@ -498,70 +504,72 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                         </div>
                       )}
 
-                      {/* Proposed Schedule Slots */}
-                      <div className="space-y-2.5">
-                        <h3 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                          Proposed 4-Slot Schedule Breakdown
-                        </h3>
-
+                      {/* Proposed Schedule Slots (Only show for scheduling requests without standalone action proposals) */}
+                      {(!proposal.actionProposals || proposal.actionProposals.length === 0) && proposal.scheduleSlots && (
                         <div className="space-y-2.5">
-                          {proposal.scheduleSlots.map((slot) => (
-                            <div
-                              key={slot.slot}
-                              className={`p-3.5 rounded-xl border transition-all ${
-                                slot.tasks.length > 0
-                                  ? 'bg-white dark:bg-[#181d2a] border-blue-200 dark:border-blue-900/50 shadow-sm'
-                                  : 'bg-gray-50/50 dark:bg-[#141824]/50 border-gray-200/60 dark:border-gray-800/60 opacity-70'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between text-xs font-bold text-gray-800 dark:text-gray-200">
-                                <span className="flex items-center gap-1.5">
-                                  <Clock className="w-3.5 h-3.5 text-blue-500" />
-                                  {slot.label}
-                                </span>
-                                <span className="text-[11px] text-gray-500 font-mono">
-                                  {slot.allocatedHours}h allocated
-                                </span>
-                              </div>
+                          <h3 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                            Proposed 4-Slot Schedule Breakdown
+                          </h3>
 
-                              {slot.tasks.length === 0 ? (
-                                <p className="text-[11px] text-gray-400 pl-5 pt-1">No tasks allocated in this slot.</p>
-                              ) : (
-                                <div className="space-y-2 pt-2">
-                                  {slot.tasks.map((t, tIdx) => (
-                                    <div
-                                      key={tIdx}
-                                      className="p-2.5 rounded-xl bg-blue-50/40 dark:bg-[#121620] border border-blue-100 dark:border-blue-900/30 flex items-center justify-between"
-                                    >
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        {t.mit && (
-                                          <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white flex items-center gap-0.5 shrink-0 shadow-sm">
-                                            <Flame className="w-2.5 h-2.5" />
-                                            MIT
-                                          </span>
-                                        )}
-                                        <span className="text-xs font-bold text-gray-900 dark:text-white truncate">
-                                          {t.title}
-                                        </span>
-                                      </div>
-
-                                      <div className="flex items-center gap-2 shrink-0">
-                                        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
-                                          {t.estimatedHours}h
-                                        </span>
-                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50">
-                                          {t.category}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
+                          <div className="space-y-2.5">
+                            {proposal.scheduleSlots.map((slot) => (
+                              <div
+                                key={slot.slot}
+                                className={`p-3.5 rounded-xl border transition-all ${
+                                  slot.tasks.length > 0
+                                    ? 'bg-white dark:bg-[#181d2a] border-blue-200 dark:border-blue-900/50 shadow-sm'
+                                    : 'bg-gray-50/50 dark:bg-[#141824]/50 border-gray-200/60 dark:border-gray-800/60 opacity-70'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between text-xs font-bold text-gray-800 dark:text-gray-200">
+                                  <span className="flex items-center gap-1.5">
+                                    <Clock className="w-3.5 h-3.5 text-blue-500" />
+                                    {slot.label}
+                                  </span>
+                                  <span className="text-[11px] text-gray-500 font-mono">
+                                    {slot.allocatedHours}h allocated
+                                  </span>
                                 </div>
-                              )}
-                            </div>
-                          ))}
+
+                                {slot.tasks.length === 0 ? (
+                                  <p className="text-[11px] text-gray-400 pl-5 pt-1">No tasks allocated in this slot.</p>
+                                ) : (
+                                  <div className="space-y-2 pt-2">
+                                    {slot.tasks.map((t, tIdx) => (
+                                      <div
+                                        key={tIdx}
+                                        className="p-2.5 rounded-xl bg-blue-50/40 dark:bg-[#121620] border border-blue-100 dark:border-blue-900/30 flex items-center justify-between"
+                                      >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          {t.mit && (
+                                            <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white flex items-center gap-0.5 shrink-0 shadow-sm">
+                                              <Flame className="w-2.5 h-2.5" />
+                                              MIT
+                                            </span>
+                                          )}
+                                          <span className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                                            {t.title}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 shrink-0">
+                                          <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                                            {t.estimatedHours}h
+                                          </span>
+                                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50">
+                                            {t.category}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </>
@@ -578,27 +586,29 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                       onClick={handleDiscardProposal}
                       className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                     >
-                      Discard
+                      {proposal.actionProposals && proposal.actionProposals.length > 0 ? 'Dismiss' : 'Discard'}
                     </button>
 
-                    <button
-                      onClick={handleApproveAndSync}
-                      disabled={isApproving}
-                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      {isApproving ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Syncing Workspace...</span>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Approve & Sync Tasks</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </>
-                      )}
-                    </button>
+                    {proposal.taskProposals && proposal.taskProposals.length > 0 && (!proposal.actionProposals || proposal.actionProposals.length === 0) && (
+                      <button
+                        onClick={handleApproveAndSync}
+                        disabled={isApproving}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isApproving ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Syncing Workspace...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Approve & Sync Tasks</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 )}
 

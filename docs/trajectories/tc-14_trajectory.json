@@ -3,7 +3,7 @@
   "title": "Zero-Conflict Calendar Reschedule",
   "description": "Reschedule client demo session around occupied Google Calendar blocks.",
   "userPrompt": "Reschedule client demo meeting to 6 PM today with zero overlap",
-  "timestamp": "2026-08-29T10:52:58.661Z",
+  "timestamp": "2026-08-29T11:00:19.614Z",
   "agentTrajectory": [
     {
       "stepNumber": 1,

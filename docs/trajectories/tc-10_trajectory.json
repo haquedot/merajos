@@ -3,7 +3,7 @@
   "title": "Edge-Case 15-Task Flood & Overlap Conflict Resolution",
   "description": "Extreme scenario with 15 backlogged tasks and 5 calendar events. Orbit resolves all overlaps.",
   "userPrompt": "Resolve conflicts across my 15 pending tasks and 5 calendar events",
-  "timestamp": "2026-08-29T10:52:58.657Z",
+  "timestamp": "2026-08-29T11:00:19.611Z",
   "agentTrajectory": [
     {
       "stepNumber": 1,

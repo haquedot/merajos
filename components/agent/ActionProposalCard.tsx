@@ -3,6 +3,8 @@ import { AgentActionProposal } from '../../lib/agent/types';
 import { Check, Trash2, ArrowRight, AlertTriangle, Sparkles, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAuthHeaders } from '../../lib/authCheck';
+import { useTaskStore } from '../../store/useTaskStore';
+import { db } from '../../database/dexie';
 
 interface ActionProposalCardProps {
   proposal: AgentActionProposal;
@@ -27,6 +29,30 @@ export const ActionProposalCard: React.FC<ActionProposalCardProps> = ({ proposal
       if (res.ok && data.success) {
         setExecuted(true);
         toast.success(`Executed: ${proposal.title}`);
+
+        if (proposal.module === 'tasks') {
+          if (proposal.opType === 'DELETE') {
+            const rawTarget = String(proposal.targetData?.title || proposal.targetData?.prompt || '');
+            const targetLower = rawTarget.toLowerCase().replace(/["']/g, '');
+            const matching = useTaskStore.getState().tasks.filter((t) =>
+              t.title.toLowerCase().includes(targetLower) || targetLower.includes(t.title.toLowerCase())
+            );
+            for (const task of matching) {
+              await useTaskStore.getState().deleteTask(task.id);
+            }
+          }
+          // Sync with API
+          fetch('/api/tasks', { headers })
+            .then((r) => r.ok && r.json())
+            .then(async (d) => {
+              if (d && d.tasks) {
+                useTaskStore.setState({ tasks: d.tasks });
+                await db.tasks.clear();
+                await db.tasks.bulkPut(d.tasks);
+              }
+            }).catch(() => {});
+        }
+
         if (onExecuted) onExecuted(proposal.actionId);
       } else {
         toast.error(data.error || 'Failed to execute proposal');
