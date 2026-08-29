@@ -8,8 +8,8 @@ import CalendarEvent from '../../../../models/CalendarEvent';
 import UserPreferences from '../../../../models/UserPreferences';
 import { ProviderFactory, AIProviderId, DEFAULT_AI_PROVIDER } from '../../../../lib/agent/providers/providerFactory';
 import { buildAgentContext } from '../../../../lib/agent/context/agentContextBuilder';
-import { OrbitAgentOrchestrator, parseUserIntentPrompt } from '../../../../lib/agent/orchestrator';
-import { AgentCoPilotProposal, TaskProposal, ScheduleSlotProposal } from '../../../../lib/agent/types';
+import { OrbitAgentOrchestrator, parseUserIntentPrompt, parseOmniActionProposal } from '../../../../lib/agent/orchestrator';
+import { AgentCoPilotProposal, TaskProposal, ScheduleSlotProposal, AgentActionProposal } from '../../../../lib/agent/types';
 import { z } from 'zod';
 
 const RequestSchema = z.object({
@@ -209,12 +209,16 @@ Return ONLY JSON matching this structure:
 
     const totalScheduledHours = finalProposals.reduce((sum, t) => sum + t.estimatedHours, 0);
 
+    const omniAction = parseOmniActionProposal(parsedReq.prompt);
+    const actionProposals: AgentActionProposal[] = omniAction ? [omniAction] : [];
+
     const proposal: AgentCoPilotProposal = {
       proposalId: `prop_${Date.now()}`,
       userIntent: parsedReq.prompt,
       createdAt: new Date().toISOString(),
       providerUsed: provider.id as AIProviderId,
       taskProposals: finalProposals,
+      actionProposals,
       scheduleSlots,
       verification: {
         isValid: totalScheduledHours <= 7.0,

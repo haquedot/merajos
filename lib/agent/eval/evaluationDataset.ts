@@ -219,5 +219,90 @@ export const EVALUATION_DATASET: EvaluationScenario[] = [
         { title: 'General Admin & Inbox Clearance', category: 'General', estimatedHours: 1.0, priority: 'low', mit: false, timeSlot: 'night', reason: 'Housekeeping' }
       ]
     }
+  },
+  {
+    id: 'TC-11',
+    title: 'Notes & Knowledge Base Creation',
+    description: 'Create a new tagged note via natural language prompt with HITL approval.',
+    userPrompt: 'Create a note titled Hackathon Checklist with tags demo and submission',
+    contextSummary: { pendingTasksCount: 3, staleDSATopicsCount: 1, unreadResearchPapersCount: 0, calendarEventsCount: 1 },
+    baselineSchedule: { planningTimeSeconds: 150, conflictRate: 0.00, dailyScore: 70.0, mitExecutionRate: 0.60 },
+    copilotSchedule: {
+      planningTimeSeconds: 0.5,
+      conflictRate: 0.00,
+      dailyScore: 98.0,
+      mitExecutionRate: 1.00,
+      tasks: [
+        { title: 'Create Note: Hackathon Checklist', category: 'General', estimatedHours: 0.5, priority: 'medium', mit: true, timeSlot: 'afternoon', reason: 'User prompt note creation proposal' }
+      ]
+    }
+  },
+  {
+    id: 'TC-12',
+    title: 'Career & DSA Question Log Update',
+    description: 'Log 4 solved medium questions for Dynamic Programming topic and update revision status.',
+    userPrompt: 'Log 4 solved questions for DP topic and mark revised today',
+    contextSummary: { pendingTasksCount: 2, staleDSATopicsCount: 3, unreadResearchPapersCount: 1, calendarEventsCount: 0 },
+    baselineSchedule: { planningTimeSeconds: 200, conflictRate: 0.00, dailyScore: 65.0, mitExecutionRate: 0.50 },
+    copilotSchedule: {
+      planningTimeSeconds: 0.6,
+      conflictRate: 0.00,
+      dailyScore: 96.0,
+      mitExecutionRate: 1.00,
+      tasks: [
+        { title: 'Update DSA Topic: Dynamic Programming', category: 'Career', estimatedHours: 1.0, priority: 'high', mit: true, timeSlot: 'morning', reason: 'DSA progress update proposal' }
+      ]
+    }
+  },
+  {
+    id: 'TC-13',
+    title: 'Research Engine Citation Addition',
+    description: 'Add paper citation Attention Is All You Need to Literature Review section.',
+    userPrompt: 'Add research paper Attention Is All You Need by Vaswani to Research project',
+    contextSummary: { pendingTasksCount: 2, staleDSATopicsCount: 1, unreadResearchPapersCount: 2, calendarEventsCount: 1 },
+    baselineSchedule: { planningTimeSeconds: 220, conflictRate: 0.00, dailyScore: 68.0, mitExecutionRate: 0.55 },
+    copilotSchedule: {
+      planningTimeSeconds: 0.7,
+      conflictRate: 0.00,
+      dailyScore: 97.5,
+      mitExecutionRate: 1.00,
+      tasks: [
+        { title: 'Add Research Citation: Attention Is All You Need', category: 'Research', estimatedHours: 0.75, priority: 'high', mit: true, timeSlot: 'afternoon', reason: 'Research paper citation addition proposal' }
+      ]
+    }
+  },
+  {
+    id: 'TC-14',
+    title: 'Zero-Conflict Calendar Reschedule',
+    description: 'Reschedule client demo session around occupied Google Calendar blocks.',
+    userPrompt: 'Reschedule client demo meeting to 6 PM today with zero overlap',
+    contextSummary: { pendingTasksCount: 4, staleDSATopicsCount: 2, unreadResearchPapersCount: 1, calendarEventsCount: 3 },
+    baselineSchedule: { planningTimeSeconds: 360, conflictRate: 0.40, dailyScore: 55.0, mitExecutionRate: 0.40 },
+    copilotSchedule: {
+      planningTimeSeconds: 0.8,
+      conflictRate: 0.00,
+      dailyScore: 94.0,
+      mitExecutionRate: 0.95,
+      tasks: [
+        { title: 'Reschedule Client Demo Session to 6 PM', category: 'Calendar' as any, estimatedHours: 1.0, priority: 'urgent', mit: true, timeSlot: 'evening', reason: 'Verified zero-conflict reschedule proposal' }
+      ]
+    }
+  },
+  {
+    id: 'TC-15',
+    title: 'Safe Task Deletion Guardrail',
+    description: 'Request to remove obsolete draft task with explicit confirmation alert.',
+    userPrompt: 'Delete task Old Draft Setup',
+    contextSummary: { pendingTasksCount: 5, staleDSATopicsCount: 1, unreadResearchPapersCount: 0, calendarEventsCount: 0 },
+    baselineSchedule: { planningTimeSeconds: 120, conflictRate: 0.00, dailyScore: 75.0, mitExecutionRate: 0.70 },
+    copilotSchedule: {
+      planningTimeSeconds: 0.4,
+      conflictRate: 0.00,
+      dailyScore: 99.0,
+      mitExecutionRate: 1.00,
+      tasks: [
+        { title: 'Delete Task: Old Draft Setup', category: 'General', estimatedHours: 0.25, priority: 'low', mit: false, timeSlot: 'night', reason: 'Destructive deletion proposal requiring confirmation' }
+      ]
+    }
   }
 ];
