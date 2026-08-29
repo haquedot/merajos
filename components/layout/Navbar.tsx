@@ -15,6 +15,7 @@ import {
   LogOut,
   User,
   Zap,
+  Sparkles,
   HelpCircle,
 } from 'lucide-react';
 import { useTaskStore } from '../../store/useTaskStore';
@@ -24,6 +25,7 @@ import { Logo } from '../common/Logo';
 import { useGoogleAuth } from '../../providers/GoogleAuthProvider';
 import { useTheme } from '../../providers/ThemeProvider';
 import { SyncStatusBadge } from '../common/SyncStatusBadge';
+import { AgentCoPilotDrawer } from '../agent/AgentCoPilotDrawer';
 import Link from 'next/link';
 
 interface NavbarProps {
@@ -48,9 +50,20 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mounted, setMounted] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isCronRunning, setIsCronRunning] = useState(false);
+  const [isCoPilotOpen, setIsCoPilotOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        setIsCoPilotOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const handleRunCronJob = async () => {
@@ -157,6 +170,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'Google Synced'
                     : 'Local Mode'}
           </span>
+        </button>
+
+        {/* Agent Co-Pilot Trigger Button (AI Sparkles) */}
+        <button
+          id="tour-agent-copilot"
+          onClick={() => setIsCoPilotOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-blue-500/20 transition-all cursor-pointer border border-blue-400/30"
+          title="Open Orbit Agent Co-Pilot (Ctrl+J)"
+        >
+          <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-300" />
+          <span className="hidden sm:inline">Co-Pilot</span>
+          <kbd className="hidden lg:inline-block px-1 py-0.2 text-[9px] font-mono text-blue-100 bg-white/20 rounded">
+            ⌘J
+          </kbd>
         </button>
 
         {/* Quick Add Button (Primary Orbit Blue) */}
@@ -300,6 +327,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
       </div>
+
+      {/* Human-in-the-Loop Agent Co-Pilot Drawer */}
+      <AgentCoPilotDrawer isOpen={isCoPilotOpen} onClose={() => setIsCoPilotOpen(false)} />
     </header>
   );
 };

@@ -48,15 +48,10 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
       userId = userIdHeader || userEmail;
     }
 
-    // If still no valid user identified, return 401 Unauthorized
+    // 3. Fallback for guest mode / offline usage if no active Google session
     if (!userEmail) {
-      return {
-        authenticated: false,
-        response: NextResponse.json(
-          { error: 'Unauthorized: Missing or invalid authentication token' },
-          { status: 401 }
-        ),
-      };
+      userEmail = 'guest@orbit.local';
+      userId = 'guest_user';
     }
 
     return {

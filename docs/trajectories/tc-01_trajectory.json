@@ -1,0 +1,107 @@
+{
+  "scenarioId": "TC-01",
+  "title": "Standard Workday (DSA + Research + Client API Bug)",
+  "description": "Balancing stale Graphs/DP DSA topics, paper literature review, and urgent client API bug.",
+  "userPrompt": "Optimize today schedule focusing on Graphs DSA and client bug",
+  "timestamp": "2026-08-29T09:49:15.157Z",
+  "agentTrajectory": [
+    {
+      "stepNumber": 1,
+      "agentName": "OrbitOrchestrator",
+      "action": "Ingested context & initialized provider",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 2,
+      "agentName": "CareerAndDSAAgent",
+      "action": "Extracted stale DSA topics and pending subject checklists",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 3,
+      "agentName": "ResearchSynthesizerAgent",
+      "action": "Extracted unread papers and writing section gaps",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 4,
+      "agentName": "TaskAndSlotAgent",
+      "action": "Scored tasks with taskScorer.ts and assigned 4 time-slots",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 5,
+      "agentName": "OrbitVerificationGuardrailAgent",
+      "action": "Evaluated constraint Evaluator and capacity ceiling",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 6,
+      "agentName": "VerificationAgent",
+      "action": "Verified 4-slot layout & capacity ceiling",
+      "status": "completed"
+    }
+  ],
+  "outputProposal": {
+    "userIntent": "Optimize today schedule focusing on Graphs DSA and client bug",
+    "taskCount": 4,
+    "totalScheduledHours": 4.5,
+    "taskProposals": [
+      {
+        "title": "DSA Practice: Graphs & Topological Sort",
+        "category": "Career",
+        "estimatedHours": 1,
+        "priority": "high",
+        "mit": true,
+        "timeSlot": "morning",
+        "reason": "Stale DSA topic unrevised for 12 days"
+      },
+      {
+        "title": "Sprint Deliverable: Client API Auth Bugfix",
+        "category": "Client",
+        "estimatedHours": 1.5,
+        "priority": "urgent",
+        "mit": true,
+        "timeSlot": "morning",
+        "reason": "Active client project milestone"
+      },
+      {
+        "title": "Research Reading: Attention Is All You Need",
+        "category": "Research",
+        "estimatedHours": 1,
+        "priority": "medium",
+        "mit": true,
+        "timeSlot": "afternoon",
+        "reason": "Unread paper in Literature Review section"
+      },
+      {
+        "title": "Personal Routine: Gym & Mobility Work",
+        "category": "Personal",
+        "estimatedHours": 1,
+        "priority": "low",
+        "mit": false,
+        "timeSlot": "evening",
+        "reason": "Evening habit routine"
+      }
+    ],
+    "verification": {
+      "isValid": true,
+      "totalScheduledHours": 4.5,
+      "maxCapacityHours": 7,
+      "checks": [
+        {
+          "name": "Capacity Ceiling",
+          "passed": true,
+          "severity": "error",
+          "message": "Workload within sustainable 7.0h limit"
+        },
+        {
+          "name": "Zero Overlap Guarantee",
+          "passed": true,
+          "severity": "error",
+          "message": "0 meeting collisions"
+        }
+      ]
+    }
+  }
+}
