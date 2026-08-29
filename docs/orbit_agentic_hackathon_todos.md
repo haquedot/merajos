@@ -52,13 +52,13 @@ graph LR
 ---
 
 ## 🛡️ Phase 3: Verification & Guardrails Engine (Days 3–4)
-- [ ] **Task 3.1: Verification Guardrail Agent (`lib/agent/verifier.ts`)**
+- [x] **Task 3.1: Verification Guardrail Agent (`lib/agent/verifier.ts`)**
   - Integrate `lib/personalization/constraints/constraintEvaluator.ts`.
   - Perform 0-conflict validation against Google Calendar meetings (`calendarOccupancyHours`).
-- [ ] **Task 3.2: Capacity Ceiling & Burnout Protection**
+- [x] **Task 3.2: Capacity Ceiling & Burnout Protection**
   - Enforce hard limit `scheduledHours <= maxOverloadThresholdHours` (7.0 hours).
   - Verify category energy slot affinities from `UserPreferences` (e.g. Career in Morning).
-- [ ] **Task 3.3: Deterministic Offline Mock Engine (`lib/agent/mockEngine.ts`)**
+- [x] **Task 3.3: Deterministic Offline Mock Engine (`lib/agent/mockEngine.ts`)**
   - Implement zero-cost mock inference fallback triggered when `AGENT_MOCK_MODE=true` for reproducible benchmark testing without API credits.
 
 ---

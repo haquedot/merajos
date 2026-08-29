@@ -1,13 +1,15 @@
 import { CareerAgent } from './subagents/careerAgent';
 import { ResearchAgent } from './subagents/researchAgent';
 import { TaskSlotAgent } from './subagents/taskSlotAgent';
+import { OrbitVerificationAgent } from './verifier';
 import { ComprehensiveAgentContext } from './context/agentContextBuilder';
-import { TaskProposal, ScheduleSlotProposal, AgentStep } from './types';
+import { TaskProposal, ScheduleSlotProposal, AgentStep, VerificationResult } from './types';
 import { UserPreferences } from '../personalization/types';
 
 export interface OrchestrationResult {
   taskProposals: TaskProposal[];
   scheduleSlots: ScheduleSlotProposal[];
+  verification: VerificationResult;
   steps: AgentStep[];
 }
 
@@ -15,11 +17,13 @@ export class OrbitAgentOrchestrator {
   private careerAgent: CareerAgent;
   private researchAgent: ResearchAgent;
   private taskSlotAgent: TaskSlotAgent;
+  private verifierAgent: OrbitVerificationAgent;
 
   constructor() {
     this.careerAgent = new CareerAgent();
     this.researchAgent = new ResearchAgent();
     this.taskSlotAgent = new TaskSlotAgent();
+    this.verifierAgent = new OrbitVerificationAgent();
   }
 
   public runPipeline(
@@ -46,7 +50,6 @@ export class OrbitAgentOrchestrator {
 
     // Step 2: Research Sub-Agent Pipeline
     const researchRes = this.researchAgent.process(
-      // Wrap unread papers into dummy project structure if needed
       context.unreadResearchPapers.length > 0
         ? [{ id: 'res_proj_1', title: 'Academic Research Queue', field: 'CS', status: 'active', progress: 50, sections: [{ id: 'sec_1', type: 'Literature Review', title: 'Paper Reading', targetWords: 1000, currentWords: 400, writingStatus: 'in_progress', papers: context.unreadResearchPapers }] }]
         : []
@@ -65,7 +68,6 @@ export class OrbitAgentOrchestrator {
     const rawCandidates: TaskProposal[] = [
       ...careerRes.proposals,
       ...researchRes.proposals,
-      // Map pending tasks from Orbit store
       ...context.pendingTasks.slice(0, 3).map((t) => ({
         id: t.id,
         title: t.title,
@@ -92,9 +94,26 @@ export class OrbitAgentOrchestrator {
       timestamp
     });
 
+    // Step 4: Verification & Guardrails Sub-Agent
+    const verificationRes = this.verifierAgent.verifyAndAdjust(
+      slotRes.slottedProposals,
+      context,
+      userPreferences || context.userPreferences
+    );
+
+    steps.push({
+      stepNumber: 4,
+      agentName: this.verifierAgent.name,
+      action: 'Evaluated constraint Evaluator and capacity ceiling',
+      status: verificationRes.verification.isValid ? 'completed' : 'warning',
+      details: `Scheduled ${verificationRes.verification.totalScheduledHours.toFixed(1)}h / ${verificationRes.verification.maxCapacityHours.toFixed(1)}h capacity limit. Passed ${verificationRes.verification.checks.length} guardrail checks.`,
+      timestamp
+    });
+
     return {
-      taskProposals: slotRes.slottedProposals,
-      scheduleSlots: slotRes.scheduleSlots,
+      taskProposals: verificationRes.verifiedProposals,
+      scheduleSlots: verificationRes.scheduleSlots,
+      verification: verificationRes.verification,
       steps
     };
   }
