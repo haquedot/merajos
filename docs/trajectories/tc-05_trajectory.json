@@ -1,0 +1,98 @@
+{
+  "scenarioId": "TC-05",
+  "title": "University Senior Hostel Interview Prep",
+  "description": "General administrative task for university hostel senior panel interview.",
+  "userPrompt": "Create a task for tomorrow afternoon to prepare for the interview of the senior hostel at my University hostel",
+  "timestamp": "2026-08-29T09:49:15.182Z",
+  "agentTrajectory": [
+    {
+      "stepNumber": 1,
+      "agentName": "OrbitOrchestrator",
+      "action": "Ingested context & initialized provider",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 2,
+      "agentName": "CareerAndDSAAgent",
+      "action": "Extracted stale DSA topics and pending subject checklists",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 3,
+      "agentName": "ResearchSynthesizerAgent",
+      "action": "Extracted unread papers and writing section gaps",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 4,
+      "agentName": "TaskAndSlotAgent",
+      "action": "Scored tasks with taskScorer.ts and assigned 4 time-slots",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 5,
+      "agentName": "OrbitVerificationGuardrailAgent",
+      "action": "Evaluated constraint Evaluator and capacity ceiling",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 6,
+      "agentName": "VerificationAgent",
+      "action": "Verified 4-slot layout & capacity ceiling",
+      "status": "completed"
+    }
+  ],
+  "outputProposal": {
+    "userIntent": "Create a task for tomorrow afternoon to prepare for the interview of the senior hostel at my University hostel",
+    "taskCount": 3,
+    "totalScheduledHours": 3.5,
+    "taskProposals": [
+      {
+        "title": "Prepare for Senior Hostel Interview at University Hostel",
+        "category": "College",
+        "estimatedHours": 1.5,
+        "priority": "high",
+        "mit": true,
+        "timeSlot": "afternoon",
+        "reason": "Direct user request"
+      },
+      {
+        "title": "Review General Campus Governance Notes",
+        "category": "General",
+        "estimatedHours": 1,
+        "priority": "medium",
+        "mit": true,
+        "timeSlot": "afternoon",
+        "reason": "Preparation checklist"
+      },
+      {
+        "title": "DSA Maintenance: Arrays & Sliding Window",
+        "category": "Career",
+        "estimatedHours": 1,
+        "priority": "low",
+        "mit": true,
+        "timeSlot": "evening",
+        "reason": "Daily maintenance"
+      }
+    ],
+    "verification": {
+      "isValid": true,
+      "totalScheduledHours": 3.5,
+      "maxCapacityHours": 7,
+      "checks": [
+        {
+          "name": "Capacity Ceiling",
+          "passed": true,
+          "severity": "error",
+          "message": "Workload within sustainable 7.0h limit"
+        },
+        {
+          "name": "Zero Overlap Guarantee",
+          "passed": true,
+          "severity": "error",
+          "message": "0 meeting collisions"
+        }
+      ]
+    }
+  }
+}

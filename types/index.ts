@@ -1,6 +1,6 @@
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskStatus = 'todo' | 'in_progress' | 'completed' | 'archived';
-export type Category = 'Client' | 'Research' | 'Career' | 'Personal' | 'College' | 'Habit';
+export type Category = 'Client' | 'Research' | 'Career' | 'Personal' | 'College' | 'Habit' | 'General';
 export type TimeSlot = 'morning' | 'afternoon' | 'evening' | 'night';
 export type RecurringOption = 'none' | 'daily' | 'weekly' | 'monthly';
 

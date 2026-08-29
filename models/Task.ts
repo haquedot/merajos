@@ -13,7 +13,7 @@ const TaskSchema: Schema = new Schema(
     description: { type: String, default: '' },
     priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
     status: { type: String, enum: ['todo', 'in_progress', 'completed', 'archived'], default: 'todo' },
-    category: { type: String, enum: ['Client', 'Research', 'Career', 'Personal', 'College', 'Habit'], default: 'Personal' },
+    category: { type: String, enum: ['Client', 'Research', 'Career', 'Personal', 'College', 'Habit', 'General'], default: 'General' },
     projectId: { type: String },
     estimatedHours: { type: Number, default: 0 },
     actualHours: { type: Number, default: 0 },
