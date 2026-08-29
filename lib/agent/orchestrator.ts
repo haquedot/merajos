@@ -6,6 +6,61 @@ import { ComprehensiveAgentContext } from './context/agentContextBuilder';
 import { TaskProposal, ScheduleSlotProposal, AgentStep, VerificationResult } from './types';
 import { UserPreferences } from '../personalization/types';
 
+export function parseUserIntentPrompt(userPrompt: string): TaskProposal | null {
+  if (!userPrompt || !userPrompt.trim()) return null;
+  const cleanPrompt = userPrompt.trim();
+  const lower = cleanPrompt.toLowerCase();
+
+  if (lower.includes('analyze my workload') || lower.includes('generate schedule')) {
+    return null;
+  }
+
+  // 1. Time Slot detection
+  let slot: 'morning' | 'afternoon' | 'evening' | 'night' = 'afternoon';
+  if (lower.includes('morning')) slot = 'morning';
+  else if (lower.includes('afternoon')) slot = 'afternoon';
+  else if (lower.includes('evening')) slot = 'evening';
+  else if (lower.includes('night')) slot = 'night';
+
+  // 2. Category detection
+  let category: TaskProposal['category'] = 'Career';
+  if (lower.includes('hostel') || lower.includes('university') || lower.includes('college') || lower.includes('exam')) {
+    category = 'College';
+  } else if (lower.includes('research') || lower.includes('paper') || lower.includes('thesis')) {
+    category = 'Research';
+  } else if (lower.includes('client') || lower.includes('project') || lower.includes('freelance')) {
+    category = 'Client';
+  } else if (lower.includes('habit') || lower.includes('workout') || lower.includes('gym')) {
+    category = 'Habit';
+  } else if (lower.includes('personal') || lower.includes('buy') || lower.includes('shopping')) {
+    category = 'Personal';
+  }
+
+  // 3. Robust Title Cleanup
+  let title = cleanPrompt;
+
+  // Remove command prefixes (e.g. "Create a task for tomorrow afternoon to")
+  title = title.replace(/^(create|add|schedule|put|set)(\s+a)?(\s+new)?\s+task\s*/i, '');
+  title = title.replace(/^(for|on|in)?\s*(today|tomorrow|this)?\s*(morning|afternoon|evening|night)?\s*/i, '');
+  title = title.replace(/^(to|for|about)\s+/i, '');
+
+  title = title.trim();
+  if (!title) title = cleanPrompt;
+  title = title.charAt(0).toUpperCase() + title.slice(1);
+
+  return {
+    id: `prompt_task_${Date.now()}`,
+    title,
+    category,
+    estimatedHours: 1.5,
+    priority: 'high',
+    mit: true,
+    timeSlot: slot,
+    reason: `Direct user request: "${cleanPrompt}"`,
+    sourceModule: 'tasks'
+  };
+}
+
 export interface OrchestrationResult {
   taskProposals: TaskProposal[];
   scheduleSlots: ScheduleSlotProposal[];
@@ -66,48 +121,8 @@ export class OrbitAgentOrchestrator {
     });
 
     // Extract User-Prompt Specific Task if provided
-    const promptTasks: TaskProposal[] = [];
-    if (userPrompt && userPrompt.trim() && !userPrompt.toLowerCase().includes('analyze my workload')) {
-      const cleanPrompt = userPrompt.trim();
-      let slot: 'morning' | 'afternoon' | 'evening' | 'night' = 'evening';
-      const lower = cleanPrompt.toLowerCase();
-      if (lower.includes('morning')) slot = 'morning';
-      else if (lower.includes('afternoon')) slot = 'afternoon';
-      else if (lower.includes('night')) slot = 'night';
-
-      let category: TaskProposal['category'] = 'Career';
-      if (lower.includes('research') || lower.includes('paper')) category = 'Research';
-      else if (lower.includes('client') || lower.includes('project')) category = 'Client';
-      else if (lower.includes('habit')) category = 'Habit';
-      else if (lower.includes('college')) category = 'College';
-
-      // Extract task title cleanly from prompt
-      let title = cleanPrompt;
-      if (lower.startsWith('create a new task for this evening for ')) {
-        title = cleanPrompt.substring(39);
-      } else if (lower.startsWith('create a new task for ')) {
-        title = cleanPrompt.substring(22);
-      } else if (lower.startsWith('add a task for ')) {
-        title = cleanPrompt.substring(15);
-      } else if (lower.startsWith('add task: ')) {
-        title = cleanPrompt.substring(10);
-      }
-
-      // Capitalize title
-      title = title.charAt(0).toUpperCase() + title.slice(1);
-
-      promptTasks.push({
-        id: `prompt_task_${Date.now()}`,
-        title,
-        category,
-        estimatedHours: 1.5,
-        priority: 'high',
-        mit: true,
-        timeSlot: slot,
-        reason: `Direct user request: "${cleanPrompt}"`,
-        sourceModule: 'tasks'
-      });
-    }
+    const userPromptTask = parseUserIntentPrompt(userPrompt || '');
+    const promptTasks: TaskProposal[] = userPromptTask ? [userPromptTask] : [];
 
     // Combine raw candidate task proposals (prompt tasks first!)
     const rawCandidates: TaskProposal[] = [

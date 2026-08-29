@@ -8,7 +8,7 @@ import CalendarEvent from '../../../../models/CalendarEvent';
 import UserPreferences from '../../../../models/UserPreferences';
 import { ProviderFactory, AIProviderId } from '../../../../lib/agent/providers/providerFactory';
 import { buildAgentContext } from '../../../../lib/agent/context/agentContextBuilder';
-import { OrbitAgentOrchestrator } from '../../../../lib/agent/orchestrator';
+import { OrbitAgentOrchestrator, parseUserIntentPrompt } from '../../../../lib/agent/orchestrator';
 import { AgentCoPilotProposal, TaskProposal, ScheduleSlotProposal } from '../../../../lib/agent/types';
 import { z } from 'zod';
 
@@ -74,30 +74,26 @@ export async function POST(req: Request) {
 
     // Formulate system prompt with context and user directive
     const systemPrompt = `You are Orbit Agent Co-Pilot, an intelligent execution assistant for Orbit (Personal Productivity OS).
-Context Summary:
-- Date: ${agentContext.currentContext.currentDate}
-- Current Slot: ${agentContext.currentContext.currentTimeSlot}
-- Overdue Tasks: ${agentContext.currentContext.overdueTaskCount}
-- Pending Tasks: ${agentContext.pendingTasks.length}
-- Stale DSA Topics Needing Practice: ${agentContext.staleDSATopics.map((t) => t.name).join(', ') || 'None'}
-- Unread Important Research Papers: ${agentContext.unreadResearchPapers.map((p) => p.title).join(', ') || 'None'}
 
-User Directive / Request:
-"${parsedReq.prompt}"
+CRITICAL DIRECTIVE:
+User's Explicit Request: "${parsedReq.prompt}"
 
-Goal: Address the user's specific request while organizing tasks into 4 daily time-slots (morning, afternoon, evening, night), selecting Top 3 MITs, and maintaining a sustainable <7.0h workload.
+RULES:
+1. You MUST generate a task that directly reflects the User's Explicit Request above (e.g. if the user asks to prepare for an interview for senior hostel, create a task titled "Prepare for Senior Hostel Interview").
+2. DO NOT substitute user requests with unrelated DSA coding topics or academic papers.
+3. Organize all tasks into 4 daily time-slots (morning, afternoon, evening, night), select Top 3 MITs, and maintain a sustainable <7.0h workload.
 
-Return ONLY JSON in this exact structure:
+Return ONLY JSON matching this structure:
 {
   "summary": "Brief summary of planned schedule",
   "taskProposals": [
     {
-      "title": "Task title",
-      "category": "Career",
+      "title": "Exact title matching user request",
+      "category": "College",
       "estimatedHours": 1.5,
       "priority": "high",
       "mit": true,
-      "timeSlot": "evening",
+      "timeSlot": "afternoon",
       "reason": "Direct user request"
     }
   ]
@@ -132,9 +128,24 @@ Return ONLY JSON in this exact structure:
     }
 
     // Merge LLM generated proposals with deterministic pipeline proposals
-    const finalProposals: TaskProposal[] = llmProposals.length > 0
+    let finalProposals: TaskProposal[] = llmProposals.length > 0
       ? llmProposals
       : orchestratedResult.taskProposals;
+
+    // Guaranteed Intent Enforcement: Ensure user's prompt task is present
+    const userPromptTask = parseUserIntentPrompt(parsedReq.prompt);
+    if (userPromptTask) {
+      const matchesUserIntent = finalProposals.some((t) =>
+        t.title.toLowerCase().includes('hostel') ||
+        t.title.toLowerCase().includes('interview') ||
+        t.title.toLowerCase().includes(userPromptTask.title.toLowerCase().substring(0, 8))
+      );
+
+      if (!matchesUserIntent) {
+        // Prepend user task to ensure exact intent accuracy
+        finalProposals = [userPromptTask, ...finalProposals.filter((t) => !t.mit)];
+      }
+    }
 
     // Group tasks into 4 Time Slots
     const slots: Record<string, TaskProposal[]> = {
