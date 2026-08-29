@@ -24,6 +24,7 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
       category: 'Quick Actions',
       items: [
         { key: 'N', description: 'Create New Task' },
+        { key: 'Alt+J / Ctrl+Shift+O', description: 'Toggle Omini Co-Pilot' },
         { key: 'Esc', description: 'Close Modals & Focus Overlay' },
       ],
     },

@@ -1,9 +1,36 @@
 import { ResearchProject, ResearchPaper, ResearchSection } from '../../../types';
-import { TaskProposal } from '../types';
+import { TaskProposal, AgentActionProposal } from '../types';
 
 export interface ResearchExtractionResult {
   paperReadingProposals: TaskProposal[];
   sectionWritingProposals: TaskProposal[];
+}
+
+export function addResearchPaperProposal(params: {
+  projectId: string;
+  projectTitle: string;
+  sectionId?: string;
+  paperTitle: string;
+  authors?: string;
+  year?: number;
+}): AgentActionProposal {
+  const { projectId, projectTitle, sectionId, paperTitle, authors = 'Unknown', year = new Date().getFullYear() } = params;
+  return {
+    actionId: `act_res_paper_${Date.now()}`,
+    module: 'research',
+    opType: 'CREATE',
+    entityId: projectId,
+    title: `Add Research Paper: "${paperTitle}"`,
+    description: `Add paper citation to project '${projectTitle}'`,
+    targetData: { projectId, sectionId, paperTitle, authors, year },
+    diffPreview: [
+      { field: 'Paper Title', before: 'None', after: paperTitle },
+      { field: 'Authors', before: 'None', after: authors },
+      { field: 'Year', before: 'None', after: year }
+    ],
+    requiresConfirmation: false,
+    status: 'pending'
+  };
 }
 
 export function extractResearchTaskCandidates(projects: ResearchProject[] = []): ResearchExtractionResult {

@@ -56,14 +56,24 @@ export const Navbar: React.FC<NavbarProps> = ({
     setMounted(true);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+      if (
+        (e.altKey && e.key.toLowerCase() === 'j') ||
+        ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'o') ||
+        ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'j') ||
+        ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'i') ||
+        ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j')
+      ) {
         e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') {
+          e.stopImmediatePropagation();
+        }
         setIsCoPilotOpen((prev) => !prev);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, []);
 
   const handleRunCronJob = async () => {
@@ -177,12 +187,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           id="tour-agent-copilot"
           onClick={() => setIsCoPilotOpen(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-blue-500/20 transition-all cursor-pointer border border-blue-400/30"
-          title="Open Orbit Agent Co-Pilot (Ctrl+J)"
+          title="Open Omini Co-Pilot (Alt+J or Ctrl+Shift+O)"
         >
           <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-300" />
-          <span className="hidden sm:inline">Co-Pilot</span>
+          <span className="hidden sm:inline">Omini</span>
           <kbd className="hidden lg:inline-block px-1 py-0.2 text-[9px] font-mono text-blue-100 bg-white/20 rounded">
-            ⌘J
+            Alt+J
           </kbd>
         </button>
 

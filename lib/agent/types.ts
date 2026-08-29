@@ -4,6 +4,29 @@ export type TimeSlot = 'morning' | 'afternoon' | 'evening' | 'night';
 export type TaskCategory = 'Client' | 'Research' | 'Career' | 'Personal' | 'College' | 'Habit' | 'General';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
+// Omni-Module Action & CRUD Types
+export type ModuleType = 'tasks' | 'career' | 'research' | 'calendar' | 'notes' | 'projects' | 'habits' | 'goals';
+export type CrudOp = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE';
+
+export interface ActionDiffItem {
+  field: string;
+  before: unknown;
+  after: unknown;
+}
+
+export interface AgentActionProposal {
+  actionId: string;
+  module: ModuleType;
+  opType: CrudOp;
+  entityId?: string;
+  title: string;
+  description: string;
+  targetData: Record<string, unknown>;
+  diffPreview?: ActionDiffItem[];
+  requiresConfirmation: boolean;
+  status: 'pending' | 'approved' | 'executed' | 'discarded';
+}
+
 export interface TaskProposal {
   id?: string;
   title: string;
@@ -60,6 +83,7 @@ export interface AgentCoPilotProposal {
   createdAt: string;
   providerUsed: AIProviderId;
   taskProposals: TaskProposal[];
+  actionProposals?: AgentActionProposal[];
   scheduleSlots: ScheduleSlotProposal[];
   verification: VerificationResult;
   steps: AgentStep[];
