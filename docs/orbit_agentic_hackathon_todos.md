@@ -64,13 +64,13 @@ graph LR
 ---
 
 ## 🎨 Phase 4: Human-in-the-Loop UI Drawer & Trajectories (Days 4–5)
-- [ ] **Task 4.1: HITL Proposal Drawer (`components/agent/AgentCoPilotDrawer.tsx`)**
+- [x] **Task 4.1: HITL Proposal Drawer (`components/agent/AgentCoPilotDrawer.tsx`)**
   - Build responsive Framer Motion drawer matching Orbit's design system (Manrope font, glassmorphism cards, dark/light theme).
   - Render 4-slot schedule breakdown (`morning`, `afternoon`, `evening`, `night`) and Top 3 MIT badges.
   - Wire **"Approve & Sync to Google Workspace"** button to execute MongoDB task creation and Google Calendar API sync.
-- [ ] **Task 4.2: Header Co-Pilot Trigger (`components/layout/Header.tsx`)**
+- [x] **Task 4.2: Header Co-Pilot Trigger (`components/layout/Navbar.tsx`)**
   - Add "Sparkles / Orbit Co-Pilot" trigger button with keyboard shortcut (`Cmd/Ctrl + K` or `Cmd/Ctrl + J`).
-- [ ] **Task 4.3: Real-Time Execution Trajectory Stream**
+- [x] **Task 4.3: Real-Time Execution Trajectory Stream**
   - Render step-by-step agent thoughts: *"Loading context..."* → *"Extracting DSA targets..."* → *"Verifying zero overlaps..."* → *"Proposal ready"*.
 
 ---
