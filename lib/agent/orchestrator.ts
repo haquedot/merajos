@@ -119,7 +119,7 @@ export class OrbitAgentOrchestrator {
     // Step 2: Research Sub-Agent Pipeline
     const researchRes = this.researchAgent.process(
       context.unreadResearchPapers.length > 0
-        ? [{ id: 'res_proj_1', title: 'Academic Research Queue', field: 'CS', status: 'active', progress: 50, sections: [{ id: 'sec_1', type: 'Literature Review', title: 'Paper Reading', targetWords: 1000, currentWords: 400, writingStatus: 'in_progress', papers: context.unreadResearchPapers }] }]
+        ? [{ id: 'res_proj_1', title: 'Academic Research Queue', field: 'CS', status: 'active', progress: 50, createdAt: timestamp, updatedAt: timestamp, sections: [{ id: 'sec_1', type: 'literature_review', title: 'Paper Reading', targetWords: 1000, currentWords: 400, writingStatus: 'drafting', createdAt: timestamp, order: 1, papers: context.unreadResearchPapers }] }]
         : []
     );
 
