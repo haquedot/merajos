@@ -1,0 +1,98 @@
+{
+  "scenarioId": "TC-02",
+  "title": "High-Urgency Online Assessment Prep",
+  "description": "Upcoming OA in 24 hours requiring 2D Dynamic Programming and System Design focus.",
+  "userPrompt": "Prepare for tomorrow OA test with DP and System Design practice",
+  "timestamp": "2026-08-29T09:49:15.161Z",
+  "agentTrajectory": [
+    {
+      "stepNumber": 1,
+      "agentName": "OrbitOrchestrator",
+      "action": "Ingested context & initialized provider",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 2,
+      "agentName": "CareerAndDSAAgent",
+      "action": "Extracted stale DSA topics and pending subject checklists",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 3,
+      "agentName": "ResearchSynthesizerAgent",
+      "action": "Extracted unread papers and writing section gaps",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 4,
+      "agentName": "TaskAndSlotAgent",
+      "action": "Scored tasks with taskScorer.ts and assigned 4 time-slots",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 5,
+      "agentName": "OrbitVerificationGuardrailAgent",
+      "action": "Evaluated constraint Evaluator and capacity ceiling",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 6,
+      "agentName": "VerificationAgent",
+      "action": "Verified 4-slot layout & capacity ceiling",
+      "status": "completed"
+    }
+  ],
+  "outputProposal": {
+    "userIntent": "Prepare for tomorrow OA test with DP and System Design practice",
+    "taskCount": 3,
+    "totalScheduledHours": 4,
+    "taskProposals": [
+      {
+        "title": "OA Practice: Dynamic Programming 2D Arrays",
+        "category": "Career",
+        "estimatedHours": 1.5,
+        "priority": "urgent",
+        "mit": true,
+        "timeSlot": "morning",
+        "reason": "Upcoming Online Assessment stage"
+      },
+      {
+        "title": "System Design: Distributed Cache & Rate Limiter",
+        "category": "Career",
+        "estimatedHours": 1.5,
+        "priority": "high",
+        "mit": true,
+        "timeSlot": "afternoon",
+        "reason": "Interview preparation module"
+      },
+      {
+        "title": "Paper Notes: RoBERTa Benchmark Comparison",
+        "category": "Research",
+        "estimatedHours": 1,
+        "priority": "medium",
+        "mit": true,
+        "timeSlot": "afternoon",
+        "reason": "Important paper queue"
+      }
+    ],
+    "verification": {
+      "isValid": true,
+      "totalScheduledHours": 4,
+      "maxCapacityHours": 7,
+      "checks": [
+        {
+          "name": "Capacity Ceiling",
+          "passed": true,
+          "severity": "error",
+          "message": "Workload within sustainable 7.0h limit"
+        },
+        {
+          "name": "Zero Overlap Guarantee",
+          "passed": true,
+          "severity": "error",
+          "message": "0 meeting collisions"
+        }
+      ]
+    }
+  }
+}

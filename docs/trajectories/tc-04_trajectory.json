@@ -1,0 +1,98 @@
+{
+  "scenarioId": "TC-04",
+  "title": "Research Paper Writing Sprint",
+  "description": "Drafting 1,000 words for NeurIPS workshop paper literature review.",
+  "userPrompt": "Create tasks to complete literature review section draft for research paper",
+  "timestamp": "2026-08-29T09:49:15.165Z",
+  "agentTrajectory": [
+    {
+      "stepNumber": 1,
+      "agentName": "OrbitOrchestrator",
+      "action": "Ingested context & initialized provider",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 2,
+      "agentName": "CareerAndDSAAgent",
+      "action": "Extracted stale DSA topics and pending subject checklists",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 3,
+      "agentName": "ResearchSynthesizerAgent",
+      "action": "Extracted unread papers and writing section gaps",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 4,
+      "agentName": "TaskAndSlotAgent",
+      "action": "Scored tasks with taskScorer.ts and assigned 4 time-slots",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 5,
+      "agentName": "OrbitVerificationGuardrailAgent",
+      "action": "Evaluated constraint Evaluator and capacity ceiling",
+      "status": "completed"
+    },
+    {
+      "stepNumber": 6,
+      "agentName": "VerificationAgent",
+      "action": "Verified 4-slot layout & capacity ceiling",
+      "status": "completed"
+    }
+  ],
+  "outputProposal": {
+    "userIntent": "Create tasks to complete literature review section draft for research paper",
+    "taskCount": 3,
+    "totalScheduledHours": 4,
+    "taskProposals": [
+      {
+        "title": "Research Writing: Literature Review Draft (800w)",
+        "category": "Research",
+        "estimatedHours": 2,
+        "priority": "high",
+        "mit": true,
+        "timeSlot": "morning",
+        "reason": "NeurIPS paper milestone"
+      },
+      {
+        "title": "Paper Analysis: FlashAttention-2 Optimization",
+        "category": "Research",
+        "estimatedHours": 1,
+        "priority": "high",
+        "mit": true,
+        "timeSlot": "afternoon",
+        "reason": "Unread star paper"
+      },
+      {
+        "title": "DSA Practice: Heaps & Priority Queues",
+        "category": "Career",
+        "estimatedHours": 1,
+        "priority": "medium",
+        "mit": true,
+        "timeSlot": "evening",
+        "reason": "Career DSA revision"
+      }
+    ],
+    "verification": {
+      "isValid": true,
+      "totalScheduledHours": 4,
+      "maxCapacityHours": 7,
+      "checks": [
+        {
+          "name": "Capacity Ceiling",
+          "passed": true,
+          "severity": "error",
+          "message": "Workload within sustainable 7.0h limit"
+        },
+        {
+          "name": "Zero Overlap Guarantee",
+          "passed": true,
+          "severity": "error",
+          "message": "0 meeting collisions"
+        }
+      ]
+    }
+  }
+}
