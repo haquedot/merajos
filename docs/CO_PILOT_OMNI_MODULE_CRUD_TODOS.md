@@ -61,34 +61,34 @@ graph LR
 ## 🛠️ Phase 2: Module-Specific Tool Suites (Days 2–4)
 
 ### 2.1 Notes & Knowledge Base Sub-Agent (`lib/agent/tools/notesTools.ts`)
-- [ ] **Task 2.1.1: Create Note Tool** — `createNoteProposal(title, content, tags, folder)`
-- [ ] **Task 2.1.2: Update Note Tool** — `updateNoteProposal(noteId, fieldUpdates)`
-- [ ] **Task 2.1.3: Delete Note Tool** — `deleteNoteProposal(noteId)`
+- [x] **Task 2.1.1: Create Note Tool** — `createNoteProposal(title, content, tags, folder)`
+- [x] **Task 2.1.2: Update Note Tool** — `updateNoteProposal(noteId, fieldUpdates)`
+- [x] **Task 2.1.3: Delete Note Tool** — `deleteNoteProposal(noteId)`
 
 ### 2.2 Projects & Milestones Sub-Agent (`lib/agent/tools/projectsTools.ts`)
-- [ ] **Task 2.2.1: Create Project Tool** — `createProjectProposal(title, description, milestones)`
-- [ ] **Task 2.2.2: Toggle Milestone Tool** — `toggleMilestoneProposal(projectId, milestoneId, completed)`
-- [ ] **Task 2.2.3: Delete Project Tool** — `deleteProjectProposal(projectId)`
+- [x] **Task 2.2.1: Create Project Tool** — `createProjectProposal(title, description, milestones)`
+- [x] **Task 2.2.2: Toggle Milestone Tool** — `toggleMilestoneProposal(projectId, milestoneId, completed)`
+- [x] **Task 2.2.3: Delete Project Tool** — `deleteProjectProposal(projectId)`
 
 ### 2.3 Habits & Routines Sub-Agent (`lib/agent/tools/habitsTools.ts`)
-- [ ] **Task 2.3.1: Log Habit Completion Tool** — `completeHabitProposal(habitId, date)`
-- [ ] **Task 2.3.2: Create Habit Tool** — `createHabitProposal(name, frequency, timeSlot)`
-- [ ] **Task 2.3.3: Archive Habit Tool** — `archiveHabitProposal(habitId)`
+- [x] **Task 2.3.1: Log Habit Completion Tool** — `completeHabitProposal(habitId, date)`
+- [x] **Task 2.3.2: Create Habit Tool** — `createHabitProposal(name, frequency, timeSlot)`
+- [x] **Task 2.3.3: Archive Habit Tool** — `archiveHabitProposal(habitId)`
 
 ### 2.4 Goals & OKR Sub-Agent (`lib/agent/tools/goalsTools.ts`)
-- [ ] **Task 2.4.1: Log KR Progress Tool** — `updateKeyResultProgressProposal(goalId, krId, progressVal)`
-- [ ] **Task 2.4.2: Create Goal Tool** — `createGoalProposal(title, targetDate, keyResults)`
+- [x] **Task 2.4.1: Log KR Progress Tool** — `updateKeyResultProgressProposal(goalId, krId, progressVal)`
+- [x] **Task 2.4.2: Create Goal Tool** — `createGoalProposal(title, targetDate, keyResults)`
 
 ### 2.5 Career & Research Engine Tool Expansions
-- [ ] **Task 2.5.1: Log DSA Question Progress** — `updateDsaQuestionsProposal(topicId, questionsAdded, markRevised)` in `careerTools.ts`.
-- [ ] **Task 2.5.2: Add Research Paper Citation** — `addResearchPaperProposal(projectId, sectionId, paperDetails)` in `researchTools.ts`.
-- [ ] **Task 2.5.3: Update Section Word Count Target** — `updateSectionWordCountProposal(projectId, sectionId, targetWords)` in `researchTools.ts`.
+- [x] **Task 2.5.1: Log DSA Question Progress** — `updateDsaQuestionsProposal(topicId, questionsAdded, markRevised)` in `careerTools.ts`.
+- [x] **Task 2.5.2: Add Research Paper Citation** — `addResearchPaperProposal(projectId, sectionId, paperDetails)` in `researchTools.ts`.
+- [x] **Task 2.5.3: Update Section Word Count Target** — `updateSectionWordCountProposal(projectId, sectionId, targetWords)` in `researchTools.ts`.
 
 ---
 
 ## ⚡ Phase 3: Universal Execution Dispatcher API (Days 4–5)
 
-- [ ] **Task 3.1: Universal Action Execution Route (`app/api/agent/execute-action/route.ts`)**
+- [x] **Task 3.1: Universal Action Execution Route (`app/api/agent/execute-action/route.ts`)**
   - Create secure POST route accepting `{ actionProposal: AgentActionProposal }`.
   - Dispatch execution based on `actionProposal.module` and `opType`:
     - `tasks` -> Updates `Task` collection & triggers `useTaskStore.addTask` / `updateTask`.
@@ -101,22 +101,22 @@ graph LR
     - `goals` -> Updates `Goal` collection.
   - Return `{ success: true, executedActionId, updatedData }`.
 
-- [ ] **Task 3.2: Client-Side Store Sync Pipeline**
+- [x] **Task 3.2: Client-Side Store Sync Pipeline**
   - Wire frontend Zustand store listeners so UI components immediately reflect executed Co-Pilot actions without needing manual page refreshes.
 
 ---
 
 ## 🎨 Phase 4: HITL Action Preview Cards & UI Drawer (Days 5–6)
 
-- [ ] **Task 4.1: Multi-Module Action Proposal Card Component (`components/agent/ActionProposalCard.tsx`)**
+- [x] **Task 4.1: Multi-Module Action Proposal Card Component (`components/agent/ActionProposalCard.tsx`)**
   - Render color-coded badges for operation types:
     - 🟢 `CREATE` (Emerald badge): Shows new entity title and properties.
     - 🔵 `UPDATE` (Blue/Amber badge): Shows field diff table (Before vs. After).
     - 🔴 `DELETE` (Rose badge): Shows warning banner and double-confirmation checkbox.
-- [ ] **Task 4.2: Integrate Proposal Stream in Drawer (`components/agent/AgentCoPilotDrawer.tsx`)**
+- [x] **Task 4.2: Integrate Proposal Stream in Drawer (`components/agent/AgentCoPilotDrawer.tsx`)**
   - Render `ActionProposalCard` items inside scrollable proposal view.
   - Wire **"Approve & Execute All"** and individual **"Approve Action"** buttons to invoke `/api/agent/execute-action`.
-- [ ] **Task 4.3: Toast Feedback & Trajectory Log Sync**
+- [x] **Task 4.3: Toast Feedback & Trajectory Log Sync**
   - Display success toast upon execution (e.g. *"Successfully logged 4 DP questions & updated revision date"*).
   - Update `CoPilotHistoryItem` status to `'approved'`.
 

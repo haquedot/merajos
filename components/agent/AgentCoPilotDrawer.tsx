@@ -38,6 +38,7 @@ import {
   markHistoryApproved,
   clearCoPilotHistory
 } from '../../lib/agent/historyStore';
+import { ActionProposalCard } from './ActionProposalCard';
 import toast from 'react-hot-toast';
 
 interface AgentCoPilotDrawerProps {
@@ -481,6 +482,21 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                           </div>
                         )}
                       </div>
+
+                      {/* Omni-Module Action Proposals (if present) */}
+                      {proposal.actionProposals && proposal.actionProposals.length > 0 && (
+                        <div className="space-y-2.5">
+                          <h3 className="text-xs font-black uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                            Omni-Module Action Proposals
+                          </h3>
+                          <div className="space-y-2">
+                            {proposal.actionProposals.map((act) => (
+                              <ActionProposalCard key={act.actionId} proposal={act} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Proposed Schedule Slots */}
                       <div className="space-y-2.5">
