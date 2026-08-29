@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { AgentActionProposal } from '../../lib/agent/types';
-import { Check, Trash2, ArrowRight, AlertTriangle, Sparkles, Layers } from 'lucide-react';
+import { Check, Trash2, ArrowRight, AlertTriangle, Sparkles, Layers, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAuthHeaders } from '../../lib/authCheck';
 import { useTaskStore } from '../../store/useTaskStore';
@@ -67,71 +68,81 @@ export const ActionProposalCard: React.FC<ActionProposalCardProps> = ({ proposal
   const getOpBadge = () => {
     switch (proposal.opType) {
       case 'CREATE':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CREATE</span>;
+        return <span className="px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">CREATE</span>;
       case 'UPDATE':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">UPDATE</span>;
+        return <span className="px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-sm">UPDATE</span>;
       case 'DELETE':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">DELETE</span>;
+        return <span className="px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shadow-sm">DELETE</span>;
       default:
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">ACTION</span>;
+        return <span className="px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-sm">ACTION</span>;
     }
   };
 
   return (
-    <div className={`p-4 rounded-xl border transition-all ${
-      executed
-        ? 'bg-emerald-950/10 border-emerald-500/30'
-        : proposal.opType === 'DELETE'
-        ? 'bg-rose-950/10 border-rose-500/30'
-        : 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700'
-    }`}>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.01 }}
+      transition={{ duration: 0.2 }}
+      className={`p-4 rounded-2xl border transition-all shadow-md ${
+        executed
+          ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800'
+          : proposal.opType === 'DELETE'
+          ? 'bg-rose-50/60 dark:bg-rose-950/20 border-rose-300 dark:border-rose-800'
+          : 'bg-white dark:bg-[#181d2a] border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-800'
+      }`}
+    >
       <div className="flex items-center justify-between gap-3 mb-2">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 text-[11px] font-mono tracking-wider uppercase rounded bg-zinc-800 text-zinc-300 border border-zinc-700">
+          <span className="px-2.5 py-0.5 text-[10px] font-black tracking-wider uppercase rounded-md bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
             {proposal.module}
           </span>
           {getOpBadge()}
         </div>
 
         {executed ? (
-          <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+          <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-extrabold">
             <Check className="w-3.5 h-3.5" /> Executed
           </span>
         ) : (
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             onClick={handleExecute}
             disabled={isExecuting}
-            className={`px-3 py-1 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 text-xs font-extrabold rounded-xl flex items-center gap-1.5 transition-all shadow-sm cursor-pointer ${
               proposal.opType === 'DELETE'
-                ? 'bg-rose-600 hover:bg-rose-500 text-white'
-                : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/20'
             } disabled:opacity-50`}
           >
             {isExecuting ? (
-              'Executing...'
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Executing...</span>
+              </>
             ) : (
               <>
-                <Sparkles className="w-3.5 h-3.5" />
-                Approve & Execute
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Approve & Execute</span>
               </>
             )}
-          </button>
+          </motion.button>
         )}
       </div>
 
-      <h4 className="text-sm font-semibold text-zinc-100">{proposal.title}</h4>
-      <p className="text-xs text-zinc-400 mt-1">{proposal.description}</p>
+      <h4 className="text-xs font-black text-gray-900 dark:text-white leading-tight">{proposal.title}</h4>
+      <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1 font-medium">{proposal.description}</p>
 
       {/* Render Property Diffs if present */}
       {proposal.diffPreview && proposal.diffPreview.length > 0 && (
-        <div className="mt-3 p-2.5 rounded-lg bg-zinc-950/70 border border-zinc-800/80 text-xs space-y-1.5 font-mono">
+        <div className="mt-3 p-2.5 rounded-xl bg-gray-50 dark:bg-[#121620] border border-gray-200 dark:border-gray-800 text-[11px] space-y-1.5 font-mono">
           {proposal.diffPreview.map((diff, idx) => (
-            <div key={idx} className="flex items-center justify-between text-zinc-300">
-              <span className="text-zinc-500">{diff.field}:</span>
+            <div key={idx} className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+              <span className="text-gray-500 dark:text-gray-400">{diff.field}:</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-rose-400/80 line-through">{String(diff.before)}</span>
-                <ArrowRight className="w-3 h-3 text-zinc-500" />
-                <span className="text-emerald-400 font-semibold">{String(diff.after)}</span>
+                <span className="text-rose-500 line-through">{String(diff.before)}</span>
+                <ArrowRight className="w-3 h-3 text-gray-400" />
+                <span className="text-emerald-500 font-extrabold">{String(diff.after)}</span>
               </div>
             </div>
           ))}
@@ -139,11 +150,11 @@ export const ActionProposalCard: React.FC<ActionProposalCardProps> = ({ proposal
       )}
 
       {proposal.requiresConfirmation && !executed && (
-        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-rose-400/90">
+        <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-500">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
           <span>Requires explicit confirmation prior to permanent removal.</span>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
