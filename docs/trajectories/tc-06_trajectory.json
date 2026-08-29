@@ -3,7 +3,7 @@
   "title": "Overloaded 12-Hour Task Backlog Reduction",
   "description": "User has 12 hours of candidate tasks; Orbit trims and caps total workload to 6.5h.",
   "userPrompt": "Analyze my overloaded backlog and schedule a sustainable day",
-  "timestamp": "2026-08-29T09:49:15.183Z",
+  "timestamp": "2026-08-29T10:52:58.655Z",
   "agentTrajectory": [
     {
       "stepNumber": 1,

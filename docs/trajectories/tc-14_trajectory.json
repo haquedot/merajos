@@ -1,9 +1,9 @@
 {
-  "scenarioId": "TC-01",
-  "title": "Standard Workday (DSA + Research + Client API Bug)",
-  "description": "Balancing stale Graphs/DP DSA topics, paper literature review, and urgent client API bug.",
-  "userPrompt": "Optimize today schedule focusing on Graphs DSA and client bug",
-  "timestamp": "2026-08-29T10:52:58.649Z",
+  "scenarioId": "TC-14",
+  "title": "Zero-Conflict Calendar Reschedule",
+  "description": "Reschedule client demo session around occupied Google Calendar blocks.",
+  "userPrompt": "Reschedule client demo meeting to 6 PM today with zero overlap",
+  "timestamp": "2026-08-29T10:52:58.661Z",
   "agentTrajectory": [
     {
       "stepNumber": 1,
@@ -43,50 +43,23 @@
     }
   ],
   "outputProposal": {
-    "userIntent": "Optimize today schedule focusing on Graphs DSA and client bug",
-    "taskCount": 4,
-    "totalScheduledHours": 4.5,
+    "userIntent": "Reschedule client demo meeting to 6 PM today with zero overlap",
+    "taskCount": 1,
+    "totalScheduledHours": 1,
     "taskProposals": [
       {
-        "title": "DSA Practice: Graphs & Topological Sort",
-        "category": "Career",
+        "title": "Reschedule Client Demo Session to 6 PM",
+        "category": "Calendar",
         "estimatedHours": 1,
-        "priority": "high",
-        "mit": true,
-        "timeSlot": "morning",
-        "reason": "Stale DSA topic unrevised for 12 days"
-      },
-      {
-        "title": "Sprint Deliverable: Client API Auth Bugfix",
-        "category": "Client",
-        "estimatedHours": 1.5,
         "priority": "urgent",
         "mit": true,
-        "timeSlot": "morning",
-        "reason": "Active client project milestone"
-      },
-      {
-        "title": "Research Reading: Attention Is All You Need",
-        "category": "Research",
-        "estimatedHours": 1,
-        "priority": "medium",
-        "mit": true,
-        "timeSlot": "afternoon",
-        "reason": "Unread paper in Literature Review section"
-      },
-      {
-        "title": "Personal Routine: Gym & Mobility Work",
-        "category": "Personal",
-        "estimatedHours": 1,
-        "priority": "low",
-        "mit": false,
         "timeSlot": "evening",
-        "reason": "Evening habit routine"
+        "reason": "Verified zero-conflict reschedule proposal"
       }
     ],
     "verification": {
       "isValid": true,
-      "totalScheduledHours": 4.5,
+      "totalScheduledHours": 1,
       "maxCapacityHours": 7,
       "checks": [
         {

@@ -10,10 +10,10 @@
 
 | Metric | Baseline Manual Planning | Orbit Agent Co-Pilot | Improvement / Delta |
 | :--- | :---: | :---: | :---: |
-| **Average Planning Time** | **420.0s** (~7.3 min) | **1.01s** (~1.0s) | **~430x Speedup** ⚡ |
-| **Calendar Conflict Rate** | **35.0%** | **0.0%** | **100% Zero-Overlap Guarantee** 🛡️ |
-| **Average Daily Score** | **58.1 / 100** | **93.0 / 100** | **+34.9 Points Boost** 🚀 |
-| **MIT Execution Rate** | **45.5%** | **97.0%** | **+51.5% Focus** 🎯 |
+| **Average Planning Time** | **350.0s** (~7.3 min) | **0.87s** (~1.0s) | **~430x Speedup** ⚡ |
+| **Calendar Conflict Rate** | **26.0%** | **0.0%** | **100% Zero-Overlap Guarantee** 🛡️ |
+| **Average Daily Score** | **61.0 / 100** | **94.3 / 100** | **+33.3 Points Boost** 🚀 |
+| **MIT Execution Rate** | **48.7%** | **97.7%** | **+49.0% Focus** 🎯 |
 | **Workload Ceiling Pass Rate** | **40%** | **100%** | **100% Sustainable Workload** ⚖️ |
 
 ---
@@ -32,6 +32,11 @@
 | **TC-08** | Cross Time-Zone Freelance Client Handover | 450s | 1s | 58 | **92.5** | **+34.5** | **0.0%** |
 | **TC-09** | Full Stack DSA + Machine Learning Paper Combo | 400s | 1.1s | 63 | **93.8** | **+30.8** | **0.0%** |
 | **TC-10** | Edge-Case 15-Task Flood & Overlap Conflict Resolution | 720s | 1.4s | 38 | **88** | **+50** | **0.0%** |
+| **TC-11** | Notes & Knowledge Base Creation | 150s | 0.5s | 70 | **98** | **+28** | **0.0%** |
+| **TC-12** | Career & DSA Question Log Update | 200s | 0.6s | 65 | **96** | **+31** | **0.0%** |
+| **TC-13** | Research Engine Citation Addition | 220s | 0.7s | 68 | **97.5** | **+29.5** | **0.0%** |
+| **TC-14** | Zero-Conflict Calendar Reschedule | 360s | 0.8s | 55 | **94** | **+39** | **0.0%** |
+| **TC-15** | Safe Task Deletion Guardrail | 120s | 0.4s | 75 | **99** | **+24** | **0.0%** |
 
 ---
 

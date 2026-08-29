@@ -124,18 +124,18 @@ graph LR
 
 ## 📊 Phase 5: Benchmark Expansion & Trajectory Auditing (Days 6–7)
 
-- [ ] **Task 5.1: Extend Evaluation Scenarios (`lib/agent/eval/evaluationDataset.ts`)**
+- [x] **Task 5.1: Extend Evaluation Scenarios (`lib/agent/eval/evaluationDataset.ts`)**
   - Add `TC-11`: Note creation and tagging via Co-Pilot.
   - Add `TC-12`: Log DSA questions solved and update topic revision status.
   - Add `TC-13`: Add research paper citation to Research project section.
   - Add `TC-14`: Reschedule calendar event with zero-conflict check.
   - Add `TC-15`: Safe deletion of obsolete task with double confirmation.
 
-- [ ] **Task 5.2: Execute Benchmark Suite (`scripts/eval_benchmark.ts`)**
+- [x] **Task 5.2: Execute Benchmark Suite (`scripts/eval_benchmark.ts`)**
   - Run `npx tsx scripts/eval_benchmark.ts` to verify 100% accuracy across all 15 test scenarios.
   - Update benchmark results in `docs/BENCHMARK_RESULTS.md`.
 
-- [ ] **Task 5.3: Trajectory Logs Verification**
+- [x] **Task 5.3: Trajectory Logs Verification**
   - Capture raw trajectory JSON logs in `docs/trajectories/tc-11_trajectory.json` through `tc-15_trajectory.json`.
 
 ---
@@ -144,14 +144,14 @@ graph LR
 
 | Module | Verification Step | Status |
 | :--- | :--- | :--- |
-| **Tasks** | Create, update, complete, and delete task via Co-Pilot prompt | Pending |
-| **Career** | Update solved question count & revision status via prompt | Pending |
-| **Research** | Add paper citation & update section target word count | Pending |
-| **Calendar** | Reschedule event & verify Google Calendar zero-overlap sync | Pending |
-| **Notes** | Create, pin, and search note via natural language | Pending |
-| **Projects** | Create project & toggle milestone checklist item | Pending |
-| **Habits** | Log habit completion & verify streak increment | Pending |
-| **Goals** | Update Key Result progress % via prompt | Pending |
+| **Tasks** | Create, update, complete, and delete task via Co-Pilot prompt | Verified |
+| **Career** | Update solved question count & revision status via prompt | Verified |
+| **Research** | Add paper citation & update section target word count | Verified |
+| **Calendar** | Reschedule event & verify Google Calendar zero-overlap sync | Verified |
+| **Notes** | Create, pin, and search note via natural language | Verified |
+| **Projects** | Create project & toggle milestone checklist item | Verified |
+| **Habits** | Log habit completion & verify streak increment | Verified |
+| **Goals** | Update Key Result progress % via prompt | Verified |
 
 ---
 *Created for Orbit ⭐ | Next-Gen AI Personal Productivity OS Phased Implementation Checklist*
