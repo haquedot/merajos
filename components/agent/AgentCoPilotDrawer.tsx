@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -31,6 +32,7 @@ interface AgentCoPilotDrawerProps {
 
 export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, onClose }) => {
   const { addTask } = useTaskStore();
+  const [mounted, setMounted] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [selectedProvider, setSelectedProvider] = useState<AIProviderId>('gemini');
   const [availableProviders, setAvailableProviders] = useState<{ id: AIProviderId; name: string }[]>([]);
@@ -39,6 +41,8 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
   const [proposal, setProposal] = useState<AgentCoPilotProposal | null>(null);
 
   useEffect(() => {
+    setMounted(true);
+
     // Fetch available AI providers from route GET endpoint
     fetch('/api/agent/co-pilot')
       .then((res) => res.json())
@@ -105,7 +109,9 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -115,7 +121,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm"
           />
 
           {/* Drawer Content */}
@@ -124,7 +130,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[540px] md:w-[620px] bg-white dark:bg-[#121620] border-l border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col overflow-hidden"
+            className="fixed right-0 top-0 bottom-0 z-[10000] w-full sm:w-[540px] md:w-[620px] bg-white dark:bg-[#121620] border-l border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Drawer Header */}
             <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
@@ -362,6 +368,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
