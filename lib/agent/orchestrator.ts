@@ -22,13 +22,15 @@ export function parseUserIntentPrompt(userPrompt: string): TaskProposal | null {
   else if (lower.includes('evening')) slot = 'evening';
   else if (lower.includes('night')) slot = 'night';
 
-  // 2. Category detection
-  let category: TaskProposal['category'] = 'Career';
-  if (lower.includes('hostel') || lower.includes('university') || lower.includes('college') || lower.includes('exam')) {
+  // 2. Category detection (Defaults to General unless specific module keyword detected)
+  let category: TaskProposal['category'] = 'General';
+  if (lower.includes('university') || lower.includes('college') || lower.includes('exam')) {
     category = 'College';
   } else if (lower.includes('research') || lower.includes('paper') || lower.includes('thesis')) {
     category = 'Research';
-  } else if (lower.includes('client') || lower.includes('project') || lower.includes('freelance')) {
+  } else if (lower.includes('career') || lower.includes('dsa') || lower.includes('job') || lower.includes('resume')) {
+    category = 'Career';
+  } else if (lower.includes('client') || lower.includes('freelance')) {
     category = 'Client';
   } else if (lower.includes('habit') || lower.includes('workout') || lower.includes('gym')) {
     category = 'Habit';
@@ -36,7 +38,16 @@ export function parseUserIntentPrompt(userPrompt: string): TaskProposal | null {
     category = 'Personal';
   }
 
-  // 3. Robust Title Cleanup
+  // 3. Date detection (Today vs Tomorrow vs Specific)
+  const todayObj = new Date();
+  let targetDate = todayObj.toISOString().split('T')[0];
+  if (lower.includes('tomorrow')) {
+    const tomorrowObj = new Date();
+    tomorrowObj.setDate(tomorrowObj.getDate() + 1);
+    targetDate = tomorrowObj.toISOString().split('T')[0];
+  }
+
+  // 4. Robust Title Cleanup
   let title = cleanPrompt;
 
   // Remove command prefixes (e.g. "Create a task for tomorrow afternoon to")
@@ -56,6 +67,7 @@ export function parseUserIntentPrompt(userPrompt: string): TaskProposal | null {
     priority: 'high',
     mit: true,
     timeSlot: slot,
+    targetDate,
     reason: `Direct user request: "${cleanPrompt}"`,
     sourceModule: 'tasks'
   };

@@ -103,11 +103,12 @@ Return ONLY JSON matching this structure:
       summary: z.string().optional().default('Generated daily schedule proposal'),
       taskProposals: z.array(z.object({
         title: z.string().optional().default('Scheduled Action Item'),
-        category: z.enum(['Client', 'Research', 'Career', 'Personal', 'College', 'Habit']).optional().default('Career'),
+        category: z.enum(['Client', 'Research', 'Career', 'Personal', 'College', 'Habit', 'General']).optional().default('General'),
         estimatedHours: z.number().optional().default(1.0),
         priority: z.enum(['low', 'medium', 'high', 'urgent']).optional().default('medium'),
         mit: z.boolean().optional().default(false),
         timeSlot: z.enum(['morning', 'afternoon', 'evening', 'night']).optional().default('morning'),
+        targetDate: z.string().optional(),
         reason: z.string().optional().default('AI scheduled candidate')
       })).optional().default([])
     });

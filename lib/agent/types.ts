@@ -1,7 +1,7 @@
 import { AIProviderId } from './providers/providerFactory';
 
 export type TimeSlot = 'morning' | 'afternoon' | 'evening' | 'night';
-export type TaskCategory = 'Client' | 'Research' | 'Career' | 'Personal' | 'College' | 'Habit';
+export type TaskCategory = 'Client' | 'Research' | 'Career' | 'Personal' | 'College' | 'Habit' | 'General';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export interface TaskProposal {
@@ -13,6 +13,7 @@ export interface TaskProposal {
   mit: boolean;
   timeSlot: TimeSlot;
   reason: string;
+  targetDate?: string;
   sourceModule?: 'career' | 'research' | 'project' | 'tasks';
   sourceEntityId?: string;
 }

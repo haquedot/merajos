@@ -128,15 +128,23 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
     setIsApproving(true);
 
     try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const tomorrowObj = new Date();
+      tomorrowObj.setDate(tomorrowObj.getDate() + 1);
+      const tomorrowStr = tomorrowObj.toISOString().split('T')[0];
+      const isTomorrowPrompt = proposal.userIntent.toLowerCase().includes('tomorrow');
+
       // Execute store mutations for all proposed tasks
       for (const tp of proposal.taskProposals) {
+        const dueDate = tp.targetDate || (isTomorrowPrompt ? tomorrowStr : todayStr);
+
         await addTask({
           title: tp.title,
           category: tp.category as any,
           priority: tp.priority as any,
           estimatedHours: tp.estimatedHours,
           mit: tp.mit,
-          dueDate: new Date().toISOString().split('T')[0],
+          dueDate,
           status: 'todo'
         });
       }
