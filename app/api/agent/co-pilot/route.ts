@@ -14,7 +14,7 @@ import { z } from 'zod';
 
 const RequestSchema = z.object({
   prompt: z.string().optional().default('Analyze my workload and generate today\'s optimal schedule'),
-  providerId: z.enum(['gemini', 'openai', 'anthropic', 'groq', 'ollama', 'mock']).optional()
+  providerId: z.enum(['gemini', 'gemini-nano', 'openai', 'anthropic', 'groq', 'ollama', 'mock']).optional()
 });
 
 export async function GET(req: Request) {
@@ -69,8 +69,9 @@ export async function POST(req: Request) {
     const orchestrator = new OrbitAgentOrchestrator();
     const orchestratedResult = orchestrator.runPipeline(agentContext, preferences as any, parsedReq.prompt);
 
-    // Resolve AI provider using Factory
-    const provider = ProviderFactory.getProvider(parsedReq.providerId as AIProviderId);
+    // Resolve AI provider using Factory (If gemini-nano is sent to server endpoint, fallback to default local Ollama for server processing)
+    const effectiveProviderId = parsedReq.providerId === 'gemini-nano' ? DEFAULT_AI_PROVIDER : (parsedReq.providerId as AIProviderId);
+    const provider = ProviderFactory.getProvider(effectiveProviderId);
 
     // Formulate system prompt with context and user directive
     const systemPrompt = `You are Orbit Agent Co-Pilot, an intelligent execution assistant for Orbit (Personal Productivity OS).

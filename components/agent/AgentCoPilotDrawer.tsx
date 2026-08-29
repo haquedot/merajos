@@ -39,6 +39,7 @@ import {
   clearCoPilotHistory
 } from '../../lib/agent/historyStore';
 import { ActionProposalCard } from './ActionProposalCard';
+import { GeminiNanoBanner } from './GeminiNanoBanner';
 import toast from 'react-hot-toast';
 
 interface AgentCoPilotDrawerProps {
@@ -369,6 +370,8 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
               ) : (
                 /* Co-Pilot Interactive Optimizer View */
                 <>
+                  <GeminiNanoBanner />
+
                   {/* Empty State Banner when no proposal & not generating */}
                   {!proposal && !isGenerating && (
                     <div className="p-8 text-center rounded-2xl bg-gradient-to-b from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-dashed border-blue-200 dark:border-blue-900/50 space-y-3">
