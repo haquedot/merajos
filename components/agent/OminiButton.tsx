@@ -30,7 +30,7 @@ export const OminiButton: React.FC<OminiButtonProps> = ({ onClick, className = '
           aria-label="Open Omini AI Co-Pilot"
           title="Open Omini (Alt+J or Ctrl+Shift+O)"
         >
-          <Sparkles className="w-5.5 h-5.5 text-amber-300 animate-pulse group-hover/btn:scale-110 transition-transform" />
+          <Sparkles className="w-5.5 h-5.5 text-white group-hover/btn:scale-110 transition-transform" />
         </motion.button>
       </div>
     </div>
