@@ -78,13 +78,20 @@ export async function POST(req: Request) {
 User's Explicit Directive: "${parsedReq.prompt}"
 
 Classify the user's directive into one of 3 semantic intent types:
-1. "INFORMATIONAL_QUERY": Questions, analysis, or recommendations (e.g. "What should I do tomorrow", "Analyze todays tasks", "How is my day").
-   - DO NOT create fake tasks matching the prompt text.
-   - Provide a helpful, concise answer in "summary" analyzing the user's workload and context.
+1. "INFORMATIONAL_QUERY": Questions, analysis, or recommendations (e.g. "What should I do tomorrow", "Analyze todays tasks", "Who is prime minister of India").
+   - DO NOT create fake tasks or fake action proposals.
+   - Provide a direct, clear answer in "summary".
 2. "TASK_MUTATION": Direct request to create or schedule a specific task (e.g. "Create a task for tomorrow afternoon to play badminton").
    - Fill "explicitTask" with the title, category, timeSlot, and targetDate requested.
-3. "MODULE_ACTION": Direct request to create, update, or delete workspace items (e.g. "Delete Accenture assessment task", "Create note titled Meeting Notes").
-   - Fill "actionProposals" array with the requested CRUD operation details.
+3. "MODULE_ACTION": Direct request to create, update, or delete items in Orbit OS modules:
+   - "projects" or "clients": Projects & Clients (e.g. "Create a new project Orbit", "Create client Acme", "Delete project X"). Note: Projects and Clients are the same module in Orbit OS.
+   - "notes": Notes & Knowledge Items (e.g. "Create note titled Meeting Notes").
+   - "career": DSA Topics & Subject Syllabus (e.g. "Mark DP topic revised").
+   - "research": Research Papers & Literature Reviews (e.g. "Add paper on Transformers").
+   - "habits": Habits & Routines.
+   - "goals": Goals & OKRs.
+   - "calendar": Calendar Events & Meetings.
+   - Fill "actionProposals" array with module, opType (CREATE/READ/UPDATE/DELETE), title, and targetData.
 
 Return ONLY valid JSON matching this structure:
 {
@@ -133,9 +140,9 @@ Return ONLY valid JSON matching this structure:
       intentType: z.enum(['INFORMATIONAL_QUERY', 'TASK_MUTATION', 'MODULE_ACTION']).default('INFORMATIONAL_QUERY'),
       summary: z.string().optional().default(''),
       actionProposals: z.array(z.object({
-        module: z.enum(['tasks', 'career', 'research', 'calendar', 'notes', 'projects', 'habits', 'goals']).default('tasks'),
+        module: z.enum(['tasks', 'career', 'research', 'calendar', 'notes', 'projects', 'habits', 'goals', 'clients']).default('tasks'),
         opType: z.enum(['CREATE', 'READ', 'UPDATE', 'DELETE']).default('CREATE'),
-        title: z.string(),
+        title: z.string().optional().default('Workspace Action Proposal'),
         description: z.string().optional().default('Parsed action proposal'),
         targetData: z.record(z.string(), z.unknown()).optional().default({})
       })).optional().default([]),
@@ -197,14 +204,25 @@ Return ONLY valid JSON matching this structure:
       console.warn(`[Agent Co-Pilot API] Provider '${provider.id}' semantic evaluation fallback:`, err.message);
     }
 
+    // Resolve Omni Module Action Proposal if present
+    const omniAction = parseOmniActionProposal(parsedReq.prompt);
+    const hasModuleAction = llmIntent === 'MODULE_ACTION' || llmActionProposals.length > 0 || !!omniAction;
+    const isAnalysisOnly = !hasModuleAction && (llmIntent === 'INFORMATIONAL_QUERY' || isAnalysisQuery(parsedReq.prompt));
+
+    const actionProposals: AgentActionProposal[] = isAnalysisOnly
+      ? []
+      : llmActionProposals.length > 0
+      ? llmActionProposals
+      : omniAction
+      ? [omniAction]
+      : [];
+
     // Fallback to deterministic orchestrator if LLM didn't specify explicit task
     let finalProposals: TaskProposal[] = orchestratedResult.taskProposals;
 
-    const isAnalysisOnly = llmIntent === 'INFORMATIONAL_QUERY' || isAnalysisQuery(parsedReq.prompt);
-
-    // If LLM or prompt extraction identified an explicit task, insert it ONLY if not an analysis/informational query
+    // If LLM or prompt extraction identified an explicit task, insert it ONLY if not an analysis or module action query
     const fallbackUserTask = parseUserIntentPrompt(parsedReq.prompt);
-    const taskToAdd = !isAnalysisOnly && (llmExplicitTask || (llmIntent === 'TASK_MUTATION' ? fallbackUserTask : null));
+    const taskToAdd = !isAnalysisOnly && !hasModuleAction && (llmExplicitTask || (llmIntent === 'TASK_MUTATION' ? fallbackUserTask : null));
 
     if (taskToAdd) {
       const matchesUserIntent = finalProposals.some((t) =>
@@ -241,21 +259,13 @@ Return ONLY valid JSON matching this structure:
 
     const totalScheduledHours = finalProposals.reduce((sum, t) => sum + t.estimatedHours, 0);
 
-    // Dynamic Action Proposals: strictly empty if informational query
-    const omniAction = parseOmniActionProposal(parsedReq.prompt);
-    const actionProposals: AgentActionProposal[] = isAnalysisOnly
-      ? []
-      : llmActionProposals.length > 0
-      ? llmActionProposals
-      : omniAction
-      ? [omniAction]
-      : [];
-
     const usedProviderId = parsedReq.providerId || provider.id;
     const usedProviderName = parsedReq.providerId === 'gemini-nano' ? 'Gemini Nano (Chrome Built-in On-Device)' : provider.name;
 
     const isTomorrowQuery = parsedReq.prompt.toLowerCase().includes('tomorrow');
-    const summaryText = llmSummary.trim() || (isTomorrowQuery
+    const summaryText = llmSummary.trim() || (actionProposals.length > 0
+      ? `Parsed ${actionProposals.length} workspace module operation request for "${actionProposals[0].title}". Review the action proposal card below to execute.`
+      : isTomorrowQuery
       ? `Tomorrow's Recommendation: ${finalProposals.length} tasks totaling ${totalScheduledHours}h recommended based on your workspace context.`
       : `Workload Overview: ${finalProposals.length} tasks scheduled totaling ${totalScheduledHours}h out of 7.0h max capacity limit.`);
 
