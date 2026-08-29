@@ -3,8 +3,101 @@ import { ResearchAgent } from './subagents/researchAgent';
 import { TaskSlotAgent } from './subagents/taskSlotAgent';
 import { OrbitVerificationAgent } from './verifier';
 import { ComprehensiveAgentContext } from './context/agentContextBuilder';
-import { TaskProposal, ScheduleSlotProposal, AgentStep, VerificationResult } from './types';
+import { TaskProposal, ScheduleSlotProposal, AgentStep, VerificationResult, AgentActionProposal, ModuleType, CrudOp } from './types';
 import { UserPreferences } from '../personalization/types';
+
+export function parseOmniActionProposal(userPrompt: string): AgentActionProposal | null {
+  if (!userPrompt || !userPrompt.trim()) return null;
+  const clean = userPrompt.trim();
+  const lower = clean.toLowerCase();
+
+  // Ignore general workload analysis commands
+  if (lower.includes('analyze my workload') || lower.includes('generate schedule')) {
+    return null;
+  }
+
+  // Detect CRUD operation
+  let opType: CrudOp = 'CREATE';
+  if (lower.startsWith('delete') || lower.startsWith('remove') || lower.includes('delete task') || lower.includes('remove note')) {
+    opType = 'DELETE';
+  } else if (lower.startsWith('update') || lower.startsWith('mark') || lower.startsWith('edit') || lower.startsWith('check') || lower.includes('revised') || lower.includes('solved')) {
+    opType = 'UPDATE';
+  } else if (lower.startsWith('find') || lower.startsWith('get') || lower.startsWith('show') || lower.startsWith('list') || lower.startsWith('search')) {
+    opType = 'READ';
+  }
+
+  // Detect Module
+  let module: ModuleType = 'tasks';
+  if (lower.includes('note') || lower.includes('memo') || lower.includes('checklist')) {
+    module = 'notes';
+  } else if (lower.includes('dsa') || lower.includes('topic') || lower.includes('syllabus') || lower.includes('subject') || lower.includes('revised')) {
+    module = 'career';
+  } else if (lower.includes('paper') || lower.includes('citation') || lower.includes('abstract') || lower.includes('journal') || lower.includes('research')) {
+    module = 'research';
+  } else if (lower.includes('project') || lower.includes('milestone')) {
+    module = 'projects';
+  } else if (lower.includes('habit') || lower.includes('routine') || lower.includes('streak')) {
+    module = 'habits';
+  } else if (lower.includes('goal') || lower.includes('okr') || lower.includes('key result')) {
+    module = 'goals';
+  } else if (lower.includes('event') || lower.includes('meeting') || lower.includes('calendar') || lower.includes('reschedule')) {
+    module = 'calendar';
+  }
+
+  const actionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+  if (module === 'notes') {
+    const titleMatch = clean.replace(/^(create|add|new)\s+(a\s+)?(note|memo)\s*(titled|named|called)?\s*/i, '').trim();
+    return {
+      actionId,
+      module: 'notes',
+      opType,
+      title: opType === 'DELETE' ? `Delete Note: ${titleMatch || clean}` : `Note: ${titleMatch || clean}`,
+      description: `${opType} note action parsed from prompt`,
+      targetData: { title: titleMatch || clean, content: '', tags: ['co-pilot'] },
+      requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'career') {
+    return {
+      actionId,
+      module: 'career',
+      opType: 'UPDATE',
+      title: `Career/DSA Action: ${clean}`,
+      description: `Update revision status/progress for DSA or Subject Syllabus`,
+      targetData: { prompt: clean, markRevised: true },
+      diffPreview: [{ field: 'revisionStatus', before: 'Stale (>7d)', after: 'Revised (Today)' }],
+      requiresConfirmation: false,
+      status: 'pending'
+    };
+  }
+
+  if (module === 'research') {
+    return {
+      actionId,
+      module: 'research',
+      opType,
+      title: `Research Engine: ${clean}`,
+      description: `${opType} research paper citation or section word count`,
+      targetData: { prompt: clean },
+      requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  return {
+    actionId,
+    module,
+    opType,
+    title: `${opType} ${module.toUpperCase()}: ${clean}`,
+    description: `Parsed action proposal for ${module} module`,
+    targetData: { prompt: clean },
+    requiresConfirmation: opType === 'DELETE',
+    status: 'pending'
+  };
+}
 
 export function parseUserIntentPrompt(userPrompt: string): TaskProposal | null {
   if (!userPrompt || !userPrompt.trim()) return null;
