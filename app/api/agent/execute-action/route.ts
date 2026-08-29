@@ -146,17 +146,33 @@ export async function POST(req: Request) {
         break;
       }
 
+      case 'clients':
       case 'projects': {
         if (action.opType === 'CREATE') {
+          const projectTitle = String(action.targetData.title || action.targetData.name || action.title || 'New Project').replace(/["']/g, '');
           executedData = await Project.create({
+            _id: `project-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
             userId,
-            title: action.targetData.title || action.title,
-            description: action.targetData.description || '',
+            name: projectTitle,
+            clientName: projectTitle,
+            description: String(action.targetData.description || `Project/Client "${projectTitle}"`),
             status: 'active',
-            milestones: action.targetData.milestones || []
+            progress: 0,
+            color: '#6366f1'
           });
-        } else if (action.opType === 'DELETE' && action.entityId) {
-          executedData = await Project.findOneAndDelete({ _id: action.entityId, userId });
+        } else if (action.opType === 'DELETE') {
+          if (action.entityId) {
+            executedData = await Project.findOneAndDelete({ _id: action.entityId, userId });
+          } else {
+            const rawTarget = String(action.targetData?.title || action.targetData?.name || action.targetData?.prompt || '');
+            const cleanTitle = rawTarget.replace(/["']/g, '').replace(/^(delete|remove)\s+(project|client)?\s*/i, '').trim();
+            if (cleanTitle) {
+              executedData = await Project.deleteMany({
+                userId,
+                name: { $regex: cleanTitle, $options: 'i' }
+              });
+            }
+          }
         }
         break;
       }
