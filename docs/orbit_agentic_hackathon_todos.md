@@ -19,18 +19,18 @@ graph LR
 ---
 
 ## 🚀 Phase 1: Core Foundation & Data Bindings (Days 1–2)
-- [ ] **Task 1.1: Environment & Provider Selector Setup**
+- [x] **Task 1.1: Environment & Provider Selector Setup**
   - Update `.env.local` with `AI_PROVIDER` (`gemini` | `openai` | `anthropic` | `groq` | `ollama` | `mock`).
   - Add corresponding API key environment variables to `.env.example`.
-- [ ] **Task 1.2: Modular AI Provider Interface & Adapters (`lib/agent/providers/`)**
+- [x] **Task 1.2: Modular AI Provider Interface & Adapters (`lib/agent/providers/`)**
   - Define `LLMProvider` base interface (`baseProvider.ts`).
   - Implement `GeminiProvider.ts`, `OpenAIProvider.ts`, `AnthropicProvider.ts`, `GroqProvider.ts`, `OllamaProvider.ts` (local LLM), and `MockProvider.ts` (zero-cost testing).
   - Implement `providerFactory.ts` to instantiate active provider dynamically based on environment or settings request.
-- [ ] **Task 1.3: Agent Type Definitions (`lib/agent/types.ts`)**
+- [x] **Task 1.3: Agent Type Definitions (`lib/agent/types.ts`)**
   - Define `AgentStep`, `AgentTrajectory`, `SubAgentTaskProposal`, `ScheduleSlotProposal`, and `VerificationResult` interfaces.
-- [ ] **Task 1.4: Agent Context Builder Bridge (`lib/agent/context/agentContextBuilder.ts`)**
+- [x] **Task 1.4: Agent Context Builder Bridge (`lib/agent/context/agentContextBuilder.ts`)**
   - Bridge Orbit's `lib/personalization/context/contextBuilder.ts` to supply live `CurrentContext`, `UserPreferences`, `DerivedSignal`, and Zustand stores (`useTaskStore`, `useCareerStore`, `useResearchStore`).
-- [ ] **Task 1.5: Base API Route Shell (`app/api/agent/co-pilot/route.ts`)**
+- [x] **Task 1.5: Base API Route Shell (`app/api/agent/co-pilot/route.ts`)**
   - Create secure API route authenticated via `lib/middleware/auth.ts` (`verifyAuth`).
 
 ---
