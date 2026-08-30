@@ -717,6 +717,8 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                   value={selectedProvider}
                   onValueChange={(val) => setSelectedProvider(val)}
                   options={modelDropdownOptions}
+                  direction="up"
+                  align="right"
                   className="w-full text-[11px]"
                 />
               </div>
