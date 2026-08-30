@@ -37,6 +37,7 @@ const PROVIDER_OPTIONS = [
 export const CustomAISettingsPanel: React.FC = () => {
   const { configs, activeModelId, addModelConfig, deleteModelConfig, setActiveModelId } = useAIConfigStore();
 
+  const [mounted, setMounted] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [providerId, setProviderId] = useState<'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama'>('openai');
   const [name, setName] = useState('');
@@ -46,6 +47,16 @@ export const CustomAISettingsPanel: React.FC = () => {
   const [showApiKey, setShowApiKey] = useState(false);
 
   const [testStatus, setTestStatus] = useState<{ loading: boolean; success?: boolean; msg?: string } | null>(null);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xs animate-pulse space-y-4 min-h-[140px]" />
+    );
+  }
 
   const handleProviderChange = (newProv: string) => {
     const p = newProv as any;

@@ -68,11 +68,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <div className="relative flex items-center justify-center w-24 shrink-0">
           <div className="relative rounded-full p-[2.5px] overflow-hidden group shadow-xl shadow-orbit-blue/30">
             {/* Continuous Rotating Conic Gradient Beam */}
-            <motion.div
+            {/* <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
               className="absolute -inset-[250%] bg-[conic-gradient(from_0deg_at_50%_50%,#0066FF_0deg,#38bdf8_90deg,transparent_180deg,#FF6B00_270deg,#0066FF_360deg)] opacity-100 pointer-events-none"
-            />
+            /> */}
 
             {/* Inner Quick Add Button */}
             <button
