@@ -35,6 +35,7 @@ import { Card } from '../ui/card';
 import { Sheet, SheetContent } from '../ui/sheet';
 import { Checkbox } from '../ui/checkbox';
 import { Select } from '../ui/select';
+import { useAIConfigStore } from '../../store/useAIConfigStore';
 import {
   ChatThread,
   ChatMessage,
@@ -59,6 +60,7 @@ const GENERATION_STEPS = [
 
 export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, onClose }) => {
   const { session } = useGoogleAuth();
+  const { configs, activeModelId } = useAIConfigStore();
   const [mounted, setMounted] = useState(false);
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -67,14 +69,26 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingStep, setGeneratingStep] = useState(0);
-  const [availableProviders, setAvailableProviders] = useState<{ id: AIProviderId; name: string; requiresKey: boolean }[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState<AIProviderId>('ollama');
+  const [selectedProvider, setSelectedProvider] = useState<string>('ollama');
 
   const [approvedTasks, setApprovedTasks] = useState<Record<string, boolean>>({});
   const [syncedMessages, setSyncedMessages] = useState<Record<string, boolean>>({});
 
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const isLocalEnv = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.endsWith('.local')) ||
+    process.env.NODE_ENV === 'development';
+
+  const modelDropdownOptions = [
+    { value: 'gemini-nano', label: '🔮 Gemini Nano (Built-in On-Device)' },
+    ...(isLocalEnv ? [{ value: 'ollama', label: '🦙 Ollama (Local Offline)' }] : []),
+    ...configs.map((c) => ({
+      value: c.id,
+      label: `⚡ ${c.name} (${c.providerId.toUpperCase()}: ${c.modelName})`
+    }))
+  ];
 
   useEffect(() => {
     setMounted(true);
@@ -93,15 +107,18 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
         setActiveThreadId(existing[0].id);
       }
 
-      // Check available providers
-      const provs = ProviderFactory.getAvailableProviders();
-      setAvailableProviders(provs);
-      if (provs.length > 0) {
-        const hasOllama = provs.some((p) => p.id === 'ollama');
-        setSelectedProvider(hasOllama ? 'ollama' : provs[0].id);
+      // Default active provider selection
+      if (activeModelId && configs.some((c) => c.id === activeModelId)) {
+        setSelectedProvider(activeModelId);
+      } else if (configs.length > 0) {
+        setSelectedProvider(configs[0].id);
+      } else if (isLocalEnv) {
+        setSelectedProvider('ollama');
+      } else {
+        setSelectedProvider('gemini-nano');
       }
     }
-  }, [isOpen]);
+  }, [isOpen, activeModelId, configs, isLocalEnv]);
 
   const activeThread = threads.find((t) => t.id === activeThreadId);
   const messages = activeThread ? activeThread.messages : [];
@@ -203,13 +220,23 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
           }))
         : [];
 
+      const selectedConfig = configs.find((c) => c.id === selectedProvider);
+      const providerIdPayload = selectedConfig ? selectedConfig.providerId : selectedProvider;
+      const userConfigPayload = selectedConfig ? {
+        providerId: selectedConfig.providerId,
+        modelName: selectedConfig.modelName,
+        apiKey: selectedConfig.apiKey,
+        baseUrl: selectedConfig.baseUrl,
+      } : undefined;
+
       const headers = await getAuthHeaders();
       const res = await fetch('/api/agent/co-pilot', {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: userText,
-          providerId: selectedProvider,
+          providerId: providerIdPayload,
+          userConfig: userConfigPayload,
           chatHistory: recentHistory
         })
       });
@@ -688,11 +715,8 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                 <Cpu className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 <Select
                   value={selectedProvider}
-                  onValueChange={(val) => setSelectedProvider(val as AIProviderId)}
-                  options={availableProviders.map((p) => ({
-                    value: p.id,
-                    label: p.name
-                  }))}
+                  onValueChange={(val) => setSelectedProvider(val)}
+                  options={modelDropdownOptions}
                   className="w-full text-[11px]"
                 />
               </div>

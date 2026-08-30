@@ -18,7 +18,13 @@ const RequestSchema = z.object({
   chatHistory: z.array(z.object({
     role: z.enum(['user', 'assistant']),
     content: z.string()
-  })).optional().default([])
+  })).optional().default([]),
+  userConfig: z.object({
+    providerId: z.enum(['gemini', 'gemini-nano', 'openai', 'anthropic', 'groq', 'ollama', 'mock']).optional(),
+    modelName: z.string().optional(),
+    apiKey: z.string().optional(),
+    baseUrl: z.string().optional(),
+  }).optional()
 });
 
 export async function GET(req: Request) {
@@ -51,9 +57,9 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const parsedReq = RequestSchema.parse(body);
 
-    // Resolve AI provider using Factory
-    const effectiveProviderId = parsedReq.providerId === 'gemini-nano' ? DEFAULT_AI_PROVIDER : (parsedReq.providerId as AIProviderId);
-    const provider = ProviderFactory.getProvider(effectiveProviderId);
+    // Resolve AI provider using Factory with optional custom BYOK credentials
+    const effectiveProviderId = parsedReq.userConfig?.providerId || (parsedReq.providerId === 'gemini-nano' ? DEFAULT_AI_PROVIDER : (parsedReq.providerId as AIProviderId));
+    const provider = ProviderFactory.getProvider(effectiveProviderId, parsedReq.userConfig);
 
     // ZERO-TOKEN FAST PATH: If query is general external knowledge (e.g. "Who is prime minister of India?"), skip DB ingestion & tool pipeline
     if (isExternalKnowledgeQuery(parsedReq.prompt)) {

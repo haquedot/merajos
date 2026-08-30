@@ -52,6 +52,7 @@ import { Input } from '../../components/ui/input';
 import { DatePicker } from '../../components/ui/date-picker';
 import { Button } from '../../components/ui/button';
 import { PersonalizationInspectionPanel } from '../../components/settings/PersonalizationInspectionPanel';
+import { CustomAISettingsPanel } from '../../components/settings/CustomAISettingsPanel';
 
 const MODULE_OPTIONS: { key: ModuleKey; label: string; description: string; alwaysOn?: boolean }[] = [
   { key: 'tasks', label: 'Tasks', description: 'Daily task management & priorities', alwaysOn: true },
@@ -500,6 +501,9 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Custom AI Co-Pilot & Provider Keys Panel */}
+      <CustomAISettingsPanel />
 
       {/* Personalization Inspection & Transparency Panel */}
       <PersonalizationInspectionPanel />
