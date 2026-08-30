@@ -90,44 +90,20 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Left Navigation Controls */}
       <div className="flex items-center gap-3">
         {/* Mobile Hamburger Toggle */}
-        <button
+        {/* <button
           onClick={onOpenMobileSidebar}
           className="md:hidden p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           aria-label="Open Navigation Menu"
         >
           <Menu className="w-5 h-5" />
-        </button>
-
-        {/* Orbit Brand identity */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <Logo size={28} />
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-sm sm:text-base tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
-                Orbit OS
-              </span>
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-[#1F3B99]/10 text-[#1F3B99] dark:bg-[#3B82F6]/20 dark:text-[#60A5FA]">
-                V2
-              </span>
-            </div>
-            <Tagline className="text-[10px]" />
-          </div>
-        </Link>
-
-        {/* Global Task Completion Status Badge */}
-        <div className="hidden lg:flex items-center gap-2 ml-4 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60 text-xs">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-          <span className="text-gray-600 dark:text-gray-300 font-medium">
-            Today: <strong className="text-gray-900 dark:text-white font-bold">{completedToday}/{todayTasks.length}</strong> tasks
-          </span>
-          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-            {completionRate}%
-          </span>
+        </button> */}
+        <div className="md:hidden">
+          <Logo
+            showTagline={true}
+          />
         </div>
-      </div>
 
-      {/* Right Navbar Controls */}
-      <div className="flex items-center gap-2.5">
+
         {/* Global Search Bar Command Trigger */}
         <button
           id="tour-search-trigger"
@@ -140,6 +116,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             Ctrl+K
           </kbd>
         </button>
+        {/* Orbit Brand identity */}
+        <Tagline className="hidden sm:block text-[10px]" />
+      </div>
+
+      {/* Right Navbar Controls */}
+      <div className="flex items-center gap-2.5">
 
         {/* Mobile Search Icon */}
         <button
@@ -154,15 +136,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           id="tour-google-sync"
           onClick={syncNow}
-          className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-            syncState === 'offline'
-              ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-              : syncState === 'error'
+          className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${syncState === 'offline'
+            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+            : syncState === 'error'
               ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
               : syncState === 'syncing'
-              ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border-[#E2E8F0] dark:border-[#243244]'
-          }`}
+                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border-[#E2E8F0] dark:border-[#243244]'
+            }`}
           title={syncMessage || 'Click to synchronize with Google'}
         >
           {syncState === 'syncing' ? (
@@ -179,12 +160,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             {syncState === 'syncing'
               ? 'Syncing...'
               : syncState === 'offline'
-              ? 'Offline'
-              : syncState === 'error'
-              ? 'Re-connect Google'
-              : session
-              ? 'Google Synced'
-              : 'Local Mode'}
+                ? 'Offline'
+                : syncState === 'error'
+                  ? 'Re-connect Google'
+                  : session
+                    ? 'Google Synced'
+                    : 'Local Mode'}
           </span>
         </button>
 
@@ -211,9 +192,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div
-            className={`w-5 h-5 rounded-full bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-transform duration-200 ease-in-out z-10 ${
-              mounted && theme === 'dark' ? 'translate-x-5.5' : 'translate-x-0'
-            }`}
+            className={`w-5 h-5 rounded-full bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-transform duration-200 ease-in-out z-10 ${mounted && theme === 'dark' ? 'translate-x-5.5' : 'translate-x-0'
+              }`}
           >
             {mounted && theme === 'dark' ? (
               <Moon className="w-3 h-3 text-indigo-400" />

@@ -7,14 +7,18 @@ import Research from '../../../../models/Research';
 import CalendarEvent from '../../../../models/CalendarEvent';
 import UserPreferences from '../../../../models/UserPreferences';
 import { ProviderFactory, AIProviderId, DEFAULT_AI_PROVIDER } from '../../../../lib/agent/providers/providerFactory';
-import { buildAgentContext } from '../../../../lib/agent/context/agentContextBuilder';
-import { OrbitAgentOrchestrator, parseUserIntentPrompt, parseOmniActionProposal, isAnalysisQuery } from '../../../../lib/agent/orchestrator';
+import { buildAgentContext, detectRequiredModules, formatCompactWorkspaceIndex } from '../../../../lib/agent/context/agentContextBuilder';
+import { OrbitAgentOrchestrator, parseUserIntentPrompt, parseOmniActionProposal, isAnalysisQuery, isExternalKnowledgeQuery } from '../../../../lib/agent/orchestrator';
 import { AgentCoPilotProposal, TaskProposal, ScheduleSlotProposal, AgentActionProposal } from '../../../../lib/agent/types';
 import { z } from 'zod';
 
 const RequestSchema = z.object({
   prompt: z.string().optional().default('Analyze my workload and generate today\'s optimal schedule'),
-  providerId: z.enum(['gemini', 'gemini-nano', 'openai', 'anthropic', 'groq', 'ollama', 'mock']).optional()
+  providerId: z.enum(['gemini', 'gemini-nano', 'openai', 'anthropic', 'groq', 'ollama', 'mock']).optional(),
+  chatHistory: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string()
+  })).optional().default([])
 });
 
 export async function GET(req: Request) {
@@ -47,14 +51,61 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const parsedReq = RequestSchema.parse(body);
 
-    const userFilter = { $or: [{ userId }, { userEmail }, { userId: { $exists: false } }] };
+    // Resolve AI provider using Factory
+    const effectiveProviderId = parsedReq.providerId === 'gemini-nano' ? DEFAULT_AI_PROVIDER : (parsedReq.providerId as AIProviderId);
+    const provider = ProviderFactory.getProvider(effectiveProviderId);
 
-    // Load live Orbit context across all modules
-    const tasks = await Task.find(userFilter).lean();
-    const careerDoc = await Career.findOne(userFilter).lean();
-    const researchDoc = await Research.findOne(userFilter).lean();
-    const events = await CalendarEvent.find(userFilter).lean();
+    // ZERO-TOKEN FAST PATH: If query is general external knowledge (e.g. "Who is prime minister of India?"), skip DB ingestion & tool pipeline
+    if (isExternalKnowledgeQuery(parsedReq.prompt)) {
+      let fastAnswer = '';
+      try {
+        const textResult = await provider.generateText(
+          `Answer the user's question clearly, accurately, and concisely in 2-4 sentences:\nUser Question: "${parsedReq.prompt}"`
+        );
+        fastAnswer = textResult || '';
+      } catch (err: any) {
+        fastAnswer = `I received your query: "${parsedReq.prompt}". Please verify your active AI provider setup.`;
+      }
+
+      const fastProposal: AgentCoPilotProposal = {
+        proposalId: `prop_fast_${Date.now()}`,
+        userIntent: parsedReq.prompt,
+        summary: fastAnswer || `Direct response for: "${parsedReq.prompt}"`,
+        isAnalysisOnly: true,
+        createdAt: new Date().toISOString(),
+        providerUsed: effectiveProviderId,
+        taskProposals: [],
+        actionProposals: [],
+        scheduleSlots: [],
+        verification: {
+          isValid: true,
+          totalScheduledHours: 0,
+          maxCapacityHours: 7.0,
+          checks: [{ name: 'Zero-Token Fast Path', passed: true, severity: 'info', message: 'Bypassed DB & pipeline for external knowledge query' }]
+        },
+        steps: [
+          { stepNumber: 1, agentName: 'ZeroTokenFastPath', action: 'Answered external Q&A directly with zero DB overhead', status: 'completed', details: `Provider: ${provider.name}`, timestamp: new Date().toISOString() }
+        ]
+      };
+
+      return NextResponse.json({ proposal: fastProposal });
+    }
+
+    const userFilter = { $or: [{ userId }, { userEmail }, { userId: { $exists: false } }] };
+    const requiredModules = detectRequiredModules(parsedReq.prompt);
+
+    // Selective DB Ingestion: Fetch minimal fields only for requested modules
+    const tasks = requiredModules.tasks
+      ? await Task.find(userFilter).select('id title category priority status timeSlot estimatedHours mit').limit(12).lean()
+      : [];
+    const careerDoc = requiredModules.career ? await Career.findOne(userFilter).lean() : null;
+    const researchDoc = requiredModules.research ? await Research.findOne(userFilter).lean() : null;
+    const events = requiredModules.calendar ? await CalendarEvent.find(userFilter).select('title startTime endTime').limit(5).lean() : [];
     const preferences = await UserPreferences.findOne(userFilter).lean();
+
+    const compactWorkspaceIndex = formatCompactWorkspaceIndex({
+      tasks: tasks as any[]
+    });
 
     const agentContext = buildAgentContext({
       tasks: tasks as any,
@@ -64,18 +115,22 @@ export async function POST(req: Request) {
       subjectPlans: (careerDoc?.subjectPlans || []) as any,
       researchPapers: (researchDoc?.projects?.flatMap((p: any) => p.sections?.flatMap((s: any) => s.papers || [])) || []) as any
     });
+    agentContext.compactWorkspaceIndex = compactWorkspaceIndex;
 
     // Run Orchestrated Sub-Agent Tool Pipeline with User Prompt Context
     const orchestrator = new OrbitAgentOrchestrator();
     const orchestratedResult = orchestrator.runPipeline(agentContext, preferences as any, parsedReq.prompt);
 
-    // Resolve AI provider using Factory (If gemini-nano is sent to server endpoint, fallback to default local Ollama for server processing)
-    const effectiveProviderId = parsedReq.providerId === 'gemini-nano' ? DEFAULT_AI_PROVIDER : (parsedReq.providerId as AIProviderId);
-    const provider = ProviderFactory.getProvider(effectiveProviderId);
+    const historyBlock = parsedReq.chatHistory.length > 0
+      ? `=== CONVERSATION HISTORY (Last ${parsedReq.chatHistory.length} Turns) ===\n` +
+        parsedReq.chatHistory.map((h) => `${h.role === 'user' ? 'User' : 'Omini Assistant'}: ${h.content}`).join('\n') + '\n\n'
+      : '';
 
     // Formulate system prompt with context and user directive for LLM semantic reasoning
     const systemPrompt = `You are Omini, the intelligent personal AI assistant for Orbit OS.
-User's Explicit Directive: "${parsedReq.prompt}"
+${compactWorkspaceIndex}
+
+${historyBlock}User's Explicit Directive: "${parsedReq.prompt}"
 
 Classify the user's directive into one of 3 semantic intent types:
 1. "INFORMATIONAL_QUERY": Questions, analysis, or recommendations (e.g. "What should I do tomorrow", "Analyze todays tasks", "Who is prime minister of India").
@@ -218,7 +273,7 @@ Return ONLY valid JSON matching this structure:
       : [];
 
     // Fallback to deterministic orchestrator if LLM didn't specify explicit task
-    let finalProposals: TaskProposal[] = orchestratedResult.taskProposals;
+    let finalProposals: TaskProposal[] = isAnalysisOnly ? [] : orchestratedResult.taskProposals;
 
     // If LLM or prompt extraction identified an explicit task, insert it ONLY if not an analysis or module action query
     const fallbackUserTask = parseUserIntentPrompt(parsedReq.prompt);
@@ -233,7 +288,7 @@ Return ONLY valid JSON matching this structure:
       }
     }
 
-    // Group tasks into 4 Time Slots
+    // Group tasks into 4 Time Slots (only if not an analysis/informational query)
     const slots: Record<string, TaskProposal[]> = {
       morning: [],
       afternoon: [],
@@ -241,21 +296,25 @@ Return ONLY valid JSON matching this structure:
       night: []
     };
 
-    finalProposals.forEach((tp) => {
-      const slotKey = tp.timeSlot || 'morning';
-      if (slots[slotKey]) {
-        slots[slotKey].push(tp);
-      } else {
-        slots.morning.push(tp);
-      }
-    });
+    if (!isAnalysisOnly && finalProposals.length > 0) {
+      finalProposals.forEach((tp) => {
+        const slotKey = tp.timeSlot || 'morning';
+        if (slots[slotKey]) {
+          slots[slotKey].push(tp);
+        } else {
+          slots.morning.push(tp);
+        }
+      });
+    }
 
-    const scheduleSlots: ScheduleSlotProposal[] = [
-      { slot: 'morning', label: 'Morning (6 AM - 12 PM)', tasks: slots.morning, allocatedHours: slots.morning.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 4.0 },
-      { slot: 'afternoon', label: 'Afternoon (12 PM - 5 PM)', tasks: slots.afternoon, allocatedHours: slots.afternoon.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 3.5 },
-      { slot: 'evening', label: 'Evening (5 PM - 9 PM)', tasks: slots.evening, allocatedHours: slots.evening.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 3.0 },
-      { slot: 'night', label: 'Night (9 PM - 12:30 AM)', tasks: slots.night, allocatedHours: slots.night.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 2.5 },
-    ];
+    const scheduleSlots: ScheduleSlotProposal[] = isAnalysisOnly || finalProposals.length === 0
+      ? []
+      : [
+          { slot: 'morning', label: 'Morning (6 AM - 12 PM)', tasks: slots.morning, allocatedHours: slots.morning.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 4.0 },
+          { slot: 'afternoon', label: 'Afternoon (12 PM - 5 PM)', tasks: slots.afternoon, allocatedHours: slots.afternoon.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 3.5 },
+          { slot: 'evening', label: 'Evening (5 PM - 9 PM)', tasks: slots.evening, allocatedHours: slots.evening.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 3.0 },
+          { slot: 'night', label: 'Night (9 PM - 12:30 AM)', tasks: slots.night, allocatedHours: slots.night.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 2.5 },
+        ];
 
     const totalScheduledHours = finalProposals.reduce((sum, t) => sum + t.estimatedHours, 0);
 

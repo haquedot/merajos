@@ -78,6 +78,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, count: uniqueItems.length }, { status: 201 });
     }
 
+    if (body.title && !body.id) {
+      const cleanTitle = body.title.trim();
+      const existing = await Task.findOne({
+        title: { $regex: new RegExp(`^${cleanTitle}$`, 'i') },
+        $or: [{ userId }, { userEmail }, { userId: { $exists: false } }]
+      });
+      if (existing) {
+        const updated = await Task.findOneAndUpdate(
+          { _id: existing._id },
+          { $set: { ...body, userId, userEmail } },
+          { returnDocument: 'after' }
+        ).lean();
+        return NextResponse.json({ task: { ...updated, id: (updated as any)._id } }, { status: 200 });
+      }
+    }
+
     const id = body.id || `task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const newTask = await Task.findOneAndUpdate(
       { _id: id },

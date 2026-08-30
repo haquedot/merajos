@@ -33,7 +33,11 @@ export function getTaskDeduplicationKey(task: DeduplicatableTask): string {
     return `g_${task.googleTaskId.trim()}`;
   }
   const cleanTitle = (task.title || '').trim().toLowerCase();
-  const cleanDueDate = (task.dueDate || '').trim();
+  let cleanDueDate = '';
+  if (task.dueDate && task.dueDate.trim()) {
+    const raw = task.dueDate.trim();
+    cleanDueDate = raw.includes('T') ? raw.split('T')[0] : raw.substring(0, 10);
+  }
   return `t_${cleanTitle}_${cleanDueDate}`;
 }
 

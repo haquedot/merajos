@@ -196,13 +196,21 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
     setIsGenerating(true);
 
     try {
+      const recentHistory = activeThread
+        ? activeThread.messages.slice(-2).map((m) => ({
+            role: m.role,
+            content: m.content
+          }))
+        : [];
+
       const headers = await getAuthHeaders();
       const res = await fetch('/api/agent/co-pilot', {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: userText,
-          providerId: selectedProvider
+          providerId: selectedProvider,
+          chatHistory: recentHistory
         })
       });
 
@@ -534,8 +542,8 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                       </div>
                     )}
 
-                    {/* Structured Task Proposals & Schedule Slots */}
-                    {msg.proposal && msg.proposal.taskProposals && msg.proposal.taskProposals.length > 0 && (
+                    {/* Structured Task Proposals & Schedule Slots (Only for Schedule/Task Creation requests) */}
+                    {msg.proposal && !msg.proposal.isAnalysisOnly && msg.proposal.taskProposals && msg.proposal.taskProposals.length > 0 && (
                       <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800/80">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
