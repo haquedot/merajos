@@ -29,9 +29,9 @@
   - [x] Update `parseOmniActionProposal` and Zod schema for link bookmarks.
   - [x] Test resource link bookmarking via Omini Co-Pilot.
 
-- [ ] **Phase 5: Career Subject Plans & Job Applications AI Integration**
-  - [ ] Extend `careerActionHandler.ts` to support creating Subject Plans and updating Job Application statuses.
-  - [ ] Add parsing logic for subject plans and job application prompts.
+- [x] **Phase 5: Career Subject Plans & Job Applications AI Integration**
+  - [x] Extend `careerActionHandler.ts` to support creating Subject Plans and updating Job Application statuses.
+  - [x] Add parsing logic for subject plans and job application prompts.
 
 - [ ] **Phase 6: Research Paper Status & Writing Progress AI Integration**
   - [ ] Extend `researchActionHandler.ts` to support paper reading status updates (`unread` ➔ `reading` ➔ `cited`) and section word count updates.

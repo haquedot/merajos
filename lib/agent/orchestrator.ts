@@ -126,7 +126,7 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
   let module: ModuleType = 'tasks';
   if (lower.includes('note') || lower.includes('memo') || lower.includes('checklist')) {
     module = 'notes';
-  } else if (lower.includes('dsa') || lower.includes('topic') || lower.includes('syllabus') || lower.includes('subject') || lower.includes('revised')) {
+  } else if (lower.includes('dsa') || lower.includes('topic') || lower.includes('syllabus') || lower.includes('subject') || lower.includes('revised') || lower.includes('job') || lower.includes('applied') || lower.includes('interview') || lower.includes('company')) {
     module = 'career';
   } else if (lower.includes('paper') || lower.includes('citation') || lower.includes('abstract') || lower.includes('journal') || lower.includes('research')) {
     module = 'research';
@@ -196,6 +196,22 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
   }
 
   if (module === 'career') {
+    const isJob = lower.includes('job') || lower.includes('applied') || lower.includes('company') || lower.includes('interview');
+    if (isJob) {
+      const companyMatch = clean.replace(/^(applied|add|log|create|update)\s+(for\s+)?(a\s+)?(job|role|application)?\s*/i, '').replace(/["']/g, '').trim();
+      const company = extractedTitle || companyMatch || clean;
+      return {
+        actionId,
+        module: 'career',
+        opType: opType === 'DELETE' ? 'DELETE' : lower.includes('move') || lower.includes('update') ? 'UPDATE' : 'CREATE',
+        title: opType === 'DELETE' ? `Delete Job Application: "${company}"` : lower.includes('move') || lower.includes('update') ? `Update Job Pipeline: "${company}"` : `Log Job Application: "${company}"`,
+        description: `Manage job application for "${company}" in Career module`,
+        targetData: { type: 'job', company, title: company, prompt: clean },
+        requiresConfirmation: opType === 'DELETE',
+        status: 'pending'
+      };
+    }
+
     return {
       actionId,
       module: 'career',
