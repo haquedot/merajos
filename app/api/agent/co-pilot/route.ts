@@ -345,12 +345,13 @@ Return ONLY valid JSON matching this structure:
     const usedProviderId = parsedReq.providerId || provider.id;
     const usedProviderName = parsedReq.providerId === 'gemini-nano' ? 'Gemini Nano (Chrome Built-in On-Device)' : provider.name;
 
+    const capacityLimit = preferences?.dailyCapacityHours || 7.0;
     const isTomorrowQuery = parsedReq.prompt.toLowerCase().includes('tomorrow');
     const summaryText = llmSummary.trim() || (actionProposals.length > 0
       ? `Parsed ${actionProposals.length} workspace module operation request for "${actionProposals[0].title}". Review the action proposal card below to execute.`
       : isTomorrowQuery
       ? `Tomorrow's Recommendation: ${finalProposals.length} tasks totaling ${totalScheduledHours}h recommended based on your workspace context.`
-      : `Workload Overview: ${finalProposals.length} tasks scheduled totaling ${totalScheduledHours}h out of 7.0h max capacity limit.`);
+      : `Workload Overview: ${finalProposals.length} tasks scheduled totaling ${totalScheduledHours}h out of ${capacityLimit.toFixed(1)}h max capacity limit.`);
 
     const proposal: AgentCoPilotProposal = {
       proposalId: `prop_${Date.now()}`,
@@ -363,12 +364,12 @@ Return ONLY valid JSON matching this structure:
       actionProposals,
       scheduleSlots,
       verification: {
-        isValid: totalScheduledHours <= 7.0,
+        isValid: totalScheduledHours <= capacityLimit,
         totalScheduledHours,
-        maxCapacityHours: 7.0,
+        maxCapacityHours: capacityLimit,
         checks: [
-          { name: 'Capacity Ceiling', passed: totalScheduledHours <= 7.0, severity: 'error', message: totalScheduledHours <= 7.0 ? 'Workload within sustainable 7.0h limit' : 'Exceeds 7.0h limit' },
-          { name: 'MIT Count', passed: finalProposals.filter((t) => t.mit).length === 3, severity: 'warning', message: 'Top 3 MITs marked' }
+          { name: 'Capacity Ceiling', passed: totalScheduledHours <= capacityLimit, severity: 'error', message: totalScheduledHours <= capacityLimit ? `Workload within sustainable ${capacityLimit.toFixed(1)}h limit` : `Exceeds ${capacityLimit.toFixed(1)}h limit` },
+          { name: 'MIT Count', passed: finalProposals.filter((t) => t.mit).length <= 3, severity: 'warning', message: 'Top MITs marked' }
         ]
       },
       steps: [

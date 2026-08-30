@@ -103,11 +103,11 @@ export const PersonalizationInspectionPanel: React.FC = () => {
         </div>
       )}
 
-      {/* Target Role & Daily Capacity Preferences */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 text-xs">
+      {/* Target Role, Daily Workload Capacity & Focus Duration Preferences */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 text-xs">
         <div className="space-y-1.5">
           <label className="font-extrabold text-gray-700 dark:text-gray-300">
-            Target Career Role / Focus Goal:
+            Target Career Role / Goal:
           </label>
           <input
             type="text"
@@ -118,8 +118,26 @@ export const PersonalizationInspectionPanel: React.FC = () => {
         </div>
 
         <div className="space-y-1.5">
+          <label className="font-extrabold text-gray-700 dark:text-gray-300 flex items-center justify-between">
+            <span>Daily Workload Capacity:</span>
+            <span className="text-[#6D5BFF] font-black">{preferences?.dailyCapacityHours || 7.0}h</span>
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={16}
+            step={0.5}
+            value={preferences?.dailyCapacityHours || 7.0}
+            onChange={(e) =>
+              updatePreferences({ dailyCapacityHours: Math.max(1, Math.min(16, Number(e.target.value) || 7.0)) })
+            }
+            className="w-full px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#6D5BFF]"
+          />
+        </div>
+
+        <div className="space-y-1.5">
           <label className="font-extrabold text-gray-700 dark:text-gray-300">
-            Preferred Focus Duration (Minutes):
+            Focus Duration (Minutes):
           </label>
           <input
             type="number"

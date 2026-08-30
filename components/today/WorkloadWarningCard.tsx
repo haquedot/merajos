@@ -31,7 +31,7 @@ export const WorkloadWarningCard: React.FC<WorkloadWarningCardProps> = ({ worklo
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
         <p className="text-amber-900 dark:text-amber-300">
-          Your scheduled commitments today (<strong>{workload.scheduledHours.toFixed(1)} hrs</strong>) exceed your sustainable daily threshold (7.0 hrs). Consider postponing low-priority tasks to prevent burnout.
+          Your scheduled commitments today (<strong>{workload.scheduledHours.toFixed(1)} hrs</strong>) exceed your sustainable daily threshold ({workload.maxOverloadThresholdHours.toFixed(1)} hrs). Consider postponing low-priority tasks to prevent burnout.
         </p>
       </div>
     </div>
