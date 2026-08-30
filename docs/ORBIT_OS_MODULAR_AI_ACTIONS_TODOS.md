@@ -13,11 +13,11 @@
   - [x] Refactor `app/api/agent/execute-action/route.ts` to delegate to `dispatchAgentAction`.
   - [x] Validate type check with `npx tsc --noEmit`.
 
-- [ ] **Phase 2: Calendar & Events AI Integration**
-  - [ ] Create `lib/agent/handlers/calendarActionHandler.ts` (`CREATE` event, `UPDATE` reschedule, `DELETE` event).
-  - [ ] Update `parseOmniActionProposal` in `lib/agent/orchestrator.ts` to parse calendar prompts.
-  - [ ] Update `StructuredSchema` in `app/api/agent/co-pilot/route.ts` for calendar actions.
-  - [ ] Test calendar event scheduling via Omini Co-Pilot.
+- [x] **Phase 2: Calendar & Events AI Integration**
+  - [x] Create `lib/agent/handlers/calendarActionHandler.ts` (`CREATE` event, `UPDATE` reschedule, `DELETE` event).
+  - [x] Update `parseOmniActionProposal` in `lib/agent/orchestrator.ts` to parse calendar prompts.
+  - [x] Update `StructuredSchema` in `app/api/agent/co-pilot/route.ts` for calendar actions.
+  - [x] Test calendar event scheduling via Omini Co-Pilot.
 
 - [ ] **Phase 3: Habits Check-ins & Goal Milestones AI Integration**
   - [ ] Update `habitsActionHandler.ts` to support daily check-ins (`UPDATE` action for `history['YYYY-MM-DD']`).

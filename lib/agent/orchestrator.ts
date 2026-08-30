@@ -216,6 +216,31 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
     };
   }
 
+  if (module === 'calendar') {
+    const eventTitle = clean
+      .replace(/^(schedule|create|add|new|reschedule|cancel|delete|remove)\s+(a\s+)?(event|meeting)?\s*/i, '')
+      .replace(/["']/g, '')
+      .trim() || extractedTitle || clean;
+
+    let targetDate = new Date().toISOString().split('T')[0];
+    if (lower.includes('tomorrow')) {
+      const tom = new Date();
+      tom.setDate(tom.getDate() + 1);
+      targetDate = tom.toISOString().split('T')[0];
+    }
+
+    return {
+      actionId,
+      module: 'calendar',
+      opType,
+      title: opType === 'DELETE' ? `Cancel Event: "${eventTitle}"` : opType === 'UPDATE' ? `Reschedule Event: "${eventTitle}"` : `Schedule Event: "${eventTitle}"`,
+      description: `${opType} calendar event "${eventTitle}" for ${targetDate}`,
+      targetData: { title: eventTitle, startDate: targetDate, endDate: targetDate, prompt: clean },
+      requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
   return {
     actionId,
     module,

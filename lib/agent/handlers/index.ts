@@ -7,6 +7,7 @@ import { CareerActionHandler } from './careerActionHandler';
 import { ResearchActionHandler } from './researchActionHandler';
 import { HabitsActionHandler } from './habitsActionHandler';
 import { GoalsActionHandler } from './goalsActionHandler';
+import { CalendarActionHandler } from './calendarActionHandler';
 
 const handlerList: ActionHandler[] = [
   new TasksActionHandler(),
@@ -16,6 +17,7 @@ const handlerList: ActionHandler[] = [
   new ResearchActionHandler(),
   new HabitsActionHandler(),
   new GoalsActionHandler(),
+  new CalendarActionHandler(),
 ];
 
 const handlerRegistry: Record<string, ActionHandler> = {};
