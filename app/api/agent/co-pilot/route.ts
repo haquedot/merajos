@@ -288,6 +288,8 @@ Return ONLY valid JSON matching this structure:
 
     const actionProposals: AgentActionProposal[] = isAnalysisOnly
       ? []
+      : omniAction && omniAction.module === 'projects' && omniAction.opType === 'UPDATE'
+      ? [omniAction]
       : llmActionProposals.length > 0
       ? llmActionProposals
       : omniAction

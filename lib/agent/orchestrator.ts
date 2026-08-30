@@ -150,22 +150,36 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
   const extractedTitle = extractTargetTitle(clean);
 
   if (module === 'projects') {
-    const isFeatureOrBug = lower.includes('feature') || lower.includes('bug') || lower.includes('module');
+    const isFeatureOrBug = lower.includes('feature') || lower.includes('bug') || lower.includes('module') || lower.includes('deliverable');
     const isExplicitNewProject = lower.startsWith('create project') || lower.startsWith('add project') || lower.startsWith('new project') || lower.startsWith('create a project') || lower.startsWith('create a new project') || lower.startsWith('create client') || lower.startsWith('add client');
 
     if (isFeatureOrBug && !isExplicitNewProject && opType !== 'DELETE') {
-      const featureTitle = clean
-        .replace(/^(create|add|new)\s+(a\s+)?(feature|bug|module)\s*(titled|named|called)?\s*/i, '')
-        .replace(/["']/g, '')
-        .trim() || extractedTitle || clean;
+      const projMatch = clean.match(/(?:in|for|to)\s+(?:the\s+)?project\s+["']?([^"',.]+)/i);
+      const projectName = projMatch ? projMatch[1].trim() : undefined;
+
+      const quoteMatches = Array.from(clean.matchAll(/["']([^"']+)["']/g)).map(m => m[1].trim());
+      let featureTitle = '';
+
+      if (projectName && quoteMatches.length > 0) {
+        const nonProj = quoteMatches.find(q => q.toLowerCase() !== projectName.toLowerCase());
+        if (nonProj) featureTitle = nonProj;
+      }
+
+      if (!featureTitle) {
+        featureTitle = clean
+          .replace(/(?:in|for|to)\s+(?:the\s+)?project\s+["']?([^"',.]+)/i, '')
+          .replace(/^(create|add|new)\s+(a\s+)?(new\s+)?(feature|deliverable|bug|module)\s*(titled|named|called)?\s*/i, '')
+          .replace(/["']/g, '')
+          .trim() || extractedTitle || clean;
+      }
 
       return {
         actionId,
         module: 'projects',
         opType: 'UPDATE',
-        title: `Add Feature to Project: "${featureTitle}"`,
-        description: `Add feature "${featureTitle}" to active project`,
-        targetData: { type: 'feature', featureTitle, title: featureTitle, prompt: clean },
+        title: `Add Feature to ${projectName ? `Project "${projectName}"` : 'Active Project'}: "${featureTitle}"`,
+        description: `Add feature "${featureTitle}" to ${projectName ? `project "${projectName}"` : 'active project'}`,
+        targetData: { type: 'feature', featureTitle, projectName, title: featureTitle, prompt: clean },
         requiresConfirmation: false,
         status: 'pending'
       };
