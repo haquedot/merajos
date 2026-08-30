@@ -35,6 +35,7 @@ import { Card } from '../ui/card';
 import { Sheet, SheetContent } from '../ui/sheet';
 import { Checkbox } from '../ui/checkbox';
 import { Select } from '../ui/select';
+import { useAIConfigStore } from '../../store/useAIConfigStore';
 import {
   ChatThread,
   ChatMessage,
@@ -59,6 +60,7 @@ const GENERATION_STEPS = [
 
 export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, onClose }) => {
   const { session } = useGoogleAuth();
+  const { configs, activeModelId } = useAIConfigStore();
   const [mounted, setMounted] = useState(false);
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -67,14 +69,26 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingStep, setGeneratingStep] = useState(0);
-  const [availableProviders, setAvailableProviders] = useState<{ id: AIProviderId; name: string; requiresKey: boolean }[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState<AIProviderId>('ollama');
+  const [selectedProvider, setSelectedProvider] = useState<string>('ollama');
 
   const [approvedTasks, setApprovedTasks] = useState<Record<string, boolean>>({});
   const [syncedMessages, setSyncedMessages] = useState<Record<string, boolean>>({});
 
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const isLocalEnv = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.endsWith('.local')) ||
+    process.env.NODE_ENV === 'development';
+
+  const modelDropdownOptions = [
+    { value: 'gemini-nano', label: '🔮 Gemini Nano (Built-in On-Device)' },
+    ...(isLocalEnv ? [{ value: 'ollama', label: '🦙 Ollama (Local Offline)' }] : []),
+    ...configs.map((c) => ({
+      value: c.id,
+      label: `⚡ ${c.name} (${c.providerId.toUpperCase()}: ${c.modelName})`
+    }))
+  ];
 
   useEffect(() => {
     setMounted(true);
@@ -93,15 +107,18 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
         setActiveThreadId(existing[0].id);
       }
 
-      // Check available providers
-      const provs = ProviderFactory.getAvailableProviders();
-      setAvailableProviders(provs);
-      if (provs.length > 0) {
-        const hasOllama = provs.some((p) => p.id === 'ollama');
-        setSelectedProvider(hasOllama ? 'ollama' : provs[0].id);
+      // Default active provider selection
+      if (activeModelId && configs.some((c) => c.id === activeModelId)) {
+        setSelectedProvider(activeModelId);
+      } else if (configs.length > 0) {
+        setSelectedProvider(configs[0].id);
+      } else if (isLocalEnv) {
+        setSelectedProvider('ollama');
+      } else {
+        setSelectedProvider('gemini-nano');
       }
     }
-  }, [isOpen]);
+  }, [isOpen, activeModelId, configs, isLocalEnv]);
 
   const activeThread = threads.find((t) => t.id === activeThreadId);
   const messages = activeThread ? activeThread.messages : [];
@@ -203,13 +220,23 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
           }))
         : [];
 
+      const selectedConfig = configs.find((c) => c.id === selectedProvider);
+      const providerIdPayload = selectedConfig ? selectedConfig.providerId : selectedProvider;
+      const userConfigPayload = selectedConfig ? {
+        providerId: selectedConfig.providerId,
+        modelName: selectedConfig.modelName,
+        apiKey: selectedConfig.apiKey,
+        baseUrl: selectedConfig.baseUrl,
+      } : undefined;
+
       const headers = await getAuthHeaders();
       const res = await fetch('/api/agent/co-pilot', {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: userText,
-          providerId: selectedProvider,
+          providerId: providerIdPayload,
+          userConfig: userConfigPayload,
           chatHistory: recentHistory
         })
       });
@@ -314,10 +341,10 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="p-0 flex flex-col overflow-hidden border-l border-gray-200 dark:border-gray-800" hideCloseButton>
+      <SheetContent side="right" className="p-0 flex flex-col overflow-hidden border-l border-gray-200 dark:border-gray-800 h-[100dvh] max-h-[100dvh] w-full sm:w-[560px] md:w-[640px]" hideCloseButton>
         {/* Header with Continuous Rotating Gradient Avatar */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-800/80 bg-white/80 dark:bg-[#121827]/90 backdrop-blur-md flex items-center justify-between relative shrink-0 z-20">
-          <div className="flex items-center gap-3">
+        <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-800/80 bg-white/80 dark:bg-[#121827]/90 backdrop-blur-md flex items-center justify-between relative shrink-0 z-20 gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
             {/* Rotating Conic Gradient Beam around Avatar */}
             <div className="relative p-[1.5px] rounded-full overflow-hidden group shadow-md shrink-0">
               <motion.div
@@ -325,28 +352,28 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                 transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
                 className="absolute -inset-[200%] bg-[conic-gradient(from_0deg_at_50%_50%,#0066FF_0deg,#38bdf8_90deg,transparent_180deg,#FF6B00_270deg,#0066FF_360deg)] opacity-90 pointer-events-none"
               />
-              <div className="relative z-10 w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-sky-400 animate-pulse" />
+              <div className="relative z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-900 text-white flex items-center justify-center">
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-sky-400 animate-pulse" />
               </div>
             </div>
 
-            <div>
-              <h2 className="text-sm font-extrabold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-extrabold tracking-tight text-gray-900 dark:text-white flex items-center gap-1.5">
                 Omini
               </h2>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium truncate max-w-[220px]">
+              <p className="text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400 font-medium truncate max-w-[110px] xs:max-w-[160px] sm:max-w-[240px]">
                 {activeThread ? activeThread.title : 'New Chat Session'}
               </p>
             </div>
           </div>
 
           {/* Header Controls: New Chat, Previous Chats Dropdown, Close */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <Button
               size="sm"
               variant="default"
               onClick={handleNewChat}
-              className="gap-1.5 font-extrabold"
+              className="gap-1.5 font-extrabold h-8 px-2 sm:px-3 text-xs"
               title="Start a new chat thread"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -359,12 +386,12 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                 size="sm"
                 variant="outline"
                 onClick={() => setShowHistoryDropdown(!showHistoryDropdown)}
-                className="gap-1.5 font-extrabold"
+                className="gap-1.5 font-extrabold h-8 px-2 sm:px-3 text-xs"
                 title="Previous Chat Threads"
               >
-                <History className="w-4 h-4 text-sky-500" />
+                <History className="w-3.5 h-3.5 text-sky-500" />
                 {threads.length > 0 && (
-                  <Badge variant="info" size="sm" className="font-mono">
+                  <Badge variant="info" size="sm" className="font-mono text-[9px] px-1 py-0">
                     {threads.length}
                   </Badge>
                 )}
@@ -377,7 +404,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                     initial={{ opacity: 0, y: 8, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                    className="absolute right-0 top-12 z-50 w-72 bg-white dark:bg-[#181d2a] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl p-2 space-y-1 backdrop-blur-xl"
+                    className="absolute right-0 top-11 z-50 w-[calc(100vw-2rem)] max-w-xs sm:w-72 bg-white dark:bg-[#181d2a] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl p-2 space-y-1 backdrop-blur-xl"
                   >
                     <div className="px-3 py-2 flex items-center justify-between border-b border-gray-100 dark:border-gray-800/80">
                       <span className="text-[11px] font-black uppercase text-gray-400 tracking-wider flex items-center gap-1.5">
@@ -414,7 +441,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                             </div>
                             <button
                               onClick={(e) => handleDeleteThread(e, t.id)}
-                              className="p-1 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                              className="p-1 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -431,16 +458,16 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
               size="icon"
               variant="ghost"
               onClick={onClose}
-              className="rounded-xl"
+              className="rounded-xl h-8 w-8"
               title="Close Drawer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
         {/* Conversational Feed Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-4 sm:space-y-6">
           <GeminiNanoBanner />
 
           {/* Welcome Screen with Rotating Gradient Border Beam */}
@@ -448,7 +475,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="relative rounded-3xl p-[1.5px] overflow-hidden shadow-xl group my-4"
+              className="relative rounded-3xl p-[1.5px] overflow-hidden shadow-xl group my-2 sm:my-4"
             >
               {/* Continuous Rotating Conic Gradient Beam */}
               <motion.div
@@ -458,21 +485,21 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
               />
 
               {/* Inner Banner Content */}
-              <div className="relative z-10 p-6 sm:p-8 rounded-[calc(1.5rem-1.5px)] bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 text-white text-center space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white mx-auto flex items-center justify-center shadow-lg shadow-blue-500/30">
-                  <Sparkles className="w-7 h-7 animate-pulse text-amber-300" />
+              <div className="relative z-10 p-5 sm:p-8 rounded-[calc(1.5rem-1.5px)] bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 text-white text-center space-y-3.5">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white mx-auto flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 animate-pulse text-amber-300" />
                 </div>
-                <div className="space-y-1.5">
-                  <h3 className="text-lg font-black tracking-tight text-white">
+                <div className="space-y-1">
+                  <h3 className="text-base sm:text-lg font-black tracking-tight text-white">
                     Welcome to Omini Chat
                   </h3>
-                  <p className="text-xs text-gray-300 max-w-sm mx-auto leading-relaxed font-medium">
+                  <p className="text-[11px] sm:text-xs text-gray-300 max-w-sm mx-auto leading-relaxed font-medium">
                     Ask any questions, request schedule recommendations, or manage your workspace modules in natural language.
                   </p>
                 </div>
 
                 {/* Quick Suggestion Pills */}
-                <div className="pt-2 flex flex-wrap items-center justify-center gap-2 max-w-md mx-auto">
+                <div className="pt-1 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 max-w-md mx-auto">
                   {[
                     'Organize my tasks for today',
                     'Who is prime minister of India?',
@@ -482,7 +509,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                     <button
                       key={i}
                       onClick={() => setPrompt(promptText)}
-                      className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs text-blue-100 font-semibold transition-all text-left truncate max-w-xs cursor-pointer active:scale-95"
+                      className="px-2.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] sm:text-xs text-blue-100 font-semibold transition-all text-left truncate max-w-full sm:max-w-xs cursor-pointer active:scale-95"
                     >
                       "{promptText}"
                     </button>
@@ -498,32 +525,32 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
               key={msg.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex gap-2.5 sm:gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-xl bg-slate-900 text-sky-400 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20 mt-1 border border-sky-500/30">
-                  <Sparkles className="w-4 h-4 text-sky-400" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-900 text-sky-400 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20 mt-1 border border-sky-500/30">
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400" />
                 </div>
               )}
 
-              <div className={`max-w-[85%] space-y-2.5 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <div className={`max-w-[92%] sm:max-w-[85%] space-y-2.5 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                 {/* User Bubble */}
                 {msg.role === 'user' && (
-                  <div className="p-3.5 rounded-2xl rounded-tr-xs bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-semibold shadow-md shadow-blue-600/20 leading-relaxed">
+                  <div className="p-3 sm:p-3.5 rounded-2xl rounded-tr-xs bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-semibold shadow-md shadow-blue-600/20 leading-relaxed">
                     {msg.content}
                   </div>
                 )}
 
                 {/* Assistant Response Bubble */}
                 {msg.role === 'assistant' && (
-                  <Card className="p-4 rounded-2xl bg-white dark:bg-[#151a28] border-gray-200/80 dark:border-gray-800 space-y-3 shadow-md">
-                    <div className="flex items-center justify-between">
+                  <Card className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#151a28] border-gray-200/80 dark:border-gray-800 space-y-3 shadow-md">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" />
+                        <Sparkles className="w-3.5 h-3.5 shrink-0" />
                         Omini Response
                       </span>
                       {msg.provider && (
-                        <Badge variant="outline" size="sm" className="font-mono capitalize text-[10px]">
+                        <Badge variant="outline" size="sm" className="font-mono capitalize text-[9px] px-1.5 py-0 truncate">
                           {msg.provider}
                         </Badge>
                       )}
@@ -545,10 +572,10 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                     {/* Structured Task Proposals & Schedule Slots (Only for Schedule/Task Creation requests) */}
                     {msg.proposal && !msg.proposal.isAnalysisOnly && msg.proposal.taskProposals && msg.proposal.taskProposals.length > 0 && (
                       <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800/80">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="text-[11px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                             <Layers className="w-3.5 h-3.5 text-blue-500" />
-                            Proposed Task Plan ({msg.proposal.taskProposals.length})
+                            Proposed Tasks ({msg.proposal.taskProposals.length})
                           </span>
 
                           {syncedMessages[msg.id] ? (
@@ -560,7 +587,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                               size="sm"
                               variant="default"
                               onClick={() => handleSyncToOrbit(msg.id, msg.proposal!)}
-                              className="gap-1.5 font-extrabold"
+                              className="gap-1.5 font-extrabold text-[11px] h-7 px-2.5"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               <span>Sync Approved Tasks</span>
@@ -575,7 +602,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                             return (
                               <div
                                 key={tId}
-                                className="p-2.5 rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-gray-50/50 dark:bg-[#121620] flex items-start gap-3 text-xs"
+                                className="p-2.5 rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-gray-50/50 dark:bg-[#121620] flex items-start gap-2.5 text-xs"
                               >
                                 <Checkbox
                                   checked={!!approvedTasks[tId]}
@@ -585,7 +612,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                                       [tId]: checked
                                     }))
                                   }
-                                  className="mt-0.5"
+                                  className="mt-0.5 shrink-0"
                                 />
                                 <div className="flex-1 min-w-0 space-y-0.5">
                                   <p className="font-extrabold text-gray-900 dark:text-white leading-snug truncate">
@@ -595,7 +622,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                                     {t.reason || 'Recommended task'}
                                   </p>
                                 </div>
-                                <Badge variant="outline" size="sm" className="capitalize text-[10px]">
+                                <Badge variant="outline" size="sm" className="capitalize text-[9px] shrink-0">
                                   {t.category}
                                 </Badge>
                               </div>
@@ -644,10 +671,10 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-start gap-3"
+              className="flex items-start gap-2.5 sm:gap-3"
             >
-              <div className="w-8 h-8 rounded-xl bg-slate-900 text-sky-400 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20 mt-1 border border-sky-500/30">
-                <Brain className="w-4 h-4 animate-pulse text-sky-400" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-900 text-sky-400 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20 mt-1 border border-sky-500/30">
+                <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse text-sky-400" />
               </div>
 
               <div className="relative rounded-2xl p-[1.5px] overflow-hidden shadow-lg flex-1">
@@ -658,7 +685,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                   className="absolute -inset-[200%] bg-[conic-gradient(from_0deg_at_50%_50%,#0066FF_0deg,#38bdf8_90deg,transparent_180deg,#FF6B00_270deg,#0066FF_360deg)] opacity-90 pointer-events-none"
                 />
 
-                <div className="relative z-10 p-4 rounded-[calc(1rem-1.5px)] bg-slate-900 text-white space-y-2.5">
+                <div className="relative z-10 p-3.5 sm:p-4 rounded-[calc(1rem-1.5px)] bg-slate-900 text-white space-y-2">
                   <p className="text-xs font-black text-sky-300 flex items-center gap-2">
                     <RefreshCw className="w-3.5 h-3.5 animate-spin text-sky-400" />
                     Omini is reasoning...
@@ -675,30 +702,29 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
         </div>
 
         {/* ChatGPT-Style Bottom Input Bar with Shadcn Controls */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-[#121827]/95 backdrop-blur-md space-y-2 shadow-2xl shrink-0 z-20">
+        <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-[#121827]/95 backdrop-blur-md space-y-2 shadow-2xl shrink-0 z-20">
           <div className="relative rounded-2xl bg-gray-50 dark:bg-[#181d2a] border border-gray-200 dark:border-gray-700/80 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500 transition-all">
-            <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200/60 dark:border-gray-800/80">
-              <span className="text-[11px] font-black text-gray-500 dark:text-gray-400 flex items-center gap-1.5 uppercase tracking-wider">
-                <Zap className="w-3.5 h-3.5 text-sky-500" />
-                Chat Directive
+            <div className="px-3 py-2 flex items-center justify-between gap-2 border-b border-gray-200/60 dark:border-gray-800/80">
+              <span className="text-[11px] font-black text-gray-500 dark:text-gray-400 flex items-center gap-1.5 uppercase tracking-wider min-w-0">
+                <Zap className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                <span className="truncate hidden xs:inline">Chat Directive</span>
               </span>
 
               {/* Shadcn AI Provider Switcher */}
-              <div className="flex items-center gap-1.5 text-[11px] min-w-[140px]">
-                <Cpu className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <div className="flex items-center gap-1.5 text-[11px] flex-1 max-w-[210px] sm:max-w-[260px] justify-end">
+                <Cpu className="w-3.5 h-3.5 text-gray-400 shrink-0 hidden sm:inline" />
                 <Select
                   value={selectedProvider}
-                  onValueChange={(val) => setSelectedProvider(val as AIProviderId)}
-                  options={availableProviders.map((p) => ({
-                    value: p.id,
-                    label: p.name
-                  }))}
+                  onValueChange={(val) => setSelectedProvider(val)}
+                  options={modelDropdownOptions}
+                  direction="up"
+                  align="right"
                   className="w-full text-[11px]"
                 />
               </div>
             </div>
 
-            <div className="p-2.5 flex items-end gap-2">
+            <div className="p-2 sm:p-2.5 flex items-end gap-2">
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -718,7 +744,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                 variant="default"
                 onClick={handleSendMessage}
                 disabled={isGenerating || !prompt.trim()}
-                className="rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/30 shrink-0 mb-0.5"
+                className="rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/30 shrink-0 mb-0.5 h-9 w-9"
                 title="Send Message (Enter)"
               >
                 {isGenerating ? (
@@ -731,7 +757,8 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
           </div>
 
           <div className="flex items-center justify-between text-[10px] text-gray-400 px-1 font-medium">
-            <span>Press <strong>Enter</strong> to send • <strong>Shift+Enter</strong> for new line</span>
+            <span className="hidden sm:inline">Press <strong>Enter</strong> to send • <strong>Shift+Enter</strong> for new line</span>
+            <span className="inline sm:hidden">Press <strong>Enter</strong> to send</span>
             <span className="font-mono">Omini v2</span>
           </div>
         </div>
