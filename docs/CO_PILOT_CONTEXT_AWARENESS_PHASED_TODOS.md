@@ -38,15 +38,15 @@ gantt
 
 **Goal**: Replace heavy database collection dumps with on-demand module fetching and a <50-token single-line state index.
 
-- [ ] **Task 2.1**: Implement `detectRequiredModules(prompt: string)` in `lib/agent/context/agentContextBuilder.ts`.
+- [x] **Task 2.1**: Implement `detectRequiredModules(prompt: string)` in `lib/agent/context/agentContextBuilder.ts`.
   - Analyze user prompt keywords to conditionally query MongoDB collections:
     - `notes`: `prompt.includes('note') || prompt.includes('memo')`
     - `projects`: `prompt.includes('project') || prompt.includes('client')`
     - `habits`: `prompt.includes('habit') || prompt.includes('streak')`
     - `goals`: `prompt.includes('goal') || prompt.includes('okr')`
     - `tasks`/`schedule`: `prompt.includes('task') || prompt.includes('schedule') || prompt.includes('workload') || prompt.includes('today') || prompt.includes('tomorrow')`
-- [ ] **Task 2.2**: Update MongoDB queries in `route.ts` to use `.select()` projection and `.limit(5)` to fetch minimal required fields.
-- [ ] **Task 2.3**: Implement `formatCompactWorkspaceIndex()` helper in `agentContextBuilder.ts`.
+- [x] **Task 2.2**: Update MongoDB queries in `route.ts` to use `.select()` projection and `.limit(5)` to fetch minimal required fields.
+- [x] **Task 2.3**: Implement `formatCompactWorkspaceIndex()` helper in `agentContextBuilder.ts`.
   - Serialize workspace state into a single-line string (~40-50 tokens):
     `Projects(2): Orbit OS, Client Alpha | Notes(2): System Design, Meeting 28Aug | Habits(2): Gym (4d), Reading (12d) | Pending Tasks(4): DP Practice, Fix Navbar`
 

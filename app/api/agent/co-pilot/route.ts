@@ -7,7 +7,7 @@ import Research from '../../../../models/Research';
 import CalendarEvent from '../../../../models/CalendarEvent';
 import UserPreferences from '../../../../models/UserPreferences';
 import { ProviderFactory, AIProviderId, DEFAULT_AI_PROVIDER } from '../../../../lib/agent/providers/providerFactory';
-import { buildAgentContext } from '../../../../lib/agent/context/agentContextBuilder';
+import { buildAgentContext, detectRequiredModules, formatCompactWorkspaceIndex } from '../../../../lib/agent/context/agentContextBuilder';
 import { OrbitAgentOrchestrator, parseUserIntentPrompt, parseOmniActionProposal, isAnalysisQuery, isExternalKnowledgeQuery } from '../../../../lib/agent/orchestrator';
 import { AgentCoPilotProposal, TaskProposal, ScheduleSlotProposal, AgentActionProposal } from '../../../../lib/agent/types';
 import { z } from 'zod';
@@ -88,13 +88,20 @@ export async function POST(req: Request) {
     }
 
     const userFilter = { $or: [{ userId }, { userEmail }, { userId: { $exists: false } }] };
+    const requiredModules = detectRequiredModules(parsedReq.prompt);
 
-    // Load live Orbit context across all modules
-    const tasks = await Task.find(userFilter).lean();
-    const careerDoc = await Career.findOne(userFilter).lean();
-    const researchDoc = await Research.findOne(userFilter).lean();
-    const events = await CalendarEvent.find(userFilter).lean();
+    // Selective DB Ingestion: Fetch minimal fields only for requested modules
+    const tasks = requiredModules.tasks
+      ? await Task.find(userFilter).select('id title category priority status timeSlot estimatedHours mit').limit(12).lean()
+      : [];
+    const careerDoc = requiredModules.career ? await Career.findOne(userFilter).lean() : null;
+    const researchDoc = requiredModules.research ? await Research.findOne(userFilter).lean() : null;
+    const events = requiredModules.calendar ? await CalendarEvent.find(userFilter).select('title startTime endTime').limit(5).lean() : [];
     const preferences = await UserPreferences.findOne(userFilter).lean();
+
+    const compactWorkspaceIndex = formatCompactWorkspaceIndex({
+      tasks: tasks as any[]
+    });
 
     const agentContext = buildAgentContext({
       tasks: tasks as any,
@@ -104,6 +111,7 @@ export async function POST(req: Request) {
       subjectPlans: (careerDoc?.subjectPlans || []) as any,
       researchPapers: (researchDoc?.projects?.flatMap((p: any) => p.sections?.flatMap((s: any) => s.papers || [])) || []) as any
     });
+    agentContext.compactWorkspaceIndex = compactWorkspaceIndex;
 
     // Run Orchestrated Sub-Agent Tool Pipeline with User Prompt Context
     const orchestrator = new OrbitAgentOrchestrator();
@@ -111,6 +119,8 @@ export async function POST(req: Request) {
 
     // Formulate system prompt with context and user directive for LLM semantic reasoning
     const systemPrompt = `You are Omini, the intelligent personal AI assistant for Orbit OS.
+${compactWorkspaceIndex}
+
 User's Explicit Directive: "${parsedReq.prompt}"
 
 Classify the user's directive into one of 3 semantic intent types:
