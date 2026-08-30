@@ -14,7 +14,11 @@ import { z } from 'zod';
 
 const RequestSchema = z.object({
   prompt: z.string().optional().default('Analyze my workload and generate today\'s optimal schedule'),
-  providerId: z.enum(['gemini', 'gemini-nano', 'openai', 'anthropic', 'groq', 'ollama', 'mock']).optional()
+  providerId: z.enum(['gemini', 'gemini-nano', 'openai', 'anthropic', 'groq', 'ollama', 'mock']).optional(),
+  chatHistory: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string()
+  })).optional().default([])
 });
 
 export async function GET(req: Request) {
@@ -117,11 +121,16 @@ export async function POST(req: Request) {
     const orchestrator = new OrbitAgentOrchestrator();
     const orchestratedResult = orchestrator.runPipeline(agentContext, preferences as any, parsedReq.prompt);
 
+    const historyBlock = parsedReq.chatHistory.length > 0
+      ? `=== CONVERSATION HISTORY (Last ${parsedReq.chatHistory.length} Turns) ===\n` +
+        parsedReq.chatHistory.map((h) => `${h.role === 'user' ? 'User' : 'Omini Assistant'}: ${h.content}`).join('\n') + '\n\n'
+      : '';
+
     // Formulate system prompt with context and user directive for LLM semantic reasoning
     const systemPrompt = `You are Omini, the intelligent personal AI assistant for Orbit OS.
 ${compactWorkspaceIndex}
 
-User's Explicit Directive: "${parsedReq.prompt}"
+${historyBlock}User's Explicit Directive: "${parsedReq.prompt}"
 
 Classify the user's directive into one of 3 semantic intent types:
 1. "INFORMATIONAL_QUERY": Questions, analysis, or recommendations (e.g. "What should I do tomorrow", "Analyze todays tasks", "How is my day").

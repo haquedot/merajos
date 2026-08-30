@@ -56,14 +56,14 @@ gantt
 
 **Goal**: Provide Omini with multi-turn conversation awareness (resolving follow-ups and pronouns) while capping chat memory token load at <150 tokens.
 
-- [ ] **Task 3.1**: Update `RequestSchema` in `app/api/agent/co-pilot/route.ts` to accept `chatHistory`:
+- [x] **Task 3.1**: Update `RequestSchema` in `app/api/agent/co-pilot/route.ts` to accept `chatHistory`:
   ```ts
   chatHistory: z.array(z.object({
     role: z.enum(['user', 'assistant']),
     content: z.string()
   })).optional().default([])
   ```
-- [ ] **Task 3.2**: Update `handleSendMessage` in `components/agent/AgentCoPilotDrawer.tsx`.
+- [x] **Task 3.2**: Update `handleSendMessage` in `components/agent/AgentCoPilotDrawer.tsx`.
   - Slice the active thread's messages to send only the last 2 messages (1 User turn + 1 Assistant turn):
   ```ts
   const chatHistory = activeThread.messages.slice(-2).map((m) => ({
@@ -71,7 +71,7 @@ gantt
     content: m.content
   }));
   ```
-- [ ] **Task 3.3**: Format `=== CONVERSATION HISTORY (Last 2 Turns) ===` into the LLM system prompt in `route.ts`.
+- [x] **Task 3.3**: Format `=== CONVERSATION HISTORY (Last 2 Turns) ===` into the LLM system prompt in `route.ts`.
 
 ---
 

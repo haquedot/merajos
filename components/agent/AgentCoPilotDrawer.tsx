@@ -178,13 +178,21 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
     }, 1100);
 
     try {
+      const recentHistory = activeThread
+        ? activeThread.messages.slice(-2).map((m) => ({
+            role: m.role,
+            content: m.content
+          }))
+        : [];
+
       const headers = await getAuthHeaders();
       const res = await fetch('/api/agent/co-pilot', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           prompt: userText,
-          providerId: selectedProvider
+          providerId: selectedProvider,
+          chatHistory: recentHistory
         })
       });
 
