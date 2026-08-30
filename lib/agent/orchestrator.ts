@@ -126,7 +126,7 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
   let module: ModuleType = 'tasks';
   if (lower.includes('note') || lower.includes('memo') || lower.includes('checklist')) {
     module = 'notes';
-  } else if (lower.includes('dsa') || lower.includes('topic') || lower.includes('syllabus') || lower.includes('subject') || lower.includes('revised')) {
+  } else if (lower.includes('dsa') || lower.includes('topic') || lower.includes('syllabus') || lower.includes('subject') || lower.includes('revised') || lower.includes('job') || lower.includes('applied') || lower.includes('interview') || lower.includes('company')) {
     module = 'career';
   } else if (lower.includes('paper') || lower.includes('citation') || lower.includes('abstract') || lower.includes('journal') || lower.includes('research')) {
     module = 'research';
@@ -134,12 +134,57 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
     module = 'projects';
   } else if (lower.includes('event') || lower.includes('meeting') || lower.includes('calendar') || lower.includes('reschedule')) {
     module = 'calendar';
+  } else if (lower.includes('habit') || lower.includes('streak') || lower.includes('routine')) {
+    module = 'habits';
+  } else if (lower.includes('goal') || lower.includes('okr') || lower.includes('key result')) {
+    module = 'goals';
+  } else if (lower.includes('link') || lower.includes('bookmark') || lower.includes('url')) {
+    module = 'links';
+  } else if (lower.includes('weekly') || lower.includes('brain dump') || lower.includes('top priority')) {
+    module = 'weekly';
+  } else if (lower.includes('setting') || lower.includes('theme') || lower.includes('dark mode') || lower.includes('light mode')) {
+    module = 'settings';
   }
 
   const actionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
   const extractedTitle = extractTargetTitle(clean);
 
   if (module === 'projects') {
+    const isFeatureOrBug = lower.includes('feature') || lower.includes('bug') || lower.includes('module') || lower.includes('deliverable');
+    const isExplicitNewProject = lower.startsWith('create project') || lower.startsWith('add project') || lower.startsWith('new project') || lower.startsWith('create a project') || lower.startsWith('create a new project') || lower.startsWith('create client') || lower.startsWith('add client');
+
+    if (isFeatureOrBug && !isExplicitNewProject && opType !== 'DELETE') {
+      const projMatch = clean.match(/(?:in|for|to)\s+(?:the\s+)?project\s+["']?([^"',.]+)/i);
+      const projectName = projMatch ? projMatch[1].trim() : undefined;
+
+      const quoteMatches = Array.from(clean.matchAll(/["']([^"']+)["']/g)).map(m => m[1].trim());
+      let featureTitle = '';
+
+      if (projectName && quoteMatches.length > 0) {
+        const nonProj = quoteMatches.find(q => q.toLowerCase() !== projectName.toLowerCase());
+        if (nonProj) featureTitle = nonProj;
+      }
+
+      if (!featureTitle) {
+        featureTitle = clean
+          .replace(/(?:in|for|to)\s+(?:the\s+)?project\s+["']?([^"',.]+)/i, '')
+          .replace(/^(create|add|new)\s+(a\s+)?(new\s+)?(feature|deliverable|bug|module)\s*(titled|named|called)?\s*/i, '')
+          .replace(/["']/g, '')
+          .trim() || extractedTitle || clean;
+      }
+
+      return {
+        actionId,
+        module: 'projects',
+        opType: 'UPDATE',
+        title: `Add Feature to ${projectName ? `Project "${projectName}"` : 'Active Project'}: "${featureTitle}"`,
+        description: `Add feature "${featureTitle}" to ${projectName ? `project "${projectName}"` : 'active project'}`,
+        targetData: { type: 'feature', featureTitle, projectName, title: featureTitle, prompt: clean },
+        requiresConfirmation: false,
+        status: 'pending'
+      };
+    }
+
     const titleMatch = clean.replace(/^(create|add|new)\s+(a\s+)?(project|client)\s*(titled|named|called)?\s*/i, '').replace(/["']/g, '').trim();
     const finalTitle = extractedTitle || titleMatch || clean;
     return {
@@ -169,6 +214,22 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
   }
 
   if (module === 'career') {
+    const isJob = lower.includes('job') || lower.includes('applied') || lower.includes('company') || lower.includes('interview');
+    if (isJob) {
+      const companyMatch = clean.replace(/^(applied|add|log|create|update)\s+(for\s+)?(a\s+)?(job|role|application)?\s*/i, '').replace(/["']/g, '').trim();
+      const company = extractedTitle || companyMatch || clean;
+      return {
+        actionId,
+        module: 'career',
+        opType: opType === 'DELETE' ? 'DELETE' : lower.includes('move') || lower.includes('update') ? 'UPDATE' : 'CREATE',
+        title: opType === 'DELETE' ? `Delete Job Application: "${company}"` : lower.includes('move') || lower.includes('update') ? `Update Job Pipeline: "${company}"` : `Log Job Application: "${company}"`,
+        description: `Manage job application for "${company}" in Career module`,
+        targetData: { type: 'job', company, title: company, prompt: clean },
+        requiresConfirmation: opType === 'DELETE',
+        status: 'pending'
+      };
+    }
+
     return {
       actionId,
       module: 'career',
@@ -183,14 +244,148 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
   }
 
   if (module === 'research') {
+    const isStatusUpdate = lower.includes('read') || lower.includes('cited') || lower.includes('status') || lower.includes('mark');
+    const paperTitle = clean
+      .replace(/^(add|create|new|mark|update|delete|remove)\s+(a\s+)?(research\s+)?(paper|citation)?\s*/i, '')
+      .replace(/["']/g, '')
+      .replace(/\s*(as read|as cited|reading|cited|unread)\s*/gi, '')
+      .trim() || extractedTitle || clean;
+
+    let targetPaperStatus = 'unread';
+    if (lower.includes('cited')) targetPaperStatus = 'cited';
+    else if (lower.includes('read')) targetPaperStatus = 'reading';
+
+    const actualOp = isStatusUpdate && opType !== 'DELETE' ? 'UPDATE' : opType;
+
     return {
       actionId,
       module: 'research',
+      opType: actualOp,
+      title: actualOp === 'DELETE' ? `Delete Paper: "${paperTitle}"` : actualOp === 'UPDATE' ? `Update Paper Status: "${paperTitle}"` : `Add Research Paper: "${paperTitle}"`,
+      description: `${actualOp} research paper "${paperTitle}" in workspace`,
+      targetData: { paperTitle, title: paperTitle, paperStatus: targetPaperStatus, prompt: clean },
+      requiresConfirmation: actualOp === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'calendar') {
+    const eventTitle = clean
+      .replace(/^(schedule|create|add|new|reschedule|cancel|delete|remove)\s+(a\s+)?(event|meeting)?\s*/i, '')
+      .replace(/["']/g, '')
+      .trim() || extractedTitle || clean;
+
+    let targetDate = new Date().toISOString().split('T')[0];
+    if (lower.includes('tomorrow')) {
+      const tom = new Date();
+      tom.setDate(tom.getDate() + 1);
+      targetDate = tom.toISOString().split('T')[0];
+    }
+
+    return {
+      actionId,
+      module: 'calendar',
       opType,
-      title: `Research Engine: ${clean}`,
-      description: `${opType} research paper citation or section word count`,
-      targetData: { title: extractedTitle, prompt: clean },
+      title: opType === 'DELETE' ? `Cancel Event: "${eventTitle}"` : opType === 'UPDATE' ? `Reschedule Event: "${eventTitle}"` : `Schedule Event: "${eventTitle}"`,
+      description: `${opType} calendar event "${eventTitle}" for ${targetDate}`,
+      targetData: { title: eventTitle, startDate: targetDate, endDate: targetDate, prompt: clean },
       requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'habits') {
+    const habitName = clean
+      .replace(/^(create|add|new|check in|mark|complete)\s+(a\s+)?(habit)?\s*/i, '')
+      .replace(/["']/g, '')
+      .replace(/\s*(as completed|completed|today|done)\s*/gi, '')
+      .trim() || extractedTitle || clean;
+
+    const isCheckIn = lower.includes('check in') || lower.includes('mark') || lower.includes('completed') || lower.includes('done');
+    const actualOpType = isCheckIn ? 'UPDATE' : opType;
+
+    return {
+      actionId,
+      module: 'habits',
+      opType: actualOpType,
+      title: actualOpType === 'UPDATE' ? `Log Habit Check-in: "${habitName}"` : actualOpType === 'DELETE' ? `Delete Habit: "${habitName}"` : `Create Habit: "${habitName}"`,
+      description: `${actualOpType} habit "${habitName}" in workspace`,
+      targetData: { name: habitName, title: habitName, prompt: clean },
+      requiresConfirmation: actualOpType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'goals') {
+    const goalTitle = clean
+      .replace(/^(create|add|new|update|complete|check off)\s+(a\s+)?(goal|okr|milestone)?\s*/i, '')
+      .replace(/["']/g, '')
+      .trim() || extractedTitle || clean;
+
+    return {
+      actionId,
+      module: 'goals',
+      opType,
+      title: opType === 'DELETE' ? `Delete Goal: "${goalTitle}"` : opType === 'UPDATE' ? `Update Goal/Milestone: "${goalTitle}"` : `Create Goal: "${goalTitle}"`,
+      description: `${opType} goal/milestone "${goalTitle}" in workspace`,
+      targetData: { title: goalTitle, prompt: clean },
+      requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'links') {
+    const urlMatch = clean.match(/https?:\/\/[^\s]+/i);
+    const extractedUrl = urlMatch ? urlMatch[0] : '';
+    const linkTitle = clean
+      .replace(/https?:\/\/[^\s]+/i, '')
+      .replace(/^(save|add|create|new|bookmark|favorite)\s+(a\s+)?(link|url|bookmark)?\s*/i, '')
+      .replace(/["']/g, '')
+      .trim() || extractedTitle || clean;
+
+    return {
+      actionId,
+      module: 'links',
+      opType,
+      title: opType === 'DELETE' ? `Delete Bookmark: "${linkTitle}"` : opType === 'UPDATE' ? `Favorite/Update Link: "${linkTitle}"` : `Save Link: "${linkTitle}"`,
+      description: `${opType} saved link "${linkTitle}" ${extractedUrl ? `(${extractedUrl})` : ''}`,
+      targetData: { title: linkTitle, url: extractedUrl, prompt: clean },
+      requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'weekly') {
+    const priorityTitle = clean
+      .replace(/^(add|set|update|create)\s+(weekly\s+)?(priority|brain dump|goal)?\s*/i, '')
+      .replace(/["']/g, '')
+      .trim() || extractedTitle || clean;
+
+    return {
+      actionId,
+      module: 'weekly',
+      opType: opType === 'DELETE' ? 'DELETE' : 'UPDATE',
+      title: opType === 'DELETE' ? `Remove Weekly Priority: "${priorityTitle}"` : `Update Weekly Priority: "${priorityTitle}"`,
+      description: `Update weekly planner focus & top priority in workspace`,
+      targetData: { title: priorityTitle, priority: priorityTitle, prompt: clean },
+      requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'settings') {
+    let targetTheme = 'dark';
+    if (lower.includes('light')) targetTheme = 'light';
+    else if (lower.includes('system')) targetTheme = 'system';
+
+    return {
+      actionId,
+      module: 'settings',
+      opType: 'UPDATE',
+      title: `Update System Theme: ${targetTheme.toUpperCase()}`,
+      description: `Change theme setting to ${targetTheme} mode`,
+      targetData: { theme: targetTheme, themeMode: targetTheme, prompt: clean },
+      requiresConfirmation: false,
       status: 'pending'
     };
   }

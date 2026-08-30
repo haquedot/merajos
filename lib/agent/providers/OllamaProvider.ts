@@ -65,6 +65,24 @@ export class OllamaProvider implements LLMProvider {
         parsed = { summary: 'Generated task proposals from local LLM', taskProposals: parsed };
       }
 
+      // Sanitize actionProposals targetData if present (convert raw strings to objects)
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.actionProposals)) {
+        parsed.actionProposals = parsed.actionProposals.map((ap: any) => {
+          if (ap && typeof ap === 'object') {
+            if (typeof ap.targetData === 'string') {
+              try {
+                ap.targetData = JSON.parse(ap.targetData);
+              } catch {
+                ap.targetData = { title: ap.targetData, name: ap.targetData, prompt: ap.targetData };
+              }
+            } else if (!ap.targetData || typeof ap.targetData !== 'object') {
+              ap.targetData = {};
+            }
+          }
+          return ap;
+        });
+      }
+
       return schema.parse(parsed);
     } catch (err: any) {
       console.warn(`[OllamaProvider] Structured parsing warning on model ${this.model}:`, err.message);
