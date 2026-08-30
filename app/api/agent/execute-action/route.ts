@@ -160,6 +160,48 @@ export async function POST(req: Request) {
             progress: 0,
             color: '#6366f1'
           });
+        } else if (action.opType === 'UPDATE') {
+          const featureTitle = String(action.targetData.featureTitle || action.targetData.title || action.targetData.name || action.title || 'New Feature').replace(/["']/g, '');
+          const newFeature = {
+            id: `feat_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            title: featureTitle,
+            description: String(action.targetData.description || `Feature "${featureTitle}" requested via Co-Pilot`),
+            completed: false,
+            priority: action.targetData.priority || 'medium',
+            createdAt: new Date().toISOString()
+          };
+
+          if (action.entityId) {
+            executedData = await Project.findOneAndUpdate(
+              { _id: action.entityId, userId },
+              { $push: { features: newFeature } },
+              { new: true }
+            );
+          } else {
+            // Find target project by name or fallback to most recent active project
+            const projectNameSearch = action.targetData.projectName ? String(action.targetData.projectName).replace(/["']/g, '').trim() : '';
+            const query = projectNameSearch
+              ? { userId, name: { $regex: projectNameSearch, $options: 'i' } }
+              : { userId, status: 'active' };
+
+            let project = await Project.findOne(query).sort({ updatedAt: -1 });
+            if (project) {
+              project.features.push(newFeature as any);
+              await project.save();
+              executedData = project;
+            } else {
+              // If no active project exists, create a default project and attach the feature
+              executedData = await Project.create({
+                _id: `project-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                userId,
+                name: 'Main Project',
+                clientName: 'Main Project',
+                description: 'Default project created via Co-Pilot',
+                status: 'active',
+                features: [newFeature]
+              });
+            }
+          }
         } else if (action.opType === 'DELETE') {
           if (action.entityId) {
             executedData = await Project.findOneAndDelete({ _id: action.entityId, userId });

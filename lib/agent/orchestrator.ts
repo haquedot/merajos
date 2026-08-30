@@ -140,6 +140,27 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
   const extractedTitle = extractTargetTitle(clean);
 
   if (module === 'projects') {
+    const isFeatureOrBug = lower.includes('feature') || lower.includes('bug') || lower.includes('module');
+    const isExplicitNewProject = lower.startsWith('create project') || lower.startsWith('add project') || lower.startsWith('new project') || lower.startsWith('create a project') || lower.startsWith('create a new project') || lower.startsWith('create client') || lower.startsWith('add client');
+
+    if (isFeatureOrBug && !isExplicitNewProject && opType !== 'DELETE') {
+      const featureTitle = clean
+        .replace(/^(create|add|new)\s+(a\s+)?(feature|bug|module)\s*(titled|named|called)?\s*/i, '')
+        .replace(/["']/g, '')
+        .trim() || extractedTitle || clean;
+
+      return {
+        actionId,
+        module: 'projects',
+        opType: 'UPDATE',
+        title: `Add Feature to Project: "${featureTitle}"`,
+        description: `Add feature "${featureTitle}" to active project`,
+        targetData: { type: 'feature', featureTitle, title: featureTitle, prompt: clean },
+        requiresConfirmation: false,
+        status: 'pending'
+      };
+    }
+
     const titleMatch = clean.replace(/^(create|add|new)\s+(a\s+)?(project|client)\s*(titled|named|called)?\s*/i, '').replace(/["']/g, '').trim();
     const finalTitle = extractedTitle || titleMatch || clean;
     return {

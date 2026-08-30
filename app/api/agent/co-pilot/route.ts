@@ -197,6 +197,19 @@ Return ONLY valid JSON matching this structure:
       return 'medium';
     }, z.enum(['low', 'medium', 'high', 'urgent'])).default('medium');
 
+    const TargetDataSchema = z.preprocess((val) => {
+      if (typeof val === 'string') {
+        try {
+          const parsed = JSON.parse(val);
+          if (typeof parsed === 'object' && parsed !== null) return parsed;
+        } catch {
+          return { title: val, name: val, prompt: val };
+        }
+      }
+      if (typeof val === 'object' && val !== null) return val;
+      return {};
+    }, z.record(z.string(), z.unknown())).optional().default({});
+
     const StructuredSchema = z.object({
       intentType: z.enum(['INFORMATIONAL_QUERY', 'TASK_MUTATION', 'MODULE_ACTION']).default('INFORMATIONAL_QUERY'),
       summary: z.string().optional().default(''),
@@ -205,7 +218,7 @@ Return ONLY valid JSON matching this structure:
         opType: z.enum(['CREATE', 'READ', 'UPDATE', 'DELETE']).default('CREATE'),
         title: z.string().optional().default('Workspace Action Proposal'),
         description: z.string().optional().default('Parsed action proposal'),
-        targetData: z.record(z.string(), z.unknown()).optional().default({})
+        targetData: TargetDataSchema
       })).optional().default([]),
       explicitTask: z.object({
         title: z.string(),
