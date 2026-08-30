@@ -138,6 +138,8 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
     module = 'habits';
   } else if (lower.includes('goal') || lower.includes('okr') || lower.includes('key result')) {
     module = 'goals';
+  } else if (lower.includes('link') || lower.includes('bookmark') || lower.includes('url')) {
+    module = 'links';
   }
 
   const actionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -280,6 +282,27 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
       title: opType === 'DELETE' ? `Delete Goal: "${goalTitle}"` : opType === 'UPDATE' ? `Update Goal/Milestone: "${goalTitle}"` : `Create Goal: "${goalTitle}"`,
       description: `${opType} goal/milestone "${goalTitle}" in workspace`,
       targetData: { title: goalTitle, prompt: clean },
+      requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'links') {
+    const urlMatch = clean.match(/https?:\/\/[^\s]+/i);
+    const extractedUrl = urlMatch ? urlMatch[0] : '';
+    const linkTitle = clean
+      .replace(/https?:\/\/[^\s]+/i, '')
+      .replace(/^(save|add|create|new|bookmark|favorite)\s+(a\s+)?(link|url|bookmark)?\s*/i, '')
+      .replace(/["']/g, '')
+      .trim() || extractedTitle || clean;
+
+    return {
+      actionId,
+      module: 'links',
+      opType,
+      title: opType === 'DELETE' ? `Delete Bookmark: "${linkTitle}"` : opType === 'UPDATE' ? `Favorite/Update Link: "${linkTitle}"` : `Save Link: "${linkTitle}"`,
+      description: `${opType} saved link "${linkTitle}" ${extractedUrl ? `(${extractedUrl})` : ''}`,
+      targetData: { title: linkTitle, url: extractedUrl, prompt: clean },
       requiresConfirmation: opType === 'DELETE',
       status: 'pending'
     };

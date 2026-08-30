@@ -5,7 +5,7 @@ export type TaskCategory = 'Client' | 'Research' | 'Career' | 'Personal' | 'Coll
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 // Omni-Module Action & CRUD Types
-export type ModuleType = 'tasks' | 'career' | 'research' | 'calendar' | 'notes' | 'projects' | 'habits' | 'goals' | 'clients';
+export type ModuleType = 'tasks' | 'career' | 'research' | 'calendar' | 'notes' | 'projects' | 'habits' | 'goals' | 'clients' | 'links' | 'weekly' | 'settings';
 export type CrudOp = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE';
 
 export interface ActionDiffItem {

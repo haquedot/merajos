@@ -24,10 +24,10 @@
   - [x] Update `goalsActionHandler.ts` to support checking off milestones (`UPDATE` action for goal milestones).
   - [x] Add parsing logic for habit completion and milestone check prompts.
 
-- [ ] **Phase 4: Saved Resource Links AI Integration**
-  - [ ] Create `lib/agent/handlers/linksActionHandler.ts` (`CREATE` bookmark, `UPDATE` favorite flag, `DELETE` link).
-  - [ ] Update `parseOmniActionProposal` and Zod schema for link bookmarks.
-  - [ ] Test resource link bookmarking via Omini Co-Pilot.
+- [x] **Phase 4: Saved Resource Links AI Integration**
+  - [x] Create `lib/agent/handlers/linksActionHandler.ts` (`CREATE` bookmark, `UPDATE` favorite flag, `DELETE` link).
+  - [x] Update `parseOmniActionProposal` and Zod schema for link bookmarks.
+  - [x] Test resource link bookmarking via Omini Co-Pilot.
 
 - [ ] **Phase 5: Career Subject Plans & Job Applications AI Integration**
   - [ ] Extend `careerActionHandler.ts` to support creating Subject Plans and updating Job Application statuses.
