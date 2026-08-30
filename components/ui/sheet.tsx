@@ -137,6 +137,7 @@ export const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               onClick={() => onOpenChange(false)}
               className="fixed inset-0 z-[9999] bg-black/65 backdrop-blur-md"
             />
@@ -147,7 +148,7 @@ export const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
               initial={initialPos}
               animate={{ x: 0, y: 0 }}
               exit={initialPos}
-              transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280, mass: 0.8 }}
               className={cn(sheetVariants({ side }), className)}
               {...props}
             >

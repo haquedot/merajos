@@ -53,8 +53,8 @@ export function buildCurrentContext(
     return sum;
   }, 0);
 
-  const sustainableCapacityHours = preferences?.dailyCapacityHours || 5.5;
-  const maxOverloadThresholdHours = 7.0;
+  const sustainableCapacityHours = preferences?.dailyCapacityHours || 7.0;
+  const maxOverloadThresholdHours = preferences?.dailyCapacityHours || 7.0;
   const isOverloaded = scheduledHours > maxOverloadThresholdHours;
 
   const workload: WorkloadCapacityModel = {

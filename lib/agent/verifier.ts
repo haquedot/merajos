@@ -48,8 +48,8 @@ export class OrbitVerificationAgent {
       });
     }
 
-    // 2. Capacity Ceiling Check (Max 7.0 Hours)
-    const maxCapacity = context.currentContext.workload.maxOverloadThresholdHours || 7.0;
+    // 2. Capacity Ceiling Check (Dynamic User Capacity Limit)
+    const maxCapacity = context.currentContext.workload.maxOverloadThresholdHours || userPreferences?.dailyCapacityHours || 7.0;
     const calendarOccupancy = context.currentContext.workload.calendarOccupancyHours || 0;
     const availableTaskCapacity = Math.max(1.0, maxCapacity - calendarOccupancy);
 
