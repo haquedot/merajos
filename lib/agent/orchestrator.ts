@@ -134,6 +134,10 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
     module = 'projects';
   } else if (lower.includes('event') || lower.includes('meeting') || lower.includes('calendar') || lower.includes('reschedule')) {
     module = 'calendar';
+  } else if (lower.includes('habit') || lower.includes('streak') || lower.includes('routine')) {
+    module = 'habits';
+  } else if (lower.includes('goal') || lower.includes('okr') || lower.includes('key result')) {
+    module = 'goals';
   }
 
   const actionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -236,6 +240,46 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
       title: opType === 'DELETE' ? `Cancel Event: "${eventTitle}"` : opType === 'UPDATE' ? `Reschedule Event: "${eventTitle}"` : `Schedule Event: "${eventTitle}"`,
       description: `${opType} calendar event "${eventTitle}" for ${targetDate}`,
       targetData: { title: eventTitle, startDate: targetDate, endDate: targetDate, prompt: clean },
+      requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'habits') {
+    const habitName = clean
+      .replace(/^(create|add|new|check in|mark|complete)\s+(a\s+)?(habit)?\s*/i, '')
+      .replace(/["']/g, '')
+      .replace(/\s*(as completed|completed|today|done)\s*/gi, '')
+      .trim() || extractedTitle || clean;
+
+    const isCheckIn = lower.includes('check in') || lower.includes('mark') || lower.includes('completed') || lower.includes('done');
+    const actualOpType = isCheckIn ? 'UPDATE' : opType;
+
+    return {
+      actionId,
+      module: 'habits',
+      opType: actualOpType,
+      title: actualOpType === 'UPDATE' ? `Log Habit Check-in: "${habitName}"` : actualOpType === 'DELETE' ? `Delete Habit: "${habitName}"` : `Create Habit: "${habitName}"`,
+      description: `${actualOpType} habit "${habitName}" in workspace`,
+      targetData: { name: habitName, title: habitName, prompt: clean },
+      requiresConfirmation: actualOpType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'goals') {
+    const goalTitle = clean
+      .replace(/^(create|add|new|update|complete|check off)\s+(a\s+)?(goal|okr|milestone)?\s*/i, '')
+      .replace(/["']/g, '')
+      .trim() || extractedTitle || clean;
+
+    return {
+      actionId,
+      module: 'goals',
+      opType,
+      title: opType === 'DELETE' ? `Delete Goal: "${goalTitle}"` : opType === 'UPDATE' ? `Update Goal/Milestone: "${goalTitle}"` : `Create Goal: "${goalTitle}"`,
+      description: `${opType} goal/milestone "${goalTitle}" in workspace`,
+      targetData: { title: goalTitle, prompt: clean },
       requiresConfirmation: opType === 'DELETE',
       status: 'pending'
     };

@@ -19,10 +19,10 @@
   - [x] Update `StructuredSchema` in `app/api/agent/co-pilot/route.ts` for calendar actions.
   - [x] Test calendar event scheduling via Omini Co-Pilot.
 
-- [ ] **Phase 3: Habits Check-ins & Goal Milestones AI Integration**
-  - [ ] Update `habitsActionHandler.ts` to support daily check-ins (`UPDATE` action for `history['YYYY-MM-DD']`).
-  - [ ] Update `goalsActionHandler.ts` to support checking off milestones (`UPDATE` action for goal milestones).
-  - [ ] Add parsing logic for habit completion and milestone check prompts.
+- [x] **Phase 3: Habits Check-ins & Goal Milestones AI Integration**
+  - [x] Update `habitsActionHandler.ts` to support daily check-ins (`UPDATE` action for `history['YYYY-MM-DD']`).
+  - [x] Update `goalsActionHandler.ts` to support checking off milestones (`UPDATE` action for goal milestones).
+  - [x] Add parsing logic for habit completion and milestone check prompts.
 
 - [ ] **Phase 4: Saved Resource Links AI Integration**
   - [ ] Create `lib/agent/handlers/linksActionHandler.ts` (`CREATE` bookmark, `UPDATE` favorite flag, `DELETE` link).
