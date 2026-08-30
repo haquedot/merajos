@@ -33,6 +33,8 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/Badge';
 import { Card } from '../ui/card';
 import { Sheet, SheetContent } from '../ui/sheet';
+import { Checkbox } from '../ui/checkbox';
+import { Select } from '../ui/select';
 import {
   ChatThread,
   ChatMessage,
@@ -194,13 +196,21 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
     setIsGenerating(true);
 
     try {
+      const recentHistory = activeThread
+        ? activeThread.messages.slice(-2).map((m) => ({
+            role: m.role,
+            content: m.content
+          }))
+        : [];
+
       const headers = await getAuthHeaders();
       const res = await fetch('/api/agent/co-pilot', {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: userText,
-          providerId: selectedProvider
+          providerId: selectedProvider,
+          chatHistory: recentHistory
         })
       });
 
@@ -304,7 +314,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="p-0 flex flex-col overflow-hidden" hideCloseButton>
+      <SheetContent side="right" className="p-0 flex flex-col overflow-hidden border-l border-gray-200 dark:border-gray-800" hideCloseButton>
         {/* Header with Continuous Rotating Gradient Avatar */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-800/80 bg-white/80 dark:bg-[#121827]/90 backdrop-blur-md flex items-center justify-between relative shrink-0 z-20">
           <div className="flex items-center gap-3">
@@ -532,8 +542,8 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                       </div>
                     )}
 
-                    {/* Structured Task Proposals & Schedule Slots */}
-                    {msg.proposal && msg.proposal.taskProposals && msg.proposal.taskProposals.length > 0 && (
+                    {/* Structured Task Proposals & Schedule Slots (Only for Schedule/Task Creation requests) */}
+                    {msg.proposal && !msg.proposal.isAnalysisOnly && msg.proposal.taskProposals && msg.proposal.taskProposals.length > 0 && (
                       <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800/80">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
@@ -558,25 +568,24 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                           )}
                         </div>
 
-                        {/* Task Checklist Items */}
+                        {/* Task Checklist Items with Shadcn Checkbox */}
                         <div className="space-y-2">
                           {msg.proposal.taskProposals.map((t, idx) => {
                             const tId = t.id || `tp_${idx}`;
                             return (
                               <div
                                 key={tId}
-                                className="p-2.5 rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-gray-50/50 dark:bg-[#121620] flex items-start gap-2.5 text-xs"
+                                className="p-2.5 rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-gray-50/50 dark:bg-[#121620] flex items-start gap-3 text-xs"
                               >
-                                <input
-                                  type="checkbox"
+                                <Checkbox
                                   checked={!!approvedTasks[tId]}
-                                  onChange={(e) =>
+                                  onCheckedChange={(checked) =>
                                     setApprovedTasks((prev) => ({
                                       ...prev,
-                                      [tId]: e.target.checked
+                                      [tId]: checked
                                     }))
                                   }
-                                  className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 dark:bg-gray-800 cursor-pointer"
+                                  className="mt-0.5"
                                 />
                                 <div className="flex-1 min-w-0 space-y-0.5">
                                   <p className="font-extrabold text-gray-900 dark:text-white leading-snug truncate">
@@ -665,7 +674,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ChatGPT-Style Bottom Input Bar */}
+        {/* ChatGPT-Style Bottom Input Bar with Shadcn Controls */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-[#121827]/95 backdrop-blur-md space-y-2 shadow-2xl shrink-0 z-20">
           <div className="relative rounded-2xl bg-gray-50 dark:bg-[#181d2a] border border-gray-200 dark:border-gray-700/80 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500 transition-all">
             <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200/60 dark:border-gray-800/80">
@@ -674,20 +683,18 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                 Chat Directive
               </span>
 
-              {/* AI Provider Switcher */}
-              <div className="flex items-center gap-1.5 text-[11px]">
-                <Cpu className="w-3.5 h-3.5 text-gray-400" />
-                <select
+              {/* Shadcn AI Provider Switcher */}
+              <div className="flex items-center gap-1.5 text-[11px] min-w-[140px]">
+                <Cpu className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                <Select
                   value={selectedProvider}
-                  onChange={(e) => setSelectedProvider(e.target.value as AIProviderId)}
-                  className="bg-transparent text-[11px] font-extrabold text-gray-700 dark:text-gray-300 focus:outline-none cursor-pointer"
-                >
-                  {availableProviders.map((p) => (
-                    <option key={p.id} value={p.id} className="bg-white dark:bg-[#181d2a]">
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(val) => setSelectedProvider(val as AIProviderId)}
+                  options={availableProviders.map((p) => ({
+                    value: p.id,
+                    label: p.name
+                  }))}
+                  className="w-full text-[11px]"
+                />
               </div>
             </div>
 
@@ -706,11 +713,12 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                 className="flex-1 bg-transparent text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none resize-none font-medium p-1 leading-relaxed"
               />
 
-              <motion.button
-                whileTap={{ scale: 0.92 }}
+              <Button
+                size="icon"
+                variant="default"
                 onClick={handleSendMessage}
                 disabled={isGenerating || !prompt.trim()}
-                className="p-2.5 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 mb-0.5"
+                className="rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/30 shrink-0 mb-0.5"
                 title="Send Message (Enter)"
               >
                 {isGenerating ? (
@@ -718,7 +726,7 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
-              </motion.button>
+              </Button>
             </div>
           </div>
 
