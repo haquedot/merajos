@@ -140,6 +140,10 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
     module = 'goals';
   } else if (lower.includes('link') || lower.includes('bookmark') || lower.includes('url')) {
     module = 'links';
+  } else if (lower.includes('weekly') || lower.includes('brain dump') || lower.includes('top priority')) {
+    module = 'weekly';
+  } else if (lower.includes('setting') || lower.includes('theme') || lower.includes('dark mode') || lower.includes('light mode')) {
+    module = 'settings';
   }
 
   const actionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -333,6 +337,41 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
       description: `${opType} saved link "${linkTitle}" ${extractedUrl ? `(${extractedUrl})` : ''}`,
       targetData: { title: linkTitle, url: extractedUrl, prompt: clean },
       requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'weekly') {
+    const priorityTitle = clean
+      .replace(/^(add|set|update|create)\s+(weekly\s+)?(priority|brain dump|goal)?\s*/i, '')
+      .replace(/["']/g, '')
+      .trim() || extractedTitle || clean;
+
+    return {
+      actionId,
+      module: 'weekly',
+      opType: opType === 'DELETE' ? 'DELETE' : 'UPDATE',
+      title: opType === 'DELETE' ? `Remove Weekly Priority: "${priorityTitle}"` : `Update Weekly Priority: "${priorityTitle}"`,
+      description: `Update weekly planner focus & top priority in workspace`,
+      targetData: { title: priorityTitle, priority: priorityTitle, prompt: clean },
+      requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
+
+  if (module === 'settings') {
+    let targetTheme = 'dark';
+    if (lower.includes('light')) targetTheme = 'light';
+    else if (lower.includes('system')) targetTheme = 'system';
+
+    return {
+      actionId,
+      module: 'settings',
+      opType: 'UPDATE',
+      title: `Update System Theme: ${targetTheme.toUpperCase()}`,
+      description: `Change theme setting to ${targetTheme} mode`,
+      targetData: { theme: targetTheme, themeMode: targetTheme, prompt: clean },
+      requiresConfirmation: false,
       status: 'pending'
     };
   }

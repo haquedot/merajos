@@ -9,6 +9,8 @@ import { HabitsActionHandler } from './habitsActionHandler';
 import { GoalsActionHandler } from './goalsActionHandler';
 import { CalendarActionHandler } from './calendarActionHandler';
 import { LinksActionHandler } from './linksActionHandler';
+import { WeeklyActionHandler } from './weeklyActionHandler';
+import { SettingsActionHandler } from './settingsActionHandler';
 
 const handlerList: ActionHandler[] = [
   new TasksActionHandler(),
@@ -20,6 +22,8 @@ const handlerList: ActionHandler[] = [
   new GoalsActionHandler(),
   new CalendarActionHandler(),
   new LinksActionHandler(),
+  new WeeklyActionHandler(),
+  new SettingsActionHandler(),
 ];
 
 const handlerRegistry: Record<string, ActionHandler> = {};

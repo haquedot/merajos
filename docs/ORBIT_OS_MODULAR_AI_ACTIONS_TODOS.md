@@ -37,7 +37,7 @@
   - [x] Extend `researchActionHandler.ts` to support paper reading status updates (`unread` ➔ `reading` ➔ `cited`) and section word count updates.
   - [x] Add parsing logic for paper reading state updates.
 
-- [ ] **Phase 7: Weekly Planner & System Settings AI Integration**
-  - [ ] Create `lib/agent/handlers/weeklyActionHandler.ts` (`UPDATE` weekly priorities, brain dump).
-  - [ ] Create `lib/agent/handlers/settingsActionHandler.ts` (`UPDATE` theme, pomodoro time).
-  - [ ] Perform final full-system type check and integration validation.
+- [x] **Phase 7: Weekly Planner & System Settings AI Integration**
+  - [x] Create `lib/agent/handlers/weeklyActionHandler.ts` (`UPDATE` weekly priorities, brain dump).
+  - [x] Create `lib/agent/handlers/settingsActionHandler.ts` (`UPDATE` theme, pomodoro time).
+  - [x] Perform final full-system type check and integration validation.

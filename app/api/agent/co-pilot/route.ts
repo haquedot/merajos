@@ -153,6 +153,8 @@ Classify the user's directive into one of 3 semantic intent types:
    - "goals": Goals & OKRs.
    - "calendar": Calendar Events & Meetings.
    - "links": Saved Resource Bookmarks & URLs.
+   - "weekly": Weekly Planner & Top Priorities.
+   - "settings": System Settings & Preferences.
    - Fill "actionProposals" array with module, opType (CREATE/READ/UPDATE/DELETE), title, and targetData.
 
 Return ONLY valid JSON matching this structure:
