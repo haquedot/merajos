@@ -1,6 +1,6 @@
 # 📋 Gemini Nano (Chrome Built-in AI) Integration TODO Checklist
 
-> **Objective**: Implement native, zero-API-key on-device AI for Orbit OS and Omini Co-Pilot via Chrome's built-in Gemini Nano (`window.ai.languageModel`) with automatic fallback to Ollama.
+> **Objective**: Implement native, zero-API-key on-device AI for Orbit OS and Omini via Chrome's built-in Gemini Nano (`window.ai.languageModel`) with automatic fallback to Ollama.
 
 ---
 
@@ -22,7 +22,7 @@
 - [ ] **Task 2.1: Build `GeminiNanoProvider` (`lib/agent/providers/GeminiNanoProvider.ts`)**
   - Implement `BaseAgentProvider` interface.
   - Implement session initialization via `window.ai.languageModel.create()`.
-  - Configure system prompts for Omini Co-Pilot intent extraction.
+  - Configure system prompts for Omini intent extraction.
   - Add structured JSON output parsing from `session.prompt()` stream.
 
 - [ ] **Task 2.2: Implement Stream & Error Handling**
