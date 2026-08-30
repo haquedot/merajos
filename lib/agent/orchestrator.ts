@@ -56,6 +56,52 @@ export function isAnalysisQuery(userPrompt: string): boolean {
   );
 }
 
+export function isExternalKnowledgeQuery(userPrompt: string): boolean {
+  if (!userPrompt || !userPrompt.trim()) return false;
+  const lower = userPrompt.toLowerCase().trim();
+
+  // If prompt explicitly mentions user workspace entities, it is NOT external knowledge
+  const hasWorkspaceKeyword =
+    lower.includes('task') ||
+    lower.includes('project') ||
+    lower.includes('client') ||
+    lower.includes('note') ||
+    lower.includes('memo') ||
+    lower.includes('habit') ||
+    lower.includes('goal') ||
+    lower.includes('okr') ||
+    lower.includes('dsa') ||
+    lower.includes('syllabus') ||
+    lower.includes('career') ||
+    lower.includes('research') ||
+    lower.includes('paper') ||
+    lower.includes('schedule') ||
+    lower.includes('workload') ||
+    lower.includes('calendar') ||
+    lower.includes('event') ||
+    lower.includes('meeting') ||
+    lower.includes('orbit') ||
+    lower.includes('my ') ||
+    lower.includes(' mine') ||
+    lower.includes('today') ||
+    lower.includes('tomorrow');
+
+  if (hasWorkspaceKeyword) return false;
+
+  return (
+    isAnalysisQuery(userPrompt) ||
+    lower.startsWith('explain') ||
+    lower.startsWith('translate') ||
+    lower.startsWith('calculate') ||
+    lower.startsWith('define') ||
+    lower.startsWith('difference between') ||
+    lower.includes('prime minister') ||
+    lower.includes('president') ||
+    lower.includes('capital of') ||
+    lower.includes('meaning of')
+  );
+}
+
 export function parseOmniActionProposal(userPrompt: string): AgentActionProposal | null {
   if (!userPrompt || !userPrompt.trim()) return null;
   const clean = userPrompt.trim();

@@ -8,7 +8,7 @@ import CalendarEvent from '../../../../models/CalendarEvent';
 import UserPreferences from '../../../../models/UserPreferences';
 import { ProviderFactory, AIProviderId, DEFAULT_AI_PROVIDER } from '../../../../lib/agent/providers/providerFactory';
 import { buildAgentContext } from '../../../../lib/agent/context/agentContextBuilder';
-import { OrbitAgentOrchestrator, parseUserIntentPrompt, parseOmniActionProposal, isAnalysisQuery } from '../../../../lib/agent/orchestrator';
+import { OrbitAgentOrchestrator, parseUserIntentPrompt, parseOmniActionProposal, isAnalysisQuery, isExternalKnowledgeQuery } from '../../../../lib/agent/orchestrator';
 import { AgentCoPilotProposal, TaskProposal, ScheduleSlotProposal, AgentActionProposal } from '../../../../lib/agent/types';
 import { z } from 'zod';
 
@@ -47,6 +47,46 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const parsedReq = RequestSchema.parse(body);
 
+    // Resolve AI provider using Factory
+    const effectiveProviderId = parsedReq.providerId === 'gemini-nano' ? DEFAULT_AI_PROVIDER : (parsedReq.providerId as AIProviderId);
+    const provider = ProviderFactory.getProvider(effectiveProviderId);
+
+    // ZERO-TOKEN FAST PATH: If query is general external knowledge (e.g. "Who is prime minister of India?"), skip DB ingestion & tool pipeline
+    if (isExternalKnowledgeQuery(parsedReq.prompt)) {
+      let fastAnswer = '';
+      try {
+        const textResult = await provider.generateText(
+          `Answer the user's question clearly, accurately, and concisely in 2-4 sentences:\nUser Question: "${parsedReq.prompt}"`
+        );
+        fastAnswer = textResult || '';
+      } catch (err: any) {
+        fastAnswer = `I received your query: "${parsedReq.prompt}". Please verify your active AI provider setup.`;
+      }
+
+      const fastProposal: AgentCoPilotProposal = {
+        proposalId: `prop_fast_${Date.now()}`,
+        userIntent: parsedReq.prompt,
+        summary: fastAnswer || `Direct response for: "${parsedReq.prompt}"`,
+        isAnalysisOnly: true,
+        createdAt: new Date().toISOString(),
+        providerUsed: effectiveProviderId,
+        taskProposals: [],
+        actionProposals: [],
+        scheduleSlots: [],
+        verification: {
+          isValid: true,
+          totalScheduledHours: 0,
+          maxCapacityHours: 7.0,
+          checks: [{ name: 'Zero-Token Fast Path', passed: true, severity: 'info', message: 'Bypassed DB & pipeline for external knowledge query' }]
+        },
+        steps: [
+          { stepNumber: 1, agentName: 'ZeroTokenFastPath', action: 'Answered external Q&A directly with zero DB overhead', status: 'completed', details: `Provider: ${provider.name}`, timestamp: new Date().toISOString() }
+        ]
+      };
+
+      return NextResponse.json({ proposal: fastProposal });
+    }
+
     const userFilter = { $or: [{ userId }, { userEmail }, { userId: { $exists: false } }] };
 
     // Load live Orbit context across all modules
@@ -68,10 +108,6 @@ export async function POST(req: Request) {
     // Run Orchestrated Sub-Agent Tool Pipeline with User Prompt Context
     const orchestrator = new OrbitAgentOrchestrator();
     const orchestratedResult = orchestrator.runPipeline(agentContext, preferences as any, parsedReq.prompt);
-
-    // Resolve AI provider using Factory (If gemini-nano is sent to server endpoint, fallback to default local Ollama for server processing)
-    const effectiveProviderId = parsedReq.providerId === 'gemini-nano' ? DEFAULT_AI_PROVIDER : (parsedReq.providerId as AIProviderId);
-    const provider = ProviderFactory.getProvider(effectiveProviderId);
 
     // Formulate system prompt with context and user directive for LLM semantic reasoning
     const systemPrompt = `You are Omini, the intelligent personal AI assistant for Orbit OS.
