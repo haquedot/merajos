@@ -99,4 +99,16 @@ export interface AgentTrajectory {
   durationMs: number;
   inputPrompt: string;
   proposal: AgentCoPilotProposal;
+  verificationPassed: boolean;
+}
+
+export interface UserAIModelConfig {
+  id: string;
+  providerId: 'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama';
+  name: string; // e.g. "My GPT-4o Key"
+  modelName: string; // e.g. "gpt-4o", "claude-3-5-sonnet", "gemini-1.5-pro", "llama-3.3-70b-versatile"
+  apiKey: string;
+  baseUrl?: string;
+  isActive?: boolean;
+  createdAt: string;
 }

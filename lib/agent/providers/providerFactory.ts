@@ -12,39 +12,49 @@ export type AIProviderId = 'gemini' | 'gemini-nano' | 'openai' | 'anthropic' | '
 // Central Default AI Provider configuration (Change here to switch default across application)
 export const DEFAULT_AI_PROVIDER: AIProviderId = 'ollama';
 
+export interface UserConfigOverride {
+  providerId?: AIProviderId;
+  modelName?: string;
+  apiKey?: string;
+  baseUrl?: string;
+}
+
 export class ProviderFactory {
   private static instance: LLMProvider | null = null;
 
   /**
    * Returns the active LLM Provider instance based on:
-   * 1. Explicit override passed in parameters
+   * 1. Explicit user model config override passed in parameters (BYOK)
    * 2. `AGENT_MOCK_MODE=true` environment variable -> MockProvider
    * 3. `AI_PROVIDER` environment variable (default: 'ollama')
    */
-  public static getProvider(providerId?: AIProviderId): LLMProvider {
+  public static getProvider(providerId?: AIProviderId, userConfig?: UserConfigOverride): LLMProvider {
     // If offline mock mode is flagged, prioritize MockProvider for benchmark safety
-    if (process.env.AGENT_MOCK_MODE === 'true' && !providerId) {
+    if (process.env.AGENT_MOCK_MODE === 'true' && !providerId && !userConfig) {
       return new MockProvider();
     }
 
-    const activeId = (providerId || process.env.AI_PROVIDER || DEFAULT_AI_PROVIDER).toLowerCase() as AIProviderId;
+    const activeId = ((userConfig?.providerId || providerId || process.env.AI_PROVIDER || DEFAULT_AI_PROVIDER) as string).toLowerCase() as AIProviderId;
+    const apiKey = userConfig?.apiKey;
+    const modelName = userConfig?.modelName;
+    const baseUrl = userConfig?.baseUrl;
 
     switch (activeId) {
       case 'gemini-nano':
         return new GeminiNanoProvider();
       case 'openai':
-        return new OpenAIProvider();
+        return new OpenAIProvider(apiKey, modelName || 'gpt-4o-mini');
       case 'anthropic':
-        return new AnthropicProvider();
+        return new AnthropicProvider(apiKey, modelName || 'claude-3-5-sonnet-20241022');
       case 'groq':
-        return new GroqProvider();
+        return new GroqProvider(apiKey, modelName || 'llama-3.3-70b-versatile');
       case 'ollama':
-        return new OllamaProvider();
+        return new OllamaProvider(baseUrl, modelName);
       case 'mock':
         return new MockProvider();
       case 'gemini':
       default:
-        return new GeminiProvider();
+        return new GeminiProvider(apiKey, modelName || 'gemini-1.5-flash');
     }
   }
 

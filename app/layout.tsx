@@ -78,6 +78,8 @@ export const metadata: Metadata = {
   },
 };
 
+import Script from 'next/script';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
@@ -88,8 +90,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head suppressHydrationWarning>
         <link rel="icon" href="/logos/orbit-light-icon.png" type="image/png" sizes="any" />
         <link rel="apple-touch-icon" href="/logos/orbit-light-icon.png" />
-        <script
+        <Script
           id="theme-initializer"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

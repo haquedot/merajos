@@ -89,7 +89,7 @@ export const ActionProposalCard: React.FC<ActionProposalCardProps> = ({ proposal
       transition={{ duration: 0.2 }}
     >
       <Card
-        className={`p-4 transition-all shadow-md ${
+        className={`p-3 sm:p-4 transition-all shadow-md ${
           executed
             ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800'
             : proposal.opType === 'DELETE'
@@ -97,12 +97,12 @@ export const ActionProposalCard: React.FC<ActionProposalCardProps> = ({ proposal
             : 'bg-white dark:bg-[#181d2a] border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-800'
         }`}
       >
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-2">
-            <Badge variant="primary" size="sm" className="uppercase font-black">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-1.5">
+            <Badge variant="primary" size="sm" className="uppercase font-black text-[9px]">
               {proposal.module}
             </Badge>
-            <Badge variant={getOpBadgeVariant()} size="sm" className="font-extrabold">
+            <Badge variant={getOpBadgeVariant()} size="sm" className="font-extrabold text-[9px]">
               {proposal.opType}
             </Badge>
           </div>
@@ -117,7 +117,7 @@ export const ActionProposalCard: React.FC<ActionProposalCardProps> = ({ proposal
               variant={proposal.opType === 'DELETE' ? 'destructive' : 'default'}
               onClick={handleExecute}
               disabled={isExecuting}
-              className="gap-1.5 font-extrabold"
+              className="gap-1.5 font-extrabold text-[11px] h-7 px-2.5"
             >
               {isExecuting ? (
                 <>
