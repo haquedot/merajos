@@ -79,11 +79,11 @@ gantt
 
 **Goal**: Route response formatting cleanly between Informational Q&A, Omni-Module Actions, and Workload Schedules.
 
-- [ ] **Task 4.1**: Refine system prompt instructions for `generateStructured`:
+- [x] **Task 4.1**: Refine system prompt instructions for `generateStructured`:
   - Instruct LLM to check `CONVERSATION HISTORY` and `WORKSPACE INDEX` before resolving ambiguities ("that project", "task #2", "move it").
-- [ ] **Task 4.2**: Update `isAnalysisOnly` logic in `route.ts`.
+- [x] **Task 4.2**: Update `isAnalysisOnly` logic in `route.ts`.
   - If intent is `INFORMATIONAL_QUERY`, return `summary` response with empty `taskProposals` and `actionProposals` (suppressing unneeded automatic task cards).
-- [ ] **Task 4.3**: Integrate Omni-Module Action Proposals when explicit mutations are requested.
+- [x] **Task 4.3**: Integrate Omni-Module Action Proposals when explicit mutations are requested.
 
 ---
 
