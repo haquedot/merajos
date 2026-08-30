@@ -10,6 +10,7 @@ interface LogoProps {
   size?: number;
   className?: string;
   showTagline?: boolean;
+  showName?: boolean;
 }
 
 export const Logo: React.FC<LogoProps> = ({
@@ -18,6 +19,7 @@ export const Logo: React.FC<LogoProps> = ({
   size = 32,
   className = '',
   showTagline = false,
+  showName = true,
 }) => {
   const iconSize = size;
 
@@ -51,9 +53,11 @@ export const Logo: React.FC<LogoProps> = ({
     <div className={`inline-flex items-center gap-3 ${className}`}>
       {IconSvg}
       <div className="flex flex-col">
-        <span className={`font-extrabold tracking-tight text-[#1F3B99] dark:text-white leading-none ${BRAND.tagline.length > 0 ? 'text-xl' : 'text-lg'}`}>
-          {BRAND.name}
-        </span>
+        {showName && (
+          <span className={`font-extrabold tracking-tight text-[#1F3B99] dark:text-white leading-none ${BRAND.tagline.length > 0 ? 'text-xl' : 'text-lg'}`}>
+            {BRAND.name}
+          </span>
+        )}
         {showTagline && (
           <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
             Plan. <span className='text-orange-600 dark:text-orange-400 font-bold'>Focus.</span> Execute. Grow.
