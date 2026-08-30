@@ -22,6 +22,8 @@ import { GlobalSearchModal } from '../modals/GlobalSearchModal';
 import Footer from './Footer';
 import { ModuleGuard } from './ModuleGuard';
 import { ModuleKey } from '../../types';
+import { AgentCoPilotDrawer } from '../agent/AgentCoPilotDrawer';
+import { OminiButton } from '../agent/OminiButton';
 
 const MODULE_ROUTES: Record<string, { key: ModuleKey; name: string }> = {
   '/career': { key: 'career', name: 'Career' },
@@ -30,7 +32,6 @@ const MODULE_ROUTES: Record<string, { key: ModuleKey; name: string }> = {
   '/habits': { key: 'habits', name: 'Habits' },
   '/research': { key: 'research', name: 'Research' },
   '/weekly-planner': { key: 'weekly_planner', name: 'Weekly Planner' },
-  // '/notes': { key: 'notes', name: 'Notes' },
   '/analytics': { key: 'analytics', name: 'Analytics' },
 };
 
@@ -56,6 +57,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [reflectionOpen, setReflectionOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [isCoPilotOpen, setIsCoPilotOpen] = useState(false);
 
   const { settings, isLoadingSettings } = useSettingsStore();
   const { session } = useGoogleAuth();
@@ -75,9 +77,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     }
   }, [settings.theme]);
 
-  // Universal keyboard shortcuts listener (Ctrl+K, N, F, D, ?)
+  // Universal keyboard shortcuts listener (Ctrl+K, N, F, D, ?, Alt+J, Ctrl+Shift+O)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Omini Assistant shortcuts first
+      if (
+        (e.altKey && e.key.toLowerCase() === 'j') ||
+        ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'o') ||
+        ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'j') ||
+        ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'i') ||
+        ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j')
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') {
+          e.stopImmediatePropagation();
+        }
+        setIsCoPilotOpen((prev) => !prev);
+        return;
+      }
+
       // Ignore key shortcuts if user is typing in an input, textarea, or contentEditable element
       const target = e.target as HTMLElement;
       if (
@@ -105,8 +124,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         router.push('/today');
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [router]);
 
   // Load settings from DB on layout mount
@@ -161,6 +181,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           onOpenQuickAdd={() => setQuickAddOpen(true)}
           onOpenSearch={() => setSearchOpen(true)}
           onOpenTour={() => setShowTour(true)}
+          onOpenCoPilot={() => setIsCoPilotOpen(true)}
         />
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6 overflow-x-hidden pb-24 md:pb-6">
@@ -192,6 +213,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <RightProductivityPanel
         isOpen={rightPanelOpen}
         onClose={() => setRightPanelOpen(false)}
+      />
+
+      {/* Floating Omini FAB Button */}
+      <OminiButton onClick={() => setIsCoPilotOpen(true)} />
+
+      {/* Omini Agent Co-Pilot Drawer */}
+      <AgentCoPilotDrawer
+        isOpen={isCoPilotOpen}
+        onClose={() => setIsCoPilotOpen(false)}
       />
 
       {/* Modals */}
@@ -237,3 +267,4 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   );
 };
 
+export default MainLayout;

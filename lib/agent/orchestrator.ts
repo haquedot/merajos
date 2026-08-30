@@ -130,18 +130,29 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
     module = 'career';
   } else if (lower.includes('paper') || lower.includes('citation') || lower.includes('abstract') || lower.includes('journal') || lower.includes('research')) {
     module = 'research';
-  } else if (lower.includes('project') || lower.includes('milestone')) {
+  } else if (lower.includes('project') || lower.includes('client') || lower.includes('freelance') || lower.includes('customer') || lower.includes('milestone')) {
     module = 'projects';
-  } else if (lower.includes('habit') || lower.includes('routine') || lower.includes('streak')) {
-    module = 'habits';
-  } else if (lower.includes('goal') || lower.includes('okr') || lower.includes('key result')) {
-    module = 'goals';
   } else if (lower.includes('event') || lower.includes('meeting') || lower.includes('calendar') || lower.includes('reschedule')) {
     module = 'calendar';
   }
 
   const actionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
   const extractedTitle = extractTargetTitle(clean);
+
+  if (module === 'projects') {
+    const titleMatch = clean.replace(/^(create|add|new)\s+(a\s+)?(project|client)\s*(titled|named|called)?\s*/i, '').replace(/["']/g, '').trim();
+    const finalTitle = extractedTitle || titleMatch || clean;
+    return {
+      actionId,
+      module: 'projects',
+      opType,
+      title: opType === 'DELETE' ? `Delete Project/Client: "${finalTitle}"` : `Create Project/Client: "${finalTitle}"`,
+      description: `${opType} project/client "${finalTitle}" in workspace`,
+      targetData: { title: finalTitle, name: finalTitle, prompt: clean },
+      requiresConfirmation: opType === 'DELETE',
+      status: 'pending'
+    };
+  }
 
   if (module === 'notes') {
     const titleMatch = clean.replace(/^(create|add|new)\s+(a\s+)?(note|memo)\s*(titled|named|called)?\s*/i, '').trim();
@@ -211,8 +222,16 @@ export function parseUserIntentPrompt(userPrompt: string): TaskProposal | null {
     lower.startsWith('update') ||
     lower.startsWith('edit') ||
     lower.startsWith('complete') ||
-    lower.includes('delete task') ||
-    lower.includes('remove task')
+    lower.includes('project') ||
+    lower.includes('client') ||
+    lower.includes('freelance') ||
+    lower.includes('note') ||
+    lower.includes('memo') ||
+    lower.includes('paper') ||
+    lower.includes('citation') ||
+    lower.includes('habit') ||
+    lower.includes('goal') ||
+    lower.includes('okr')
   ) {
     return null;
   }
