@@ -273,7 +273,7 @@ Return ONLY valid JSON matching this structure:
       : [];
 
     // Fallback to deterministic orchestrator if LLM didn't specify explicit task
-    let finalProposals: TaskProposal[] = orchestratedResult.taskProposals;
+    let finalProposals: TaskProposal[] = isAnalysisOnly ? [] : orchestratedResult.taskProposals;
 
     // If LLM or prompt extraction identified an explicit task, insert it ONLY if not an analysis or module action query
     const fallbackUserTask = parseUserIntentPrompt(parsedReq.prompt);
@@ -288,7 +288,7 @@ Return ONLY valid JSON matching this structure:
       }
     }
 
-    // Group tasks into 4 Time Slots
+    // Group tasks into 4 Time Slots (only if not an analysis/informational query)
     const slots: Record<string, TaskProposal[]> = {
       morning: [],
       afternoon: [],
@@ -296,21 +296,25 @@ Return ONLY valid JSON matching this structure:
       night: []
     };
 
-    finalProposals.forEach((tp) => {
-      const slotKey = tp.timeSlot || 'morning';
-      if (slots[slotKey]) {
-        slots[slotKey].push(tp);
-      } else {
-        slots.morning.push(tp);
-      }
-    });
+    if (!isAnalysisOnly && finalProposals.length > 0) {
+      finalProposals.forEach((tp) => {
+        const slotKey = tp.timeSlot || 'morning';
+        if (slots[slotKey]) {
+          slots[slotKey].push(tp);
+        } else {
+          slots.morning.push(tp);
+        }
+      });
+    }
 
-    const scheduleSlots: ScheduleSlotProposal[] = [
-      { slot: 'morning', label: 'Morning (6 AM - 12 PM)', tasks: slots.morning, allocatedHours: slots.morning.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 4.0 },
-      { slot: 'afternoon', label: 'Afternoon (12 PM - 5 PM)', tasks: slots.afternoon, allocatedHours: slots.afternoon.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 3.5 },
-      { slot: 'evening', label: 'Evening (5 PM - 9 PM)', tasks: slots.evening, allocatedHours: slots.evening.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 3.0 },
-      { slot: 'night', label: 'Night (9 PM - 12:30 AM)', tasks: slots.night, allocatedHours: slots.night.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 2.5 },
-    ];
+    const scheduleSlots: ScheduleSlotProposal[] = isAnalysisOnly || finalProposals.length === 0
+      ? []
+      : [
+          { slot: 'morning', label: 'Morning (6 AM - 12 PM)', tasks: slots.morning, allocatedHours: slots.morning.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 4.0 },
+          { slot: 'afternoon', label: 'Afternoon (12 PM - 5 PM)', tasks: slots.afternoon, allocatedHours: slots.afternoon.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 3.5 },
+          { slot: 'evening', label: 'Evening (5 PM - 9 PM)', tasks: slots.evening, allocatedHours: slots.evening.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 3.0 },
+          { slot: 'night', label: 'Night (9 PM - 12:30 AM)', tasks: slots.night, allocatedHours: slots.night.reduce((sum, t) => sum + t.estimatedHours, 0), availableCapacityHours: 2.5 },
+        ];
 
     const totalScheduledHours = finalProposals.reduce((sum, t) => sum + t.estimatedHours, 0);
 

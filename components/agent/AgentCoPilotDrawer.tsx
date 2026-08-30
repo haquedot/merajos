@@ -542,8 +542,8 @@ export const AgentCoPilotDrawer: React.FC<AgentCoPilotDrawerProps> = ({ isOpen, 
                       </div>
                     )}
 
-                    {/* Structured Task Proposals & Schedule Slots */}
-                    {msg.proposal && msg.proposal.taskProposals && msg.proposal.taskProposals.length > 0 && (
+                    {/* Structured Task Proposals & Schedule Slots (Only for Schedule/Task Creation requests) */}
+                    {msg.proposal && !msg.proposal.isAnalysisOnly && msg.proposal.taskProposals && msg.proposal.taskProposals.length > 0 && (
                       <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800/80">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
