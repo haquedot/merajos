@@ -33,9 +33,9 @@
   - [x] Extend `careerActionHandler.ts` to support creating Subject Plans and updating Job Application statuses.
   - [x] Add parsing logic for subject plans and job application prompts.
 
-- [ ] **Phase 6: Research Paper Status & Writing Progress AI Integration**
-  - [ ] Extend `researchActionHandler.ts` to support paper reading status updates (`unread` ➔ `reading` ➔ `cited`) and section word count updates.
-  - [ ] Add parsing logic for paper reading state updates.
+- [x] **Phase 6: Research Paper Status & Writing Progress AI Integration**
+  - [x] Extend `researchActionHandler.ts` to support paper reading status updates (`unread` ➔ `reading` ➔ `cited`) and section word count updates.
+  - [x] Add parsing logic for paper reading state updates.
 
 - [ ] **Phase 7: Weekly Planner & System Settings AI Integration**
   - [ ] Create `lib/agent/handlers/weeklyActionHandler.ts` (`UPDATE` weekly priorities, brain dump).

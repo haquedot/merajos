@@ -226,14 +226,27 @@ export function parseOmniActionProposal(userPrompt: string): AgentActionProposal
   }
 
   if (module === 'research') {
+    const isStatusUpdate = lower.includes('read') || lower.includes('cited') || lower.includes('status') || lower.includes('mark');
+    const paperTitle = clean
+      .replace(/^(add|create|new|mark|update|delete|remove)\s+(a\s+)?(research\s+)?(paper|citation)?\s*/i, '')
+      .replace(/["']/g, '')
+      .replace(/\s*(as read|as cited|reading|cited|unread)\s*/gi, '')
+      .trim() || extractedTitle || clean;
+
+    let targetPaperStatus = 'unread';
+    if (lower.includes('cited')) targetPaperStatus = 'cited';
+    else if (lower.includes('read')) targetPaperStatus = 'reading';
+
+    const actualOp = isStatusUpdate && opType !== 'DELETE' ? 'UPDATE' : opType;
+
     return {
       actionId,
       module: 'research',
-      opType,
-      title: `Research Engine: ${clean}`,
-      description: `${opType} research paper citation or section word count`,
-      targetData: { title: extractedTitle, prompt: clean },
-      requiresConfirmation: opType === 'DELETE',
+      opType: actualOp,
+      title: actualOp === 'DELETE' ? `Delete Paper: "${paperTitle}"` : actualOp === 'UPDATE' ? `Update Paper Status: "${paperTitle}"` : `Add Research Paper: "${paperTitle}"`,
+      description: `${actualOp} research paper "${paperTitle}" in workspace`,
+      targetData: { paperTitle, title: paperTitle, paperStatus: targetPaperStatus, prompt: clean },
+      requiresConfirmation: actualOp === 'DELETE',
       status: 'pending'
     };
   }
